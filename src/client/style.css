@@ -1,0 +1,325 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f5f5;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+#app {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 100%;
+  padding: 30px;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+h1, h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-group input[type="number"] {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.form-group input[type="number"]:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.radio-group input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.primary-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  background: #4a90d9;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.primary-btn:hover {
+  background: #3a7bc8;
+}
+
+.primary-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.secondary-btn:hover {
+  background: #e0e0e0;
+}
+
+.stats {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  font-size: 14px;
+  color: #666;
+}
+
+.stats p {
+  margin-bottom: 5px;
+}
+
+/* Practice Screen */
+.progress-bar {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #666;
+  font-size: 14px;
+}
+
+.prompt {
+  text-align: center;
+  font-size: 48px;
+  margin-bottom: 40px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.prompt.english-prompt {
+  font-size: 24px;
+}
+
+.answer-section {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.answer-section input {
+  flex: 1;
+  padding: 12px;
+  font-size: 18px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+}
+
+.answer-section input:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
+
+.answer-section .primary-btn {
+  width: auto;
+  padding: 12px 24px;
+}
+
+.feedback {
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.feedback.correct {
+  background: #d4edda;
+  color: #155724;
+}
+
+.feedback.incorrect {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.feedback .correct-answer {
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+.answer-hanzi {
+  font-size: 1.3em;
+}
+
+.answer-pinyin {
+  color: #555;
+}
+
+.answer-english {
+  color: #333;
+}
+
+.example-hint {
+  margin-top: 15px;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.example-sentence {
+  margin-top: 10px;
+  font-size: 0.9em;
+  line-height: 1.6;
+}
+
+.ex-hanzi {
+  font-size: 1.1em;
+  color: #333;
+}
+
+.ex-pinyin {
+  color: #0066cc;
+}
+
+.ex-english {
+  color: #666;
+  font-style: italic;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Result Screen */
+.result-stats {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.result-stats p {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.result-stats .success {
+  color: #28a745;
+}
+
+.result-stats .retry {
+  color: #dc3545;
+}
+
+.mistakes-section {
+  margin-bottom: 30px;
+}
+
+.mistakes-section h3 {
+  margin-bottom: 15px;
+  color: #555;
+}
+
+.mistakes-section ul {
+  list-style: none;
+}
+
+.mistakes-section li {
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.mistakes-section .hanzi {
+  font-size: 20px;
+}
+
+.mistakes-section .details {
+  color: #666;
+  font-size: 14px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  #app {
+    padding: 20px;
+  }
+
+  .prompt {
+    font-size: 36px;
+  }
+
+  .answer-section {
+    flex-direction: column;
+  }
+
+  .answer-section .primary-btn {
+    width: 100%;
+  }
+}

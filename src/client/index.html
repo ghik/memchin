@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chinese Practice</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="app">
+    <div id="start-screen" class="screen active">
+      <h1>Chinese Practice</h1>
+
+      <div class="form-group">
+        <label for="word-count">How many words?</label>
+        <input type="number" id="word-count" value="10" min="1" max="100">
+      </div>
+
+      <div class="form-group">
+        <label>Practice mode:</label>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="mode" value="pinyin" checked>
+            Hanzi → Pinyin
+          </label>
+          <label>
+            <input type="radio" name="mode" value="english">
+            Hanzi → English
+          </label>
+          <label>
+            <input type="radio" name="mode" value="hanzi">
+            English → Hanzi
+          </label>
+        </div>
+      </div>
+
+      <button id="start-btn" class="primary-btn">Start Practice</button>
+
+      <div id="stats" class="stats"></div>
+    </div>
+
+    <div id="practice-screen" class="screen">
+      <div class="progress-bar">
+        <span id="progress-text">Question 1 of 10</span>
+      </div>
+
+      <div id="prompt" class="prompt"></div>
+
+      <div class="answer-section">
+        <input type="text" id="answer-input" placeholder="Your answer..." autocomplete="off">
+        <button id="submit-btn" class="primary-btn">Submit</button>
+        <button id="skip-btn" class="secondary-btn">I don't know</button>
+      </div>
+
+      <div id="feedback" class="feedback hidden"></div>
+      <button id="next-btn" class="primary-btn hidden">Next</button>
+    </div>
+
+    <div id="result-screen" class="screen">
+      <h2>Session Complete!</h2>
+
+      <div id="result-stats" class="result-stats"></div>
+
+      <div id="mistakes-section" class="mistakes-section hidden">
+        <h3>Words to review:</h3>
+        <ul id="mistakes-list"></ul>
+      </div>
+
+      <button id="restart-btn" class="primary-btn">Practice Again</button>
+    </div>
+  </div>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
