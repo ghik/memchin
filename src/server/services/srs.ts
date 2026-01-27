@@ -3,14 +3,14 @@ import { upsertProgress, getProgress } from '../db.js';
 
 // Bucket delays in minutes
 const BUCKET_DELAYS_MINUTES: Record<number, number> = {
-  0: 0,        // Immediate
-  1: 1,        // 1 minute
-  2: 5,        // 5 minutes
-  3: 30,       // 30 minutes
-  4: 120,      // 2 hours
-  5: 480,      // 8 hours
-  6: 1440,     // 1 day
-  7: 4320,     // 3 days (mastered)
+  0: 0, // Immediate
+  1: 1, // 1 minute
+  2: 5, // 5 minutes
+  3: 30, // 30 minutes
+  4: 120, // 2 hours
+  5: 480, // 8 hours
+  6: 1440, // 1 day
+  7: 4320, // 3 days (mastered)
 };
 
 const MAX_BUCKET = 7;

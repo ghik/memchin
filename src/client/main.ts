@@ -1,5 +1,11 @@
-import type {PracticeMode, PracticeQuestion} from './services.js';
-import {completePractice, getStats, getWordCount, startPractice, submitAnswer} from './services.js';
+import type { PracticeMode, PracticeQuestion } from './services.js';
+import {
+  completePractice,
+  getStats,
+  getWordCount,
+  startPractice,
+  submitAnswer,
+} from './services.js';
 
 // DOM Elements
 const startScreen = document.getElementById('start-screen')!;
@@ -24,7 +30,6 @@ const mistakesList = document.getElementById('mistakes-list')!;
 const restartBtn = document.getElementById('restart-btn')!;
 
 // State
-let sessionId = '';
 let currentMode: PracticeMode = 'pinyin';
 let questions: PracticeQuestion[] = [];
 let currentIndex = 0;
@@ -54,14 +59,19 @@ async function loadStats() {
     const [stats, wordCount] = await Promise.all([getStats(), getWordCount()]);
 
     if (wordCount === 0) {
-      statsDiv.innerHTML = '<p>No words in database. Run <code>npm run import-hsk</code> first.</p>';
+      statsDiv.innerHTML =
+        '<p>No words in database. Run <code>npm run import-hsk</code> first.</p>';
       startBtn.disabled = true;
       return;
     }
 
-    const html = stats.map(s => `
+    const html = stats
+      .map(
+        (s) => `
       <p><strong>${s.mode}:</strong> ${s.learned}/${s.totalWords} learned, ${s.mastered} mastered, ${s.dueForReview} due</p>
-    `).join('');
+    `
+      )
+      .join('');
 
     statsDiv.innerHTML = html;
   } catch (error) {
@@ -73,14 +83,14 @@ async function loadStats() {
 // Start practice
 async function handleStart() {
   const count = parseInt(wordCountInput.value) || 10;
-  currentMode = (document.querySelector('input[name="mode"]:checked') as HTMLInputElement).value as PracticeMode;
+  currentMode = (document.querySelector('input[name="mode"]:checked') as HTMLInputElement)
+    .value as PracticeMode;
 
   try {
     startBtn.disabled = true;
     startBtn.textContent = 'Loading...';
 
     const response = await startPractice(count, currentMode);
-    sessionId = response.sessionId;
     questions = shuffle(response.questions);
     currentIndex = 0;
     results.clear();
@@ -97,29 +107,37 @@ async function handleStart() {
 }
 
 // Format example hints for question (varies by mode)
-function formatExampleHints(examples: { hanzi: string; pinyin: string; english: string }[]): string {
+function formatExampleHints(
+  examples: { hanzi: string; pinyin: string; english: string }[]
+): string {
   if (currentMode === 'hanzi') {
     // english->hanzi: show english only
-    return examples.map(ex => `<span class="ex-english">${ex.english}</span>`).join('<br>');
+    return examples.map((ex) => `<span class="ex-english">${ex.english}</span>`).join('<br>');
   } else {
     // pinyin and english modes (hanzi->X): show hanzi only
-    return examples.map(ex => `<span class="ex-hanzi">${ex.hanzi}</span>`).join('<br>');
+    return examples.map((ex) => `<span class="ex-hanzi">${ex.hanzi}</span>`).join('<br>');
   }
 }
 
 // Format full examples for answer
-function formatExampleAnswers(examples: { hanzi: string; pinyin: string; english: string }[]): string {
-  return examples.map(ex =>
-    `<span class="ex-hanzi">${ex.hanzi}</span> <span class="ex-pinyin">(${ex.pinyin})</span> <span class="ex-english">— ${ex.english}</span>`
-  ).join('<br>');
+function formatExampleAnswers(
+  examples: { hanzi: string; pinyin: string; english: string }[]
+): string {
+  return examples
+    .map(
+      (ex) =>
+        `<span class="ex-hanzi">${ex.hanzi}</span> <span class="ex-pinyin">(${ex.pinyin})</span> <span class="ex-english">— ${ex.english}</span>`
+    )
+    .join('<br>');
 }
 
 // Show current question
 function showQuestion() {
   const question = questions[currentIndex];
   const word = question.word;
+  const bucketLabel = question.bucket === null ? 'new' : `bucket ${question.bucket}`;
 
-  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
+  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length} (${bucketLabel})`;
 
   // Show example hints alongside the question
   if (word.examples.length > 0) {
@@ -166,7 +184,18 @@ async function handleSubmit() {
 
   try {
     submitBtn.disabled = true;
-    const response = await submitAnswer(sessionId, question.word.id, answer);
+    const response = await submitAnswer(currentMode, question.word.id, answer);
+
+    // Handle synonym case - valid word but not the target
+    if (response.synonym) {
+      feedbackDiv.classList.remove('hidden', 'correct', 'incorrect');
+      feedbackDiv.classList.add('synonym');
+      feedbackDiv.innerHTML = `✓ "${answer}" is correct, but not the word I'm looking for. Try again!`;
+      answerInput.value = '';
+      answerInput.focus();
+      submitBtn.disabled = false;
+      return;
+    }
 
     // Track first attempt for bucket calculation
     if (!results.has(question.word.id)) {
@@ -178,7 +207,7 @@ async function handleSubmit() {
     }
 
     // Show feedback
-    feedbackDiv.classList.remove('hidden', 'correct', 'incorrect');
+    feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
     feedbackDiv.classList.add(response.correct ? 'correct' : 'incorrect');
 
     if (response.correct) {
@@ -249,10 +278,10 @@ async function finishPractice() {
       correctFirstTry,
     }));
 
-    await completePractice(sessionId, resultArray);
+    await completePractice(currentMode, resultArray);
 
     // Show results
-    const correctCount = resultArray.filter(r => r.correctFirstTry).length;
+    const correctCount = resultArray.filter((r) => r.correctFirstTry).length;
     const incorrectCount = resultArray.length - correctCount;
 
     resultStatsDiv.innerHTML = `
@@ -262,18 +291,22 @@ async function finishPractice() {
 
     // Show mistakes
     const mistakes = resultArray
-      .filter(r => !r.correctFirstTry)
-      .map(r => questions.find(q => q.word.id === r.wordId)!)
+      .filter((r) => !r.correctFirstTry)
+      .map((r) => questions.find((q) => q.word.id === r.wordId)!)
       .filter(Boolean);
 
     if (mistakes.length > 0) {
       mistakesSection.classList.remove('hidden');
-      mistakesList.innerHTML = mistakes.map(q => `
+      mistakesList.innerHTML = mistakes
+        .map(
+          (q) => `
         <li>
           <span class="hanzi">${q.word.hanzi}</span>
           <span class="details">(${q.word.pinyin}) - ${q.word.english[0]}</span>
         </li>
-      `).join('');
+      `
+        )
+        .join('');
     } else {
       mistakesSection.classList.add('hidden');
     }

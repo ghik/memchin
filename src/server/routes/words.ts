@@ -5,7 +5,7 @@ const router = Router();
 
 router.get('/', (req, res) => {
   const words = getAllWords();
-  res.json({ words, total: words.length });
+  res.json({ words, total: words.size });
 });
 
 router.get('/count', (req, res) => {

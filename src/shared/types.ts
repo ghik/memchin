@@ -13,6 +13,7 @@ export interface Word {
   hskLevel: number;
   frequencyRank: number;
   examples: Example[];
+  translatable: boolean;
 }
 
 export type PracticeMode = 'pinyin' | 'english' | 'hanzi';
@@ -30,6 +31,7 @@ export interface PracticeQuestion {
   word: Word;
   prompt: string;
   acceptedAnswers: string[];
+  bucket: number | null; // null = new word
 }
 
 export interface StartRequest {
@@ -38,12 +40,11 @@ export interface StartRequest {
 }
 
 export interface StartResponse {
-  sessionId: string;
   questions: PracticeQuestion[];
 }
 
 export interface AnswerRequest {
-  sessionId: string;
+  mode: PracticeMode;
   wordId: number;
   answer: string;
 }
@@ -51,10 +52,11 @@ export interface AnswerRequest {
 export interface AnswerResponse {
   correct: boolean;
   correctAnswers: string[];
+  synonym?: boolean; // True if answer is a valid synonym but not the target word
 }
 
 export interface CompleteRequest {
-  sessionId: string;
+  mode: PracticeMode;
   results: Array<{ wordId: number; correctFirstTry: boolean }>;
 }
 

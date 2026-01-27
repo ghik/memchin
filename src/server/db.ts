@@ -2,7 +2,7 @@ import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { Word, Progress, PracticeMode } from '../shared/types.js';
+import type { PracticeMode, Progress, Word } from '../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, '../../data/memchin.db');
@@ -26,7 +26,8 @@ export async function initDb(): Promise<void> {
     db = new SQL.Database();
   }
 
-  // Initialize schema - frequency_rank is used as the primary key
+  // Initialize schema
+  // @formatter:off
   db.run(`
     CREATE TABLE IF NOT EXISTS words (
       id INTEGER PRIMARY KEY,
@@ -35,7 +36,9 @@ export async function initDb(): Promise<void> {
       pinyin_numbered TEXT NOT NULL,
       english TEXT NOT NULL,
       hsk_level INTEGER NOT NULL,
-      examples TEXT NOT NULL DEFAULT '[]'
+      examples TEXT NOT NULL DEFAULT '[]',
+      translatable INTEGER NOT NULL DEFAULT 1,
+      rank INTEGER
     );
   `);
 
@@ -51,11 +54,16 @@ export async function initDb(): Promise<void> {
       UNIQUE(word_id, mode)
     );
   `);
+  // @formatter:on
 
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible);`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_words_frequency ON words(id);`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_words_rank ON words(rank);`);
 
   saveDb();
+}
+
+export function getDb() {
+  return db;
 }
 
 export function saveDb(): void {
@@ -65,60 +73,72 @@ export function saveDb(): void {
 }
 
 // Word operations
-export function getAllWords(): Word[] {
+export function getAllWords(): Map<number, Word> {
+  if (allWords !== null) {
+    return allWords;
+  }
+
   const stmt = db.prepare('SELECT * FROM words ORDER BY id');
-  const rows: any[] = [];
+  allWords = new Map<number, Word>();
   while (stmt.step()) {
-    rows.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return rows.map(rowToWord);
-}
-
-export function getWordById(id: number): Word | null {
-  const stmt = db.prepare('SELECT * FROM words WHERE id = ?');
-  stmt.bind([id]);
-  if (stmt.step()) {
     const row = stmt.getAsObject();
-    stmt.free();
-    return rowToWord(row);
+    const word = rowToWord(row);
+    allWords.set(word.id, word);
   }
   stmt.free();
-  return null;
+  return allWords;
 }
 
-export function insertWord(word: Omit<Word, 'id'>): number {
-  db.run(`
-    INSERT OR REPLACE INTO words (id, hanzi, pinyin, pinyin_numbered, english, hsk_level, examples)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `, [
-    word.frequencyRank,
-    word.hanzi,
-    word.pinyin,
-    word.pinyinNumbered,
-    JSON.stringify(word.english),
-    word.hskLevel,
-    JSON.stringify(word.examples),
-  ]);
+export function getWordById(id: number): Word {
+  return getAllWords().get(id)!;
+}
 
-  saveDb();
-  return word.frequencyRank;
+let allWords: Map<number, Word> | null = null;
+let ambiguousTranslations: Set<string> | null = null;
+
+function normalizedTranslations(englishTranslations: string[]): string {
+  return englishTranslations.join('|').toLowerCase().trim();
+}
+
+function loadAmbiguousTranslations(): void {
+  const foundTranslations = new Set<string>();
+  ambiguousTranslations = new Set<string>();
+
+  for (const word of getAllWords().values()) {
+    const translations = normalizedTranslations(word.english);
+    if (foundTranslations.has(translations)) {
+      ambiguousTranslations.add(translations);
+    } else {
+      foundTranslations.add(translations);
+    }
+  }
+}
+
+export function isAmbiguousTranslation(englishTranslations: string[]): boolean {
+  if (!ambiguousTranslations) {
+    loadAmbiguousTranslations();
+  }
+  return ambiguousTranslations!.has(normalizedTranslations(englishTranslations));
 }
 
 export function insertWords(words: Omit<Word, 'id'>[]): void {
   for (const word of words) {
-    db.run(`
-      INSERT OR REPLACE INTO words (id, hanzi, pinyin, pinyin_numbered, english, hsk_level, examples)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `, [
-      word.frequencyRank,
-      word.hanzi,
-      word.pinyin,
-      word.pinyinNumbered,
-      JSON.stringify(word.english),
-      word.hskLevel,
-      JSON.stringify(word.examples),
-    ]);
+    db.run(
+      `
+          INSERT INTO words (hanzi, pinyin, pinyin_numbered, english, hsk_level, examples, translatable, rank)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        word.hanzi,
+        word.pinyin,
+        word.pinyinNumbered,
+        JSON.stringify(word.english),
+        word.hskLevel,
+        JSON.stringify(word.examples),
+        word.translatable ? 1 : 0,
+        word.frequencyRank,
+      ]
+    );
   }
   saveDb();
 }
@@ -141,35 +161,39 @@ export function getProgress(wordId: number, mode: PracticeMode): Progress | null
   return null;
 }
 
-export function upsertProgress(wordId: number, mode: PracticeMode, bucket: number, nextEligible: string): void {
+export function upsertProgress(
+  wordId: number,
+  mode: PracticeMode,
+  bucket: number,
+  nextEligible: string
+): void {
   const now = new Date().toISOString();
-
-  // Check if exists
-  const existing = getProgress(wordId, mode);
-  if (existing) {
-    db.run(`
-      UPDATE progress SET bucket = ?, last_practiced = ?, next_eligible = ?
-      WHERE word_id = ? AND mode = ?
-    `, [bucket, now, nextEligible, wordId, mode]);
-  } else {
-    db.run(`
-      INSERT INTO progress (word_id, mode, bucket, last_practiced, next_eligible)
-      VALUES (?, ?, ?, ?, ?)
-    `, [wordId, mode, bucket, now, nextEligible]);
-  }
-  saveDb();
+  db.run(
+    `
+        INSERT INTO progress (word_id, mode, bucket, last_practiced, next_eligible)
+        VALUES (?, ?, ?, ?, ?) ON CONFLICT(word_id, mode) DO
+        UPDATE SET
+            bucket = excluded.bucket,
+            last_practiced = excluded.last_practiced,
+            next_eligible = excluded.next_eligible
+    `,
+    [wordId, mode, bucket, now, nextEligible]
+  );
 }
 
 export function getWordsForPractice(mode: PracticeMode, count: number): Word[] {
   const now = new Date().toISOString();
+  const translatableFilter = mode === 'english' ? 'AND w.translatable = 1' : '';
 
   // First get words that are due for review
   const dueStmt = db.prepare(`
-    SELECT w.* FROM words w
-    JOIN progress p ON w.id = p.word_id
-    WHERE p.mode = ? AND p.next_eligible <= ?
-    ORDER BY p.next_eligible ASC
-    LIMIT ?
+      SELECT w.*
+      FROM words w
+               JOIN progress p ON w.id = p.word_id
+      WHERE p.mode = ?
+        AND p.next_eligible <= ? ${translatableFilter}
+      ORDER BY p.next_eligible ASC
+          LIMIT ?
   `);
   dueStmt.bind([mode, now, count]);
 
@@ -181,17 +205,16 @@ export function getWordsForPractice(mode: PracticeMode, count: number): Word[] {
 
   if (result.length < count) {
     // Get new words (no progress record for this mode)
-    const existingIds = result.map(w => w.id);
-    const placeholders = existingIds.length > 0
-      ? `AND w.id NOT IN (${existingIds.join(',')})`
-      : '';
+    const existingIds = result.map((w) => w.id);
+    const placeholders = existingIds.length > 0 ? `AND w.id NOT IN (${existingIds.join(',')})` : '';
 
     const newStmt = db.prepare(`
-      SELECT w.* FROM words w
-      LEFT JOIN progress p ON w.id = p.word_id AND p.mode = ?
-      WHERE p.id IS NULL ${placeholders}
-      ORDER BY w.id ASC
-      LIMIT ?
+        SELECT w.*
+        FROM words w
+                 LEFT JOIN progress p ON w.id = p.word_id AND p.mode = ?
+        WHERE p.id IS NULL ${placeholders} ${translatableFilter}
+        ORDER BY w.rank ASC
+            LIMIT ?
     `);
     newStmt.bind([mode, count - result.length]);
 
@@ -204,17 +227,30 @@ export function getWordsForPractice(mode: PracticeMode, count: number): Word[] {
   return result;
 }
 
-export function getStats(mode: PracticeMode): { totalWords: number; learned: number; mastered: number; dueForReview: number } {
+export function getStats(mode: PracticeMode): {
+  totalWords: number;
+  learned: number;
+  mastered: number;
+  dueForReview: number;
+} {
   const now = new Date().toISOString();
   const totalWords = getWordCount();
 
-  const learnedResult = db.exec(`SELECT COUNT(*) FROM progress WHERE mode = '${mode}'`);
+  const learnedResult = db.exec(`SELECT COUNT(*)
+                                 FROM progress
+                                 WHERE mode = '${mode}'`);
   const learned = (learnedResult[0]?.values[0]?.[0] as number) ?? 0;
 
-  const masteredResult = db.exec(`SELECT COUNT(*) FROM progress WHERE mode = '${mode}' AND bucket >= 7`);
+  const masteredResult = db.exec(`SELECT COUNT(*)
+                                  FROM progress
+                                  WHERE mode = '${mode}'
+                                    AND bucket >= 7`);
   const mastered = (masteredResult[0]?.values[0]?.[0] as number) ?? 0;
 
-  const dueResult = db.exec(`SELECT COUNT(*) FROM progress WHERE mode = '${mode}' AND next_eligible <= '${now}'`);
+  const dueResult = db.exec(`SELECT COUNT(*)
+                             FROM progress
+                             WHERE mode = '${mode}'
+                               AND next_eligible <= '${now}'`);
   const dueForReview = (dueResult[0]?.values[0]?.[0] as number) ?? 0;
 
   return { totalWords, learned, mastered, dueForReview };
@@ -228,8 +264,9 @@ function rowToWord(row: any): Word {
     pinyinNumbered: row.pinyin_numbered,
     english: JSON.parse(row.english),
     hskLevel: row.hsk_level,
-    frequencyRank: row.id, // id is the frequency rank
+    frequencyRank: row.rank ?? 999999,
     examples: JSON.parse(row.examples || '[]'),
+    translatable: Boolean(row.translatable),
   };
 }
 
@@ -242,8 +279,4 @@ function rowToProgress(row: any): Progress {
     lastPracticed: row.last_practiced,
     nextEligible: row.next_eligible,
   };
-}
-
-export function getDb(): SqlJsDatabase {
-  return db;
 }

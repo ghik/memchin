@@ -16,22 +16,24 @@ export interface Word {
   hskLevel: number;
   frequencyRank: number;
   examples: Example[];
+  translatable: boolean;
 }
 
 export interface PracticeQuestion {
   word: Word;
   prompt: string;
   acceptedAnswers: string[];
+  bucket: number | null;
 }
 
 interface StartResponse {
-  sessionId: string;
   questions: PracticeQuestion[];
 }
 
 interface AnswerResponse {
   correct: boolean;
   correctAnswers: string[];
+  synonym?: boolean;
 }
 
 interface CompleteResponse {
@@ -65,14 +67,14 @@ export async function startPractice(count: number, mode: PracticeMode): Promise<
 }
 
 export async function submitAnswer(
-  sessionId: string,
+  mode: PracticeMode,
   wordId: number,
   answer: string
 ): Promise<AnswerResponse> {
   const response = await fetch(`${API_BASE}/practice/answer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, wordId, answer }),
+    body: JSON.stringify({ mode, wordId, answer }),
   });
 
   if (!response.ok) {
@@ -84,13 +86,13 @@ export async function submitAnswer(
 }
 
 export async function completePractice(
-  sessionId: string,
+  mode: PracticeMode,
   results: Array<{ wordId: number; correctFirstTry: boolean }>
 ): Promise<CompleteResponse> {
   const response = await fetch(`${API_BASE}/practice/complete`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionId, results }),
+    body: JSON.stringify({ mode, results }),
   });
 
   if (!response.ok) {

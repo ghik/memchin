@@ -204,6 +204,11 @@ h2 {
   color: #721c24;
 }
 
+.feedback.synonym {
+  background: #fff3cd;
+  color: #856404;
+}
+
 .feedback .correct-answer {
   margin-top: 10px;
   font-weight: 500;

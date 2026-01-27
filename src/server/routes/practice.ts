@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import type {
   PracticeMode,
   PracticeQuestion,
@@ -11,34 +10,44 @@ import type {
   CompleteResponse,
   Word,
 } from '../../shared/types.js';
-import { getWordsForPractice, getStats } from '../db.js';
+import {
+  getWordsForPractice,
+  getStats,
+  saveDb,
+  getProgress,
+  getWordById,
+  isAmbiguousTranslation,
+} from '../db.js';
 import { updateProgress } from '../services/srs.js';
-import { pinyinMatches, englishMatches, hanziMatches, toNumberedPinyin } from '../services/pinyin.js';
+import { pinyinMatches, englishMatches, hanziMatches } from '../services/pinyin.js';
 
 const router = Router();
 
-// In-memory session storage (for simplicity)
-const sessions = new Map<string, { mode: PracticeMode; questions: PracticeQuestion[] }>();
-
 function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
+  const progress = getProgress(word.id, mode);
+  const bucket = progress?.bucket ?? null;
+
   switch (mode) {
     case 'pinyin':
       return {
         word,
         prompt: word.hanzi,
-        acceptedAnswers: [word.pinyin, word.pinyinNumbered],
+        acceptedAnswers: [word.pinyinNumbered],
+        bucket,
       };
     case 'english':
       return {
         word,
         prompt: word.hanzi,
         acceptedAnswers: word.english,
+        bucket,
       };
     case 'hanzi':
       return {
         word,
-        prompt: word.english.join(' / '),
+        prompt: word.english.join(', '),
         acceptedAnswers: [word.hanzi],
+        bucket,
       };
   }
 }
@@ -60,74 +69,62 @@ router.post('/start', (req, res) => {
     return res.status(400).json({ error: 'No words available for practice' });
   }
 
-  const questions = words.map(word => createQuestion(word, mode));
-  const sessionId = uuidv4();
-
-  sessions.set(sessionId, { mode, questions });
-
-  // Clean up old sessions (keep last 100)
-  if (sessions.size > 100) {
-    const keys = Array.from(sessions.keys());
-    for (let i = 0; i < keys.length - 100; i++) {
-      sessions.delete(keys[i]);
-    }
-  }
-
-  const response: StartResponse = { sessionId, questions };
+  const questions = words.map((word) => createQuestion(word, mode));
+  const response: StartResponse = { questions };
   res.json(response);
 });
 
 router.post('/answer', (req, res) => {
-  const { sessionId, wordId, answer } = req.body as AnswerRequest;
+  const { mode, wordId, answer } = req.body as AnswerRequest;
 
-  const session = sessions.get(sessionId);
-  if (!session) {
-    return res.status(404).json({ error: 'Session not found' });
-  }
-
-  const question = session.questions.find(q => q.word.id === wordId);
-  if (!question) {
-    return res.status(404).json({ error: 'Word not in session' });
+  const word = getWordById(wordId);
+  if (!word) {
+    return res.status(404).json({ error: 'Word not found' });
   }
 
   let correct: boolean;
-  switch (session.mode) {
+  let synonym = false;
+
+  console.log(
+    `Checking answer "${answer}" for word ID ${wordId} ${word.hanzi} ${word.pinyin} in mode "${mode}"`
+  );
+
+  switch (mode) {
     case 'pinyin':
-      correct = pinyinMatches(answer, question.word.pinyin);
+      correct = pinyinMatches(answer, word.pinyin);
       break;
     case 'english':
-      correct = englishMatches(answer, question.word.english);
+      correct = englishMatches(answer, word.english);
       break;
     case 'hanzi':
-      correct = hanziMatches(answer, question.word.hanzi);
+      const isExactMatch = hanziMatches(answer, word.hanzi);
+      const isSynonym = !isExactMatch && isAmbiguousTranslation(word.english);
+      correct = isExactMatch;
+      synonym = isSynonym;
       break;
   }
 
   const response: AnswerResponse = {
     correct,
-    correctAnswers: question.acceptedAnswers,
+    correctAnswers:
+      mode === 'hanzi' ? [word.hanzi] : mode === 'pinyin' ? [word.pinyinNumbered] : word.english,
+    ...(synonym && { synonym: true }),
   };
   res.json(response);
 });
 
 router.post('/complete', (req, res) => {
-  const { sessionId, results } = req.body as CompleteRequest;
-
-  const session = sessions.get(sessionId);
-  if (!session) {
-    return res.status(404).json({ error: 'Session not found' });
-  }
+  const { mode, results } = req.body as CompleteRequest;
 
   let newWordsLearned = 0;
 
   for (const result of results) {
-    updateProgress(result.wordId, session.mode, result.correctFirstTry);
+    updateProgress(result.wordId, mode, result.correctFirstTry);
     if (result.correctFirstTry) {
       newWordsLearned++;
     }
   }
-
-  sessions.delete(sessionId);
+  saveDb();
 
   const response: CompleteResponse = {
     wordsReviewed: results.length,
@@ -138,7 +135,7 @@ router.post('/complete', (req, res) => {
 
 router.get('/stats', (req, res) => {
   const modes: PracticeMode[] = ['pinyin', 'english', 'hanzi'];
-  const stats = modes.map(mode => ({
+  const stats = modes.map((mode) => ({
     mode,
     ...getStats(mode),
   }));
