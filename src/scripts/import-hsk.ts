@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { initDb, insertWords } from '../server/db.js';
-import { toNumberedPinyin } from '../server/services/pinyin.js';
+import { splitPinyin, toNumberedPinyin } from '../server/services/pinyin.js';
+import { generateSpeech } from '../server/services/tts.js';
 import type { Example } from '../shared/types.js';
 import { loadFrequencyData } from './migrate.js';
 
@@ -155,7 +156,12 @@ ${wordList}`;
       const result = new Map<string, Example[]>();
 
       for (const item of parsed) {
-        result.set(item.hanzi, item.examples);
+        // Ensure example pinyin is properly split into syllables
+        const examples = item.examples.map((ex) => ({
+          ...ex,
+          pinyin: splitPinyin(ex.pinyin),
+        }));
+        result.set(item.hanzi, examples);
       }
 
       return result;
@@ -176,7 +182,8 @@ async function importLevels(
   levels: number[],
   numExamples: number,
   start?: number,
-  end?: number
+  end?: number,
+  skipAudio?: boolean
 ): Promise<void> {
   // Initialize database first
   await initDb();
@@ -192,7 +199,7 @@ async function importLevels(
 
       const cleanedWords = rawWords.map((raw) => ({
         hanzi: cleanVariant(raw.hanzi),
-        pinyin: cleanVariant(raw.pinyin),
+        pinyin: splitPinyin(cleanVariant(raw.pinyin)),
         english: raw.english,
         hskLevel: level,
       }));
@@ -255,28 +262,44 @@ async function importLevels(
 
     insertWords(words);
     console.log(`Saved ${words.length} words to database`);
+
+    // Generate audio for each word
+    if (!skipAudio) {
+      console.log(`Generating audio...`);
+      for (const word of words) {
+        try {
+          await generateSpeech(word.hanzi, word.examples.map((ex) => ex.hanzi));
+        } catch (error) {
+          console.error(`Failed to generate audio for "${word.hanzi}":`, error);
+        }
+      }
+      console.log(`Generated audio for ${words.length} words`);
+    }
   }
 
   console.log(`\nImport complete: ${allCleanedWords.length} words`);
 }
 
 // Parse command line arguments
-// Usage: npm run import-hsk [--examples=N] [--start=N] [--end=N] [levels]
+// Usage: npm run import-hsk [--examples=N] [--start=N] [--end=N] [--skip-audio] [levels]
 // Examples:
 //   npm run import-hsk                  - imports HSK 1 with 1 example per word
 //   npm run import-hsk -- --examples=3  - imports HSK 1 with 3 examples per word
 //   npm run import-hsk -- 2 3           - imports HSK 2 and 3
 //   npm run import-hsk -- --examples=2 1-6  - imports all levels with 2 examples each
 //   npm run import-hsk -- --start=451 --end=475 1-6  - imports only words 451-475
+//   npm run import-hsk -- --skip-audio 1  - imports without generating audio
 function parseArgs(args: string[]): {
   levels: number[];
   numExamples: number;
   start?: number;
   end?: number;
+  skipAudio: boolean;
 } {
   let numExamples = 1;
   let start: number | undefined;
   let end: number | undefined;
+  let skipAudio = false;
   const levelArgs: string[] = [];
 
   for (const arg of args) {
@@ -288,13 +311,15 @@ function parseArgs(args: string[]): {
       start = parseInt(arg.split('=')[1]);
     } else if (arg.startsWith('--end=')) {
       end = parseInt(arg.split('=')[1]);
+    } else if (arg === '--skip-audio') {
+      skipAudio = true;
     } else {
       levelArgs.push(arg);
     }
   }
 
   const levels = parseLevels(levelArgs);
-  return { levels, numExamples, start, end };
+  return { levels, numExamples, start, end, skipAudio };
 }
 
 function parseLevels(args: string[]): number[] {
@@ -318,8 +343,8 @@ function parseLevels(args: string[]): number[] {
   return [...new Set(levels)].sort((a, b) => a - b);
 }
 
-const { levels, numExamples, start, end } = parseArgs(process.argv.slice(2));
+const { levels, numExamples, start, end, skipAudio } = parseArgs(process.argv.slice(2));
 console.log(
-  `Importing HSK levels: ${levels.join(', ')} with ${numExamples} example${numExamples > 1 ? 's' : ''} per word`
+  `Importing HSK levels: ${levels.join(', ')} with ${numExamples} example${numExamples > 1 ? 's' : ''} per word${skipAudio ? ' (skipping audio)' : ''}`
 );
-importLevels(levels, numExamples, start, end).catch(console.error);
+importLevels(levels, numExamples, start, end, skipAudio).catch(console.error);

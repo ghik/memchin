@@ -11,11 +11,15 @@
     "migrate": "tsx src/scripts/migrate.ts",
     "dedup": "tsx src/scripts/dedup.ts",
     "check-examples": "tsx src/scripts/check-examples.ts",
+    "generate-audio": "tsx src/scripts/generate-audio.ts",
+    "rename-audio": "tsx src/scripts/rename-audio.ts",
+    "rename-example-audio": "tsx src/scripts/rename-example-audio.ts",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@google-cloud/text-to-speech": "^6.4.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "sql.js": "^1.10.0",

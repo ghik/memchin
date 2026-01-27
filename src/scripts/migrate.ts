@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDb, saveDb, getDb } from '../server/db.js';
+import { splitPinyin, toNumberedPinyin } from '../server/services/pinyin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -66,6 +67,27 @@ async function migrate(): Promise<void> {
     db.run('DELETE FROM progress');
     console.log('Added rank column and cleared progress');
   }
+
+  // Migration: split pinyin into syllables
+  console.log('Splitting pinyin into syllables...');
+  const pinyinStmt = db.prepare('SELECT id, pinyin FROM words');
+  let pinyinUpdated = 0;
+  while (pinyinStmt.step()) {
+    const row = pinyinStmt.getAsObject();
+    const oldPinyin = row.pinyin as string;
+    const newPinyin = splitPinyin(oldPinyin);
+    if (oldPinyin !== newPinyin) {
+      const newNumbered = toNumberedPinyin(newPinyin);
+      db.run('UPDATE words SET pinyin = ?, pinyin_numbered = ? WHERE id = ?', [
+        newPinyin,
+        newNumbered,
+        row.id,
+      ]);
+      pinyinUpdated++;
+    }
+  }
+  pinyinStmt.free();
+  console.log(`Updated pinyin for ${pinyinUpdated} words`);
 
   saveDb();
   console.log('Migration complete');

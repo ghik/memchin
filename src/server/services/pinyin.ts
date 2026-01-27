@@ -10,6 +10,63 @@ const TONE_TO_NUMBER: Record<string, [string, number]> = {
   'ǖ': ['ü', 1], 'ǘ': ['ü', 2], 'ǚ': ['ü', 3], 'ǜ': ['ü', 4],
 };
 
+// Vowel character classes for regex
+const A = '[aāáǎà]';
+const E = '[eēéěè]';
+const I = '[iīíǐì]';
+const O = '[oōóǒò]';
+const U = '[uūúǔù]';
+const V = '[üǖǘǚǜv]'; // ü can be written as v
+
+// All possible pinyin finals (vowel combinations)
+// prettier-ignore
+const FINALS = [
+  // Complex finals first (longer matches)
+  `${I}${A}ng`, `${I}${A}${O}`, `${I}${A}n`, `${I}${O}ng`, `${U}${A}ng`, `${U}${A}${I}`, `${U}${A}n`,
+  `${I}${A}`, `${I}${E}`, `${I}${U}`, `${I}ng`, `${I}n`,
+  `${U}${A}`, `${U}${O}`, `${U}${I}`, `${U}n`, `${U}ng`,
+  `${V}${E}`, `${V}${A}n`, `${V}n`,
+  `${A}ng`, `${A}${I}`, `${A}${O}`, `${A}n`,
+  `${E}ng`, `${E}${I}`, `${E}n`, `${E}r`,
+  `${O}ng`, `${O}${U}`,
+  `${A}`, `${E}`, `${I}`, `${O}`, `${U}`, `${V}`,
+].join('|');
+
+// Initial consonants (zh, ch, sh must come before z, c, s)
+const INITIALS = '(?:zh|ch|sh|[bpmfdtnlgkhjqxrzcsyw])';
+
+// Complete syllable pattern (match at start of string)
+const SYLLABLE_PATTERN = new RegExp(`^(${INITIALS}?(?:${FINALS}))`, 'i');
+
+/**
+ * Split pinyin string into separate syllables
+ * e.g. "zhīdào" -> "zhī dào"
+ */
+export function splitPinyin(pinyin: string): string {
+  // Handle already-spaced pinyin and apostrophes
+  const normalized = pinyin.replace(/['\s]+/g, ' ').trim();
+  if (normalized.includes(' ')) {
+    return normalized;
+  }
+
+  const syllables: string[] = [];
+  let remaining = pinyin;
+
+  while (remaining.length > 0) {
+    const match = remaining.match(SYLLABLE_PATTERN);
+    if (match && match[1]) {
+      syllables.push(remaining.slice(0, match[1].length));
+      remaining = remaining.slice(match[1].length);
+    } else {
+      // No match - take one character and continue
+      syllables.push(remaining[0]);
+      remaining = remaining.slice(1);
+    }
+  }
+
+  return syllables.join(' ');
+}
+
 export function toNumberedPinyin(pinyin: string): string {
   const syllables = pinyin.toLowerCase().split(/\s+/);
   return syllables
@@ -34,13 +91,10 @@ export function toNumberedPinyin(pinyin: string): string {
 
 export function normalizePinyin(input: string): string {
   // Convert to numbered format for comparison
-  const r = toNumberedPinyin(input.toLowerCase().trim());
-  console.log(`Normalized pinyin: "${input}" -> "${r}"`);
-  return r;
+  return toNumberedPinyin(input.toLowerCase().trim());
 }
 
 export function pinyinMatches(input: string, expected: string): boolean {
-  console.log(`Comparing pinyin: input="${input}", expected="${expected}"`);
   return normalizePinyin(input) === normalizePinyin(expected);
 }
 

@@ -12,6 +12,12 @@ data/
 .env.local
 .env.*.local
 
+# Google Cloud credentials
+*-credentials.json
+*-service-account.json
+service-account*.json
+gcp-*.json
+
 # IDE / Tools
 .idea/
 .vscode/

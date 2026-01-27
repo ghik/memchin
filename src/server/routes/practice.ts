@@ -85,10 +85,6 @@ router.post('/answer', (req, res) => {
   let correct: boolean;
   let synonym = false;
 
-  console.log(
-    `Checking answer "${answer}" for word ID ${wordId} ${word.hanzi} ${word.pinyin} in mode "${mode}"`
-  );
-
   switch (mode) {
     case 'pinyin':
       correct = pinyinMatches(answer, word.pinyin);

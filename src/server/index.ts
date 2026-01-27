@@ -23,6 +23,9 @@ async function main() {
   app.use('/api/words', wordsRouter);
   app.use('/api/practice', practiceRouter);
 
+  // Serve audio files
+  app.use('/audio', express.static(path.join(__dirname, '../../data/audio')));
+
   // Serve static files in production
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client')));

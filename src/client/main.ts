@@ -28,6 +28,13 @@ const resultStatsDiv = document.getElementById('result-stats')!;
 const mistakesSection = document.getElementById('mistakes-section')!;
 const mistakesList = document.getElementById('mistakes-list')!;
 const restartBtn = document.getElementById('restart-btn')!;
+const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
+
+// Load autoplay preference from localStorage
+autoplayCheckbox.checked = localStorage.getItem('autoplayAudio') !== 'false';
+autoplayCheckbox.addEventListener('change', () => {
+  localStorage.setItem('autoplayAudio', String(autoplayCheckbox.checked));
+});
 
 // State
 let currentMode: PracticeMode = 'pinyin';
@@ -106,16 +113,28 @@ async function handleStart() {
   }
 }
 
+// Audio playback
+function playAudio(hanzi: string, auto: boolean = false) {
+  if (auto && !autoplayCheckbox.checked) return;
+  const audio = new Audio(`/audio/${encodeURIComponent(hanzi)}.mp3`);
+  audio.play().catch((err) => console.warn('Audio playback failed:', err));
+}
+
+// Make hanzi clickable for audio
+function clickableHanzi(hanzi: string, className: string): string {
+  return `<span class="${className} clickable-hanzi" data-hanzi="${hanzi}">${hanzi}</span>`;
+}
+
 // Format example hints for question (varies by mode)
 function formatExampleHints(
   examples: { hanzi: string; pinyin: string; english: string }[]
 ): string {
   if (currentMode === 'hanzi') {
-    // english->hanzi: show english only
+    // english->hanzi: show english only (to not give away the answer)
     return examples.map((ex) => `<span class="ex-english">${ex.english}</span>`).join('<br>');
   } else {
-    // pinyin and english modes (hanzi->X): show hanzi only
-    return examples.map((ex) => `<span class="ex-hanzi">${ex.hanzi}</span>`).join('<br>');
+    // pinyin and english modes (hanzi->X): show clickable example hanzi
+    return examples.map((ex) => clickableHanzi(ex.hanzi, 'ex-hanzi')).join('<br>');
   }
 }
 
@@ -126,7 +145,7 @@ function formatExampleAnswers(
   return examples
     .map(
       (ex) =>
-        `<span class="ex-hanzi">${ex.hanzi}</span> <span class="ex-pinyin">(${ex.pinyin})</span> <span class="ex-english">— ${ex.english}</span>`
+        `${clickableHanzi(ex.hanzi, 'ex-hanzi')} <span class="ex-pinyin">(${ex.pinyin})</span> <span class="ex-english">— ${ex.english}</span>`
     )
     .join('<br>');
 }
@@ -140,10 +159,21 @@ function showQuestion() {
   progressText.textContent = `Question ${currentIndex + 1} of ${questions.length} (${bucketLabel})`;
 
   // Show example hints alongside the question
-  if (word.examples.length > 0) {
-    promptDiv.innerHTML = `${question.prompt}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
+  if (currentMode === 'hanzi') {
+    // english->hanzi mode: show english prompt, no clickable hanzi
+    if (word.examples.length > 0) {
+      promptDiv.innerHTML = `${question.prompt}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
+    } else {
+      promptDiv.textContent = question.prompt;
+    }
   } else {
-    promptDiv.textContent = question.prompt;
+    // pinyin/english modes: show clickable hanzi prompt
+    const clickablePrompt = clickableHanzi(word.hanzi, 'prompt-hanzi');
+    if (word.examples.length > 0) {
+      promptDiv.innerHTML = `${clickablePrompt}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
+    } else {
+      promptDiv.innerHTML = clickablePrompt;
+    }
   }
   promptDiv.className = currentMode === 'hanzi' ? 'prompt english-prompt' : 'prompt';
 
@@ -160,7 +190,7 @@ function showQuestion() {
 // Format full answer for display
 function formatFullAnswer(question: PracticeQuestion): string {
   const word = question.word;
-  const hanzi = `<span class="answer-hanzi">${word.hanzi}</span>`;
+  const hanzi = clickableHanzi(word.hanzi, 'answer-hanzi');
   const pinyin = `<span class="answer-pinyin">${word.pinyin}</span>`;
   const english = `<span class="answer-english">${word.english.join('; ')}</span>`;
 
@@ -216,6 +246,9 @@ async function handleSubmit() {
       feedbackDiv.innerHTML = `✗ Incorrect<div class="correct-answer">${formatFullAnswer(question)}</div>`;
     }
 
+    // Play word pronunciation (auto)
+    playAudio(question.word.hanzi, true);
+
     submitBtn.classList.add('hidden');
     skipBtn.classList.add('hidden');
     nextBtn.classList.remove('hidden');
@@ -242,6 +275,9 @@ function handleSkip() {
   feedbackDiv.classList.remove('hidden', 'correct', 'incorrect');
   feedbackDiv.classList.add('incorrect');
   feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+
+  // Play word pronunciation (auto)
+  playAudio(question.word.hanzi, true);
 
   submitBtn.classList.add('hidden');
   skipBtn.classList.add('hidden');
@@ -301,7 +337,7 @@ async function finishPractice() {
         .map(
           (q) => `
         <li>
-          <span class="hanzi">${q.word.hanzi}</span>
+          ${clickableHanzi(q.word.hanzi, 'hanzi')}
           <span class="details">(${q.word.pinyin}) - ${q.word.english[0]}</span>
         </li>
       `
@@ -346,8 +382,23 @@ answerInput.addEventListener('keydown', (e) => {
 
 document.addEventListener('keydown', (e) => {
   if (e.isComposing) return;
-  if (e.key === 'Enter' && !nextBtn.classList.contains('hidden')) {
-    handleNext();
+  if (e.key === 'Enter') {
+    if (!nextBtn.classList.contains('hidden')) {
+      handleNext();
+    } else if (resultScreen.classList.contains('active')) {
+      handleRestart();
+    }
+  }
+});
+
+// Click handler for audio playback on hanzi
+document.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  if (target.classList.contains('clickable-hanzi')) {
+    const hanzi = target.dataset.hanzi;
+    if (hanzi) {
+      playAudio(hanzi);
+    }
   }
 });
 
