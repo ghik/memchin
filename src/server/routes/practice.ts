@@ -19,32 +19,41 @@ import {
   isAmbiguousTranslation,
 } from '../db.js';
 import { updateProgress } from '../services/srs.js';
-import { pinyinMatches, englishMatches, hanziMatches } from '../services/pinyin.js';
+import { pinyinMatches, englishMatches, hanziMatches, toNumberedPinyin } from '../services/pinyin.js';
+import { getCharacterBreakdown } from '../services/cedict.js';
 
 const router = Router();
+
+function addBreakdown(word: Word): Word {
+  return {
+    ...word,
+    breakdown: getCharacterBreakdown(word.hanzi),
+  };
+}
 
 function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
   const progress = getProgress(word.id, mode);
   const bucket = progress?.bucket ?? null;
+  const wordWithBreakdown = addBreakdown(word);
 
   switch (mode) {
     case 'pinyin':
       return {
-        word,
+        word: wordWithBreakdown,
         prompt: word.hanzi,
-        acceptedAnswers: [word.pinyinNumbered],
+        acceptedAnswers: [toNumberedPinyin(word.pinyin)],
         bucket,
       };
     case 'english':
       return {
-        word,
+        word: wordWithBreakdown,
         prompt: word.hanzi,
         acceptedAnswers: word.english,
         bucket,
       };
     case 'hanzi':
       return {
-        word,
+        word: wordWithBreakdown,
         prompt: word.english.join(', '),
         acceptedAnswers: [word.hanzi],
         bucket,
@@ -103,8 +112,8 @@ router.post('/answer', (req, res) => {
   const response: AnswerResponse = {
     correct,
     correctAnswers:
-      mode === 'hanzi' ? [word.hanzi] : mode === 'pinyin' ? [word.pinyinNumbered] : word.english,
-    ...(synonym && { synonym: true }),
+      mode === 'hanzi' ? [word.hanzi] : mode === 'pinyin' ? [toNumberedPinyin(word.pinyin)] : word.english,
+    synonym,
   };
   res.json(response);
 });

@@ -7,16 +7,22 @@ export interface Example {
   english: string;
 }
 
+export interface CharacterBreakdown {
+  hanzi: string;
+  pinyin: string;
+  meaning: string;
+}
+
 export interface Word {
   id: number;
   hanzi: string;
   pinyin: string;
-  pinyinNumbered: string;
   english: string[];
   hskLevel: number;
   frequencyRank: number;
   examples: Example[];
   translatable: boolean;
+  breakdown?: CharacterBreakdown[];
 }
 
 export interface PracticeQuestion {
@@ -33,7 +39,7 @@ interface StartResponse {
 interface AnswerResponse {
   correct: boolean;
   correctAnswers: string[];
-  synonym?: boolean;
+  synonym: boolean;
 }
 
 interface CompleteResponse {

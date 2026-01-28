@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { initDb, insertWords } from '../server/db.js';
-import { splitPinyin, toNumberedPinyin } from '../server/services/pinyin.js';
+import { splitPinyin } from '../server/services/pinyin.js';
 import { generateSpeech } from '../server/services/tts.js';
 import type { Example } from '../shared/types.js';
 import { loadFrequencyData } from './migrate.js';
@@ -29,7 +29,6 @@ interface RawWord {
 interface WordToInsert {
   hanzi: string;
   pinyin: string;
-  pinyinNumbered: string;
   english: string[];
   hskLevel: number;
   frequencyRank: number;
@@ -251,7 +250,6 @@ async function importLevels(
       return {
         hanzi: raw.hanzi,
         pinyin: raw.pinyin,
-        pinyinNumbered: toNumberedPinyin(raw.pinyin),
         english: raw.english,
         hskLevel: raw.hskLevel,
         frequencyRank: frequencyData.get(raw.hanzi) ?? 999999,

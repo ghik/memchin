@@ -187,6 +187,22 @@ function showQuestion() {
   skipBtn.classList.remove('hidden');
 }
 
+// Format character breakdown
+function formatBreakdown(
+  breakdown: { hanzi: string; pinyin: string; meaning: string }[]
+): string {
+  if (breakdown.length === 0) return '';
+
+  const items = breakdown
+    .map(
+      (char) =>
+        `<div class="breakdown-item"><span class="char-hanzi">${char.hanzi}</span> <span class="breakdown-pinyin">(${char.pinyin})</span> <span class="breakdown-meaning">${char.meaning}</span></div>`
+    )
+    .join('');
+
+  return `<div class="character-breakdown">${items}</div>`;
+}
+
 // Format full answer for display
 function formatFullAnswer(question: PracticeQuestion): string {
   const word = question.word;
@@ -200,6 +216,11 @@ function formatFullAnswer(question: PracticeQuestion): string {
   // Show example answers
   if (word.examples.length > 0) {
     result += `<div class="example-sentence">${formatExampleAnswers(word.examples)}</div>`;
+  }
+
+  // Show character breakdown for multi-character words (at the bottom)
+  if (word.breakdown && word.breakdown.length > 0) {
+    result += formatBreakdown(word.breakdown);
   }
 
   return result;

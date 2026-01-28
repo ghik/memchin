@@ -4,16 +4,22 @@ export interface Example {
   english: string;
 }
 
+export interface CharacterBreakdown {
+  hanzi: string;
+  pinyin: string;
+  meaning: string;
+}
+
 export interface Word {
   id: number;
   hanzi: string;
   pinyin: string;
-  pinyinNumbered: string;
   english: string[];
   hskLevel: number;
   frequencyRank: number;
   examples: Example[];
   translatable: boolean;
+  breakdown?: CharacterBreakdown[];
 }
 
 export type PracticeMode = 'pinyin' | 'english' | 'hanzi';
@@ -52,7 +58,7 @@ export interface AnswerRequest {
 export interface AnswerResponse {
   correct: boolean;
   correctAnswers: string[];
-  synonym?: boolean; // True if answer is a valid synonym but not the target word
+  synonym: boolean; // True if answer is a valid synonym but not the target word
 }
 
 export interface CompleteRequest {

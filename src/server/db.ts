@@ -121,17 +121,16 @@ export function isAmbiguousTranslation(englishTranslations: string[]): boolean {
   return ambiguousTranslations!.has(normalizedTranslations(englishTranslations));
 }
 
-export function insertWords(words: Omit<Word, 'id'>[]): void {
+export function insertWords(words: Omit<Word, 'id' | 'breakdown'>[]): void {
   for (const word of words) {
     db.run(
       `
-          INSERT INTO words (hanzi, pinyin, pinyin_numbered, english, hsk_level, examples, translatable, rank)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO words (hanzi, pinyin, english, hsk_level, examples, translatable, rank)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
       [
         word.hanzi,
         word.pinyin,
-        word.pinyinNumbered,
         JSON.stringify(word.english),
         word.hskLevel,
         JSON.stringify(word.examples),
@@ -261,7 +260,6 @@ function rowToWord(row: any): Word {
     id: row.id,
     hanzi: row.hanzi,
     pinyin: row.pinyin,
-    pinyinNumbered: row.pinyin_numbered,
     english: JSON.parse(row.english),
     hskLevel: row.hsk_level,
     frequencyRank: row.rank ?? 999999,

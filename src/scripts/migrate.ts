@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDb, saveDb, getDb } from '../server/db.js';
-import { splitPinyin, toNumberedPinyin } from '../server/services/pinyin.js';
+import { splitPinyin } from '../server/services/pinyin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -75,14 +75,11 @@ async function migrate(): Promise<void> {
   while (pinyinStmt.step()) {
     const row = pinyinStmt.getAsObject();
     const oldPinyin = row.pinyin as string;
-    const newPinyin = splitPinyin(oldPinyin);
+    // Strip existing spaces and re-split to fix any incorrect splits
+    const stripped = oldPinyin.replace(/\s+/g, '');
+    const newPinyin = splitPinyin(stripped);
     if (oldPinyin !== newPinyin) {
-      const newNumbered = toNumberedPinyin(newPinyin);
-      db.run('UPDATE words SET pinyin = ?, pinyin_numbered = ? WHERE id = ?', [
-        newPinyin,
-        newNumbered,
-        row.id,
-      ]);
+      db.run('UPDATE words SET pinyin = ? WHERE id = ?', [newPinyin, row.id]);
       pinyinUpdated++;
     }
   }

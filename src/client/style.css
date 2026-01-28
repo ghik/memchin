@@ -252,6 +252,35 @@ h2 {
   line-height: 1.6;
 }
 
+.character-breakdown {
+  margin-top: 12px;
+  padding: 10px 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.85em;
+}
+
+.breakdown-item {
+  margin-bottom: 6px;
+}
+
+.breakdown-item:last-child {
+  margin-bottom: 0;
+}
+
+.char-hanzi {
+  font-size: 1.3em;
+}
+
+.breakdown-pinyin {
+  color: #0066cc;
+  margin-right: 6px;
+}
+
+.breakdown-meaning {
+  color: #666;
+}
+
 .ex-hanzi {
   font-size: 1.1em;
   color: #333;
