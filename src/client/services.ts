@@ -53,6 +53,7 @@ interface Stats {
   learned: number;
   mastered: number;
   dueForReview: number;
+  buckets: number[];
 }
 
 const API_BASE = '/api';

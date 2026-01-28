@@ -77,4 +77,5 @@ export interface Stats {
   learned: number;
   mastered: number;
   dueForReview: number;
+  buckets: number[]; // count of words in each bucket (index = bucket number)
 }

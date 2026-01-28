@@ -232,6 +232,7 @@ export function getStats(mode: PracticeMode): {
   learned: number;
   mastered: number;
   dueForReview: number;
+  buckets: number[];
 } {
   const now = new Date().toISOString();
   const totalWords = getWordCount();
@@ -253,7 +254,13 @@ export function getStats(mode: PracticeMode): {
                                AND next_eligible <= '${now}'`);
   const dueForReview = (dueResult[0]?.values[0]?.[0] as number) ?? 0;
 
-  return { totalWords, learned, mastered, dueForReview };
+  const buckets = new Array(MAX_BUCKET + 1).fill(0);
+  const bucketResult = db.exec(`SELECT bucket, COUNT(*) FROM progress WHERE mode = '${mode}' GROUP BY bucket`);
+  for (const [bucket, count] of bucketResult[0]?.values ?? []) {
+    buckets[bucket as number] = count as number;
+  }
+
+  return { totalWords, learned, mastered, dueForReview, buckets };
 }
 
 function rowToWord(row: any): Word {

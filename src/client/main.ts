@@ -74,9 +74,15 @@ async function loadStats() {
 
     const html = stats
       .map(
-        (s) => `
+        (s) => {
+          const bucketBar = s.buckets
+            .map((count, i) => `<span class="bucket-count" title="Bucket ${i}">${count}</span>`)
+            .join('');
+          return `
       <p><strong>${s.mode}:</strong> ${s.learned}/${s.totalWords} learned, ${s.mastered} mastered, ${s.dueForReview} due</p>
-    `
+      <div class="bucket-bar">${bucketBar}</div>
+    `;
+        }
       )
       .join('');
 

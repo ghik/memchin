@@ -154,6 +154,22 @@ h2 {
   margin-bottom: 5px;
 }
 
+.bucket-bar {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.bucket-count {
+  flex: 1;
+  text-align: center;
+  padding: 3px 0;
+  font-size: 12px;
+  background: #e9ecef;
+  border-radius: 3px;
+  color: #555;
+}
+
 /* Practice Screen */
 .progress-bar {
   text-align: center;
