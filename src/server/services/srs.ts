@@ -2,22 +2,25 @@ import type { PracticeMode } from '../../shared/types.js';
 import { upsertProgress, getProgress } from '../db.js';
 
 // Bucket delays in minutes
-const BUCKET_DELAYS_MINUTES: Record<number, number> = {
-  0: 0, // Immediate
-  1: 1, // 1 minute
-  2: 5, // 5 minutes
-  3: 30, // 30 minutes
-  4: 120, // 2 hours
-  5: 480, // 8 hours
-  6: 1440, // 1 day
-  7: 4320, // 3 days (mastered)
-};
+const BUCKET_DELAYS_MINUTES = [
+  0, // 0: Immediate
+  1, // 1: 1 minute
+  5, // 2: 5 minutes
+  30, // 3: 30 minutes
+  120, // 4: 2 hours
+  480, // 5: 8 hours
+  1440, // 6: 1 day
+  4320, // 7: 3 days
+  14400, // 8: 10 days (mastered)
+];
 
-const MAX_BUCKET = 7;
+export const MAX_BUCKET = BUCKET_DELAYS_MINUTES.length - 1;
 
 export function calculateNextEligible(bucket: number): string {
-  const delayMinutes = BUCKET_DELAYS_MINUTES[bucket] ?? BUCKET_DELAYS_MINUTES[MAX_BUCKET];
-  const nextEligible = new Date(Date.now() + delayMinutes * 60 * 1000);
+  const delayMinutes = BUCKET_DELAYS_MINUTES[Math.min(bucket, MAX_BUCKET)];
+  // Add ±25% jitter so words from the same session don't all become due at the same time
+  const jitter = delayMinutes * (0.75 + Math.random() * 0.5);
+  const nextEligible = new Date(Date.now() + jitter * 60 * 1000);
   return nextEligible.toISOString();
 }
 

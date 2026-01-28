@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { PracticeMode, Progress, Word } from '../shared/types.js';
+import { MAX_BUCKET } from './services/srs.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.join(__dirname, '../../data/memchin.db');
@@ -243,7 +244,7 @@ export function getStats(mode: PracticeMode): {
   const masteredResult = db.exec(`SELECT COUNT(*)
                                   FROM progress
                                   WHERE mode = '${mode}'
-                                    AND bucket >= 7`);
+                                    AND bucket >= ${MAX_BUCKET}`);
   const mastered = (masteredResult[0]?.values[0]?.[0] as number) ?? 0;
 
   const dueResult = db.exec(`SELECT COUNT(*)
