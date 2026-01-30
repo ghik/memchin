@@ -18,6 +18,7 @@ import {
   getProgress,
   getWordById,
   isAmbiguousTranslation,
+  getLabelsForWord,
 } from '../db.js';
 import { updateProgress } from '../services/srs.js';
 import { pinyinMatches, englishMatches, hanziMatches, toNumberedPinyin } from '../services/pinyin.js';
@@ -25,17 +26,18 @@ import { getCharacterBreakdown } from '../services/cedict.js';
 
 const router = Router();
 
-function addBreakdown(word: Word): Word {
+function enrichWord(word: Word): Word {
   return {
     ...word,
     breakdown: getCharacterBreakdown(word.hanzi),
+    labels: getLabelsForWord(word.id),
   };
 }
 
 function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
   const progress = getProgress(word.id, mode);
   const bucket = progress?.bucket ?? null;
-  const wordWithBreakdown = addBreakdown(word);
+  const wordWithBreakdown = enrichWord(word);
 
   switch (mode) {
     case 'hanzi2pinyin':
@@ -70,7 +72,7 @@ function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
 }
 
 router.post('/start', (req, res) => {
-  const { count, mode, review } = req.body as StartRequest;
+  const { count, mode, review, label } = req.body as StartRequest;
 
   if (!count || !mode) {
     return res.status(400).json({ error: 'count and mode are required' });
@@ -80,7 +82,7 @@ router.post('/start', (req, res) => {
     return res.status(400).json({ error: 'Invalid mode' });
   }
 
-  const words = review ? getWordsForReview(mode, count) : getWordsForPractice(mode, count);
+  const words = review ? getWordsForReview(mode, count, label) : getWordsForPractice(mode, count, label);
 
   if (words.length === 0) {
     return res.status(400).json({ error: 'No words available for practice' });

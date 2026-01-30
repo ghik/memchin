@@ -1,8 +1,11 @@
 import type { PracticeMode, PracticeQuestion } from './services.js';
 import {
+  addLabel,
   completePractice,
+  getLabels,
   getStats,
   getWordCount,
+  removeLabel,
   startPractice,
   submitAnswer,
 } from './services.js';
@@ -29,6 +32,7 @@ const mistakesSection = document.getElementById('mistakes-section')!;
 const mistakesList = document.getElementById('mistakes-list')!;
 const restartBtn = document.getElementById('restart-btn')!;
 const reviewCheckbox = document.getElementById('review-learned') as HTMLInputElement;
+const labelFilter = document.getElementById('label-filter') as HTMLSelectElement;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
 
 // Load autoplay preference from localStorage
@@ -44,6 +48,8 @@ let currentIndex = 0;
 let results: Map<number, boolean> = new Map(); // wordId -> correctFirstTry
 let incorrectThisRound: PracticeQuestion[] = [];
 let submitBlocked = false;
+let wordLabels: Map<number, string[]> = new Map();
+let allKnownLabels: string[] = [];
 
 // Utility functions
 function showScreen(screen: HTMLElement) {
@@ -72,7 +78,19 @@ const MODE_LABELS: Record<PracticeMode, string> = {
 // Load stats on start
 async function loadStats() {
   try {
-    const [stats, wordCount] = await Promise.all([getStats(), getWordCount()]);
+    const [stats, wordCount, labels] = await Promise.all([getStats(), getWordCount(), getLabels()]);
+
+    // Populate label filter dropdown
+    allKnownLabels = labels;
+    const currentValue = labelFilter.value;
+    labelFilter.innerHTML = '<option value="">All words</option>';
+    for (const label of labels) {
+      const opt = document.createElement('option');
+      opt.value = label;
+      opt.textContent = label;
+      labelFilter.appendChild(opt);
+    }
+    labelFilter.value = currentValue;
 
     if (wordCount === 0) {
       statsDiv.innerHTML =
@@ -112,11 +130,16 @@ async function handleStart() {
     startBtn.disabled = true;
     startBtn.textContent = 'Loading...';
 
-    const response = await startPractice(count, currentMode, reviewCheckbox.checked);
+    const selectedLabel = labelFilter.value || undefined;
+    const response = await startPractice(count, currentMode, reviewCheckbox.checked, selectedLabel);
     questions = shuffle(response.questions);
     currentIndex = 0;
     results.clear();
     incorrectThisRound = [];
+    wordLabels.clear();
+    for (const q of response.questions) {
+      wordLabels.set(q.word.id, q.word.labels || []);
+    }
 
     showScreen(practiceScreen);
     showQuestion();
@@ -241,6 +264,81 @@ function formatFullAnswer(question: PracticeQuestion): string {
   return result;
 }
 
+// Label UI in feedback area
+function renderLabelsUI(wordId: number): string {
+  const labels = wordLabels.get(wordId) || [];
+  const tags = labels.map(
+    (l) => `<span class="label-tag" data-word-id="${wordId}" data-label="${l}">${l}<button class="label-remove" data-word-id="${wordId}" data-label="${l}">&times;</button></span>`
+  ).join('');
+
+  const datalistOptions = allKnownLabels
+    .filter((l) => !labels.includes(l))
+    .map((l) => `<option value="${l}">`)
+    .join('');
+
+  return `<div class="labels-section">
+    <div class="labels-tags">${tags}</div>
+    <div class="label-add-row">
+      <input type="text" class="label-input" placeholder="Add label..." list="label-suggestions-${wordId}" data-word-id="${wordId}">
+      <datalist id="label-suggestions-${wordId}">${datalistOptions}</datalist>
+      <button class="label-add-btn" data-word-id="${wordId}">Add</button>
+    </div>
+  </div>`;
+}
+
+function attachLabelHandlers() {
+  // Remove label handlers
+  feedbackDiv.querySelectorAll('.label-remove').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const el = e.currentTarget as HTMLElement;
+      const wordId = parseInt(el.dataset.wordId!);
+      const label = el.dataset.label!;
+      const result = await removeLabel(wordId, label);
+      wordLabels.set(wordId, result.labels);
+      updateLabelsDisplay(wordId);
+    });
+  });
+
+  // Add label handlers
+  feedbackDiv.querySelectorAll('.label-add-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const wordId = parseInt((btn as HTMLElement).dataset.wordId!);
+      const input = feedbackDiv.querySelector(`.label-input[data-word-id="${wordId}"]`) as HTMLInputElement;
+      const label = input.value.trim();
+      if (!label) return;
+      const result = await addLabel(wordId, label);
+      wordLabels.set(wordId, result.labels);
+      if (!allKnownLabels.includes(label)) {
+        allKnownLabels.push(label);
+        allKnownLabels.sort();
+      }
+      input.value = '';
+      updateLabelsDisplay(wordId);
+    });
+  });
+
+  // Enter key on label input
+  feedbackDiv.querySelectorAll('.label-input').forEach((input) => {
+    input.addEventListener('keydown', (e) => {
+      if ((e as KeyboardEvent).key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        const wordId = (input as HTMLElement).dataset.wordId!;
+        const btn = feedbackDiv.querySelector(`.label-add-btn[data-word-id="${wordId}"]`) as HTMLButtonElement;
+        btn?.click();
+      }
+    });
+  });
+}
+
+function updateLabelsDisplay(wordId: number) {
+  const section = feedbackDiv.querySelector('.labels-section');
+  if (section) {
+    section.outerHTML = renderLabelsUI(wordId);
+    attachLabelHandlers();
+  }
+}
+
 // Handle answer submission
 async function handleSubmit() {
   const answer = answerInput.value.trim();
@@ -287,10 +385,11 @@ async function handleSubmit() {
     feedbackDiv.classList.add(response.correct ? 'correct' : 'incorrect');
 
     if (response.correct) {
-      feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+      feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.id)}`;
     } else {
-      feedbackDiv.innerHTML = `✗ Incorrect<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+      feedbackDiv.innerHTML = `✗ Incorrect<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.id)}`;
     }
+    attachLabelHandlers();
 
     // Play word pronunciation (auto)
     playAudio(question.word.hanzi, true);
@@ -320,7 +419,8 @@ function handleSkip() {
   // Show the correct answer
   feedbackDiv.classList.remove('hidden', 'correct', 'incorrect');
   feedbackDiv.classList.add('incorrect');
-  feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+  feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.id)}`;
+  attachLabelHandlers();
 
   // Play word pronunciation (auto)
   playAudio(question.word.hanzi, true);

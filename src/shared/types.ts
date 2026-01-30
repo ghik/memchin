@@ -20,6 +20,7 @@ export interface Word {
   examples: Example[];
   translatable: boolean;
   breakdown?: CharacterBreakdown[];
+  labels?: string[];
 }
 
 export type PracticeMode = 'hanzi2pinyin' | 'hanzi2english' | 'english2hanzi' | 'english2pinyin';
@@ -44,6 +45,7 @@ export interface StartRequest {
   count: number;
   mode: PracticeMode;
   review: boolean;
+  label?: string;
 }
 
 export interface StartResponse {

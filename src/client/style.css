@@ -348,6 +348,93 @@ h2 {
   font-style: italic;
 }
 
+/* Label styles */
+.labels-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.labels-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.label-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #e9ecef;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #333;
+}
+
+.label-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #888;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.label-remove:hover {
+  color: #c00;
+}
+
+.label-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.label-input {
+  padding: 4px 8px;
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 140px;
+}
+
+.label-input:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
+
+.label-add-btn {
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #f8f9fa;
+  cursor: pointer;
+  color: #555;
+}
+
+.label-add-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+#label-filter {
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  width: 200px;
+}
+
+#label-filter:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
+
 .hidden {
   display: none !important;
 }

@@ -57,6 +57,15 @@ export async function initDb(): Promise<void> {
   `);
   // @formatter:on
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS word_labels (
+      word_id INTEGER NOT NULL,
+      label TEXT NOT NULL,
+      FOREIGN KEY (word_id) REFERENCES words(id),
+      UNIQUE(word_id, label)
+    );
+  `);
+
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_rank ON words(rank);`);
 
@@ -186,18 +195,21 @@ export function upsertProgress(
   );
 }
 
-export function getWordsForReview(mode: PracticeMode, count: number): Word[] {
+export function getWordsForReview(mode: PracticeMode, count: number, label?: string): Word[] {
   const translatableFilter = (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') ? 'AND w.translatable = 1' : '';
+  const labelJoin = label ? 'JOIN word_labels wl ON w.id = wl.word_id AND wl.label = ?' : '';
+  const params: any[] = label ? [label, mode, count] : [mode, count];
 
   const stmt = db.prepare(`
       SELECT w.*
       FROM words w
+               ${labelJoin}
                JOIN progress p ON w.id = p.word_id
       WHERE p.mode = ? ${translatableFilter}
       ORDER BY p.next_eligible ASC
           LIMIT ?
   `);
-  stmt.bind([mode, count]);
+  stmt.bind(params);
 
   const result: Word[] = [];
   while (stmt.step()) {
@@ -207,21 +219,24 @@ export function getWordsForReview(mode: PracticeMode, count: number): Word[] {
   return result;
 }
 
-export function getWordsForPractice(mode: PracticeMode, count: number): Word[] {
+export function getWordsForPractice(mode: PracticeMode, count: number, label?: string): Word[] {
   const now = new Date().toISOString();
   const translatableFilter = (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') ? 'AND w.translatable = 1' : '';
+  const labelJoin = label ? 'JOIN word_labels wl ON w.id = wl.word_id AND wl.label = ?' : '';
 
   // First get words that are due for review
+  const dueParams: any[] = label ? [label, mode, now, count] : [mode, now, count];
   const dueStmt = db.prepare(`
       SELECT w.*
       FROM words w
+               ${labelJoin}
                JOIN progress p ON w.id = p.word_id
       WHERE p.mode = ?
         AND p.next_eligible <= ? ${translatableFilter}
       ORDER BY p.next_eligible ASC
           LIMIT ?
   `);
-  dueStmt.bind([mode, now, count]);
+  dueStmt.bind(dueParams);
 
   const result: Word[] = [];
   while (dueStmt.step()) {
@@ -234,15 +249,17 @@ export function getWordsForPractice(mode: PracticeMode, count: number): Word[] {
     const existingIds = result.map((w) => w.id);
     const placeholders = existingIds.length > 0 ? `AND w.id NOT IN (${existingIds.join(',')})` : '';
 
+    const newParams: any[] = label ? [label, mode, count - result.length] : [mode, count - result.length];
     const newStmt = db.prepare(`
         SELECT w.*
         FROM words w
+                 ${labelJoin}
                  LEFT JOIN progress p ON w.id = p.word_id AND p.mode = ?
         WHERE p.id IS NULL ${placeholders} ${translatableFilter}
         ORDER BY w.rank ASC
             LIMIT ?
     `);
-    newStmt.bind([mode, count - result.length]);
+    newStmt.bind(newParams);
 
     while (newStmt.step()) {
       result.push(rowToWord(newStmt.getAsObject()));
@@ -287,6 +304,42 @@ export function getStats(mode: PracticeMode): {
   }
 
   return { totalWords, learned, mastered, dueForReview, buckets };
+}
+
+// Label operations
+export function getLabelsForWord(wordId: number): string[] {
+  const stmt = db.prepare('SELECT label FROM word_labels WHERE word_id = ? ORDER BY label');
+  stmt.bind([wordId]);
+  const labels: string[] = [];
+  while (stmt.step()) {
+    labels.push(stmt.getAsObject().label as string);
+  }
+  stmt.free();
+  return labels;
+}
+
+export function addLabelToWord(wordId: number, label: string): void {
+  db.run(
+    'INSERT OR IGNORE INTO word_labels (word_id, label) VALUES (?, ?)',
+    [wordId, label]
+  );
+}
+
+export function removeLabelFromWord(wordId: number, label: string): void {
+  db.run(
+    'DELETE FROM word_labels WHERE word_id = ? AND label = ?',
+    [wordId, label]
+  );
+}
+
+export function getAllLabels(): string[] {
+  const stmt = db.prepare('SELECT DISTINCT label FROM word_labels ORDER BY label');
+  const labels: string[] = [];
+  while (stmt.step()) {
+    labels.push(stmt.getAsObject().label as string);
+  }
+  stmt.free();
+  return labels;
 }
 
 function rowToWord(row: any): Word {

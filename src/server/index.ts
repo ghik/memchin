@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initDb } from './db.js';
+import { initDb, getAllLabels } from './db.js';
 import wordsRouter from './routes/words.js';
 import practiceRouter from './routes/practice.js';
 
@@ -22,6 +22,9 @@ async function main() {
   // API routes
   app.use('/api/words', wordsRouter);
   app.use('/api/practice', practiceRouter);
+  app.get('/api/labels', (_req, res) => {
+    res.json(getAllLabels());
+  });
 
   // Serve audio files
   app.use('/audio', express.static(path.join(__dirname, '../../data/audio')));

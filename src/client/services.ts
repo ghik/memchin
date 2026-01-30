@@ -23,6 +23,7 @@ export interface Word {
   examples: Example[];
   translatable: boolean;
   breakdown?: CharacterBreakdown[];
+  labels?: string[];
 }
 
 export interface PracticeQuestion {
@@ -58,11 +59,13 @@ interface Stats {
 
 const API_BASE = '/api';
 
-export async function startPractice(count: number, mode: PracticeMode, review: boolean): Promise<StartResponse> {
+export async function startPractice(count: number, mode: PracticeMode, review: boolean, label?: string): Promise<StartResponse> {
+  const body: Record<string, unknown> = { count, mode, review };
+  if (label) body.label = label;
   const response = await fetch(`${API_BASE}/practice/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ count, mode, review }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -117,6 +120,36 @@ export async function getStats(): Promise<Stats[]> {
     throw new Error('Failed to get stats');
   }
 
+  return response.json();
+}
+
+export async function addLabel(wordId: number, label: string): Promise<{ labels: string[] }> {
+  const response = await fetch(`${API_BASE}/words/${wordId}/labels`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to add label');
+  }
+  return response.json();
+}
+
+export async function removeLabel(wordId: number, label: string): Promise<{ labels: string[] }> {
+  const response = await fetch(`${API_BASE}/words/${wordId}/labels/${encodeURIComponent(label)}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to remove label');
+  }
+  return response.json();
+}
+
+export async function getLabels(): Promise<string[]> {
+  const response = await fetch(`${API_BASE}/labels`);
+  if (!response.ok) {
+    throw new Error('Failed to get labels');
+  }
   return response.json();
 }
 
