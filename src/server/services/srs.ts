@@ -32,7 +32,7 @@ export function updateProgress(wordId: number, mode: PracticeMode, correct: bool
   if (correct) {
     newBucket = Math.min(currentBucket + 1, MAX_BUCKET);
   } else {
-    newBucket = Math.max(currentBucket - 1, 0);
+    newBucket = 0;
   }
 
   const nextEligible = calculateNextEligible(newBucket);

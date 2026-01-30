@@ -12,6 +12,7 @@ import type {
 } from '../../shared/types.js';
 import {
   getWordsForPractice,
+  getWordsForReview,
   getStats,
   saveDb,
   getProgress,
@@ -37,42 +38,49 @@ function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
   const wordWithBreakdown = addBreakdown(word);
 
   switch (mode) {
-    case 'pinyin':
+    case 'hanzi2pinyin':
       return {
         word: wordWithBreakdown,
         prompt: word.hanzi,
         acceptedAnswers: [toNumberedPinyin(word.pinyin)],
         bucket,
       };
-    case 'english':
+    case 'hanzi2english':
       return {
         word: wordWithBreakdown,
         prompt: word.hanzi,
         acceptedAnswers: word.english,
         bucket,
       };
-    case 'hanzi':
+    case 'english2hanzi':
       return {
         word: wordWithBreakdown,
         prompt: word.english.join(', '),
         acceptedAnswers: [word.hanzi],
         bucket,
       };
+    case 'english2pinyin':
+      return {
+        word: wordWithBreakdown,
+        prompt: word.english.join(', '),
+        acceptedAnswers: [toNumberedPinyin(word.pinyin)],
+        bucket,
+      };
   }
 }
 
 router.post('/start', (req, res) => {
-  const { count, mode } = req.body as StartRequest;
+  const { count, mode, review } = req.body as StartRequest;
 
   if (!count || !mode) {
     return res.status(400).json({ error: 'count and mode are required' });
   }
 
-  if (!['pinyin', 'english', 'hanzi'].includes(mode)) {
+  if (!['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)) {
     return res.status(400).json({ error: 'Invalid mode' });
   }
 
-  const words = getWordsForPractice(mode, count);
+  const words = review ? getWordsForReview(mode, count) : getWordsForPractice(mode, count);
 
   if (words.length === 0) {
     return res.status(400).json({ error: 'No words available for practice' });
@@ -95,24 +103,27 @@ router.post('/answer', (req, res) => {
   let synonym = false;
 
   switch (mode) {
-    case 'pinyin':
+    case 'hanzi2pinyin':
       correct = pinyinMatches(answer, word.pinyin);
       break;
-    case 'english':
+    case 'hanzi2english':
       correct = englishMatches(answer, word.english);
       break;
-    case 'hanzi':
+    case 'english2hanzi':
       const isExactMatch = hanziMatches(answer, word.hanzi);
       const isSynonym = !isExactMatch && isAmbiguousTranslation(word.english);
       correct = isExactMatch;
       synonym = isSynonym;
+      break;
+    case 'english2pinyin':
+      correct = pinyinMatches(answer, word.pinyin);
       break;
   }
 
   const response: AnswerResponse = {
     correct,
     correctAnswers:
-      mode === 'hanzi' ? [word.hanzi] : mode === 'pinyin' ? [toNumberedPinyin(word.pinyin)] : word.english,
+      mode === 'english2hanzi' ? [word.hanzi] : (mode === 'hanzi2pinyin' || mode === 'english2pinyin') ? [toNumberedPinyin(word.pinyin)] : word.english,
     synonym,
   };
   res.json(response);
@@ -139,7 +150,7 @@ router.post('/complete', (req, res) => {
 });
 
 router.get('/stats', (req, res) => {
-  const modes: PracticeMode[] = ['pinyin', 'english', 'hanzi'];
+  const modes: PracticeMode[] = ['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'];
   const stats = modes.map((mode) => ({
     mode,
     ...getStats(mode),

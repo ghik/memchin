@@ -28,6 +28,7 @@ const resultStatsDiv = document.getElementById('result-stats')!;
 const mistakesSection = document.getElementById('mistakes-section')!;
 const mistakesList = document.getElementById('mistakes-list')!;
 const restartBtn = document.getElementById('restart-btn')!;
+const reviewCheckbox = document.getElementById('review-learned') as HTMLInputElement;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
 
 // Load autoplay preference from localStorage
@@ -37,11 +38,12 @@ autoplayCheckbox.addEventListener('change', () => {
 });
 
 // State
-let currentMode: PracticeMode = 'pinyin';
+let currentMode: PracticeMode = 'hanzi2pinyin';
 let questions: PracticeQuestion[] = [];
 let currentIndex = 0;
 let results: Map<number, boolean> = new Map(); // wordId -> correctFirstTry
 let incorrectThisRound: PracticeQuestion[] = [];
+let submitBlocked = false;
 
 // Utility functions
 function showScreen(screen: HTMLElement) {
@@ -59,6 +61,13 @@ function shuffle<T>(array: T[]): T[] {
   }
   return result;
 }
+
+const MODE_LABELS: Record<PracticeMode, string> = {
+  hanzi2pinyin: 'Hanzi → Pinyin',
+  hanzi2english: 'Hanzi → English',
+  english2hanzi: 'English → Hanzi',
+  english2pinyin: 'English → Pinyin',
+};
 
 // Load stats on start
 async function loadStats() {
@@ -79,7 +88,7 @@ async function loadStats() {
             .map((count, i) => `<span class="bucket-count" title="Bucket ${i}">${count}</span>`)
             .join('');
           return `
-      <p><strong>${s.mode}:</strong> ${s.learned}/${s.totalWords} learned, ${s.mastered} mastered, ${s.dueForReview} due</p>
+      <p><strong>${MODE_LABELS[s.mode] ?? s.mode}:</strong> ${s.learned}/${s.totalWords} learned, ${s.mastered} mastered, ${s.dueForReview} due</p>
       <div class="bucket-bar">${bucketBar}</div>
     `;
         }
@@ -103,7 +112,7 @@ async function handleStart() {
     startBtn.disabled = true;
     startBtn.textContent = 'Loading...';
 
-    const response = await startPractice(count, currentMode);
+    const response = await startPractice(count, currentMode, reviewCheckbox.checked);
     questions = shuffle(response.questions);
     currentIndex = 0;
     results.clear();
@@ -135,11 +144,11 @@ function clickableHanzi(hanzi: string, className: string): string {
 function formatExampleHints(
   examples: { hanzi: string; pinyin: string; english: string }[]
 ): string {
-  if (currentMode === 'hanzi') {
-    // english->hanzi: show english only (to not give away the answer)
+  if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
+    // english->X: show english only (to not give away the answer)
     return examples.map((ex) => `<span class="ex-english">${ex.english}</span>`).join('<br>');
   } else {
-    // pinyin and english modes (hanzi->X): show clickable example hanzi
+    // hanzi->X modes: show clickable example hanzi
     return examples.map((ex) => clickableHanzi(ex.hanzi, 'ex-hanzi')).join('<br>');
   }
 }
@@ -165,15 +174,15 @@ function showQuestion() {
   progressText.textContent = `Question ${currentIndex + 1} of ${questions.length} (${bucketLabel})`;
 
   // Show example hints alongside the question
-  if (currentMode === 'hanzi') {
-    // english->hanzi mode: show english prompt, no clickable hanzi
+  if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
+    // english->X mode: show english prompt, no clickable hanzi
     if (word.examples.length > 0) {
       promptDiv.innerHTML = `${question.prompt}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
     } else {
       promptDiv.textContent = question.prompt;
     }
   } else {
-    // pinyin/english modes: show clickable hanzi prompt
+    // hanzi->X modes: show clickable hanzi prompt
     const clickablePrompt = clickableHanzi(word.hanzi, 'prompt-hanzi');
     if (word.examples.length > 0) {
       promptDiv.innerHTML = `${clickablePrompt}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
@@ -181,7 +190,7 @@ function showQuestion() {
       promptDiv.innerHTML = clickablePrompt;
     }
   }
-  promptDiv.className = currentMode === 'hanzi' ? 'prompt english-prompt' : 'prompt';
+  promptDiv.className = (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') ? 'prompt english-prompt' : 'prompt';
 
   answerInput.value = '';
   answerInput.disabled = false;
@@ -251,6 +260,16 @@ async function handleSubmit() {
       answerInput.value = '';
       answerInput.focus();
       submitBtn.disabled = false;
+
+      // Block Enter until user types something or 1 second elapses
+      submitBlocked = true;
+      const unblock = () => { submitBlocked = false; };
+      const timer = setTimeout(unblock, 1000);
+      answerInput.addEventListener('input', () => {
+        clearTimeout(timer);
+        unblock();
+      }, { once: true });
+
       return;
     }
 
@@ -397,7 +416,7 @@ restartBtn.addEventListener('click', handleRestart);
 answerInput.addEventListener('keydown', (e) => {
   // Ignore Enter during IME composition (e.g. pinyin input)
   if (e.isComposing) return;
-  if (e.key === 'Enter' && !submitBtn.classList.contains('hidden')) {
+  if (e.key === 'Enter' && !submitBtn.classList.contains('hidden') && !submitBlocked) {
     if (answerInput.value.trim() === '') {
       handleSkip();
     } else {
@@ -410,12 +429,21 @@ answerInput.addEventListener('keydown', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.isComposing) return;
   if (e.key === 'Enter') {
-    if (!nextBtn.classList.contains('hidden')) {
-      handleNext();
-    } else if (resultScreen.classList.contains('active')) {
+    if (resultScreen.classList.contains('active')) {
       handleRestart();
+    } else if (startScreen.classList.contains('active')) {
+      handleStart();
+    } else if (!nextBtn.classList.contains('hidden')) {
+      handleNext();
     }
   }
+});
+
+// Preset count buttons
+document.querySelectorAll('.preset-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    wordCountInput.value = (btn as HTMLElement).dataset.count!;
+  });
 });
 
 // Click handler for audio playback on hanzi

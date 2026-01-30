@@ -60,6 +60,11 @@ export async function initDb(): Promise<void> {
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_rank ON words(rank);`);
 
+  // Migrate old mode names
+  db.run(`UPDATE progress SET mode = 'hanzi2pinyin' WHERE mode = 'pinyin'`);
+  db.run(`UPDATE progress SET mode = 'hanzi2english' WHERE mode = 'english'`);
+  db.run(`UPDATE progress SET mode = 'english2hanzi' WHERE mode = 'hanzi'`);
+
   saveDb();
 }
 
@@ -181,9 +186,30 @@ export function upsertProgress(
   );
 }
 
+export function getWordsForReview(mode: PracticeMode, count: number): Word[] {
+  const translatableFilter = (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') ? 'AND w.translatable = 1' : '';
+
+  const stmt = db.prepare(`
+      SELECT w.*
+      FROM words w
+               JOIN progress p ON w.id = p.word_id
+      WHERE p.mode = ? ${translatableFilter}
+      ORDER BY p.next_eligible ASC
+          LIMIT ?
+  `);
+  stmt.bind([mode, count]);
+
+  const result: Word[] = [];
+  while (stmt.step()) {
+    result.push(rowToWord(stmt.getAsObject()));
+  }
+  stmt.free();
+  return result;
+}
+
 export function getWordsForPractice(mode: PracticeMode, count: number): Word[] {
   const now = new Date().toISOString();
-  const translatableFilter = mode === 'english' ? 'AND w.translatable = 1' : '';
+  const translatableFilter = (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') ? 'AND w.translatable = 1' : '';
 
   // First get words that are due for review
   const dueStmt = db.prepare(`

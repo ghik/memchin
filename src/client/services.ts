@@ -1,5 +1,5 @@
 // Types (duplicated from shared to avoid Vite path issues)
-export type PracticeMode = 'pinyin' | 'english' | 'hanzi';
+export type PracticeMode = 'hanzi2pinyin' | 'hanzi2english' | 'english2hanzi' | 'english2pinyin';
 
 export interface Example {
   hanzi: string;
@@ -58,11 +58,11 @@ interface Stats {
 
 const API_BASE = '/api';
 
-export async function startPractice(count: number, mode: PracticeMode): Promise<StartResponse> {
+export async function startPractice(count: number, mode: PracticeMode, review: boolean): Promise<StartResponse> {
   const response = await fetch(`${API_BASE}/practice/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ count, mode }),
+    body: JSON.stringify({ count, mode, review }),
   });
 
   if (!response.ok) {

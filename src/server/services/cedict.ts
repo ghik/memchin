@@ -172,24 +172,41 @@ export function lookupWord(hanzi: string): CedictEntry | null {
 }
 
 /**
+ * Check if a definition is only a surname or variant reference
+ */
+function isSurnameOrVariant(definition: string): boolean {
+  return /^surname\s/i.test(definition) ||
+    /^(old\s+)?variant\s+of\s/i.test(definition);
+}
+
+/**
+ * Filter out entries where ALL definitions are just surnames or variants
+ */
+function filterEntries(entries: CedictEntry[]): CedictEntry[] {
+  return entries.filter((entry) =>
+    entry.definitions.some((def) => !isSurnameOrVariant(def))
+  );
+}
+
+/**
  * Get character breakdown for a multi-character word
  * Returns meaning for each individual character
  */
 export function getCharacterBreakdown(hanzi: string): CharacterBreakdown[] {
-  if (hanzi.length <= 1) return [];
-
   const map = loadCedict();
   const result: CharacterBreakdown[] = [];
 
   for (const char of hanzi) {
     const entries = map.get(char);
-    if (entries && entries.length > 0) {
-      const entry = entries[0];
-      result.push({
-        hanzi: char,
-        pinyin: entry.pinyin,
-        meaning: entry.definitions.join(' / '),
-      });
+    const filtered = entries ? filterEntries(entries) : [];
+    if (filtered.length > 0) {
+      for (const entry of filtered) {
+        result.push({
+          hanzi: char,
+          pinyin: entry.pinyin,
+          meaning: entry.definitions.filter((d) => !isSurnameOrVariant(d)).join(' / '),
+        });
+      }
     } else {
       result.push({
         hanzi: char,

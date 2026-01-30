@@ -13,25 +13,45 @@
 
       <div class="form-group">
         <label for="word-count">How many words?</label>
-        <input type="number" id="word-count" value="10" min="1" max="100">
+        <div class="count-row">
+          <input type="number" id="word-count" value="10" min="1" max="100">
+          <div class="count-presets">
+            <button type="button" class="preset-btn" data-count="5">5</button>
+            <button type="button" class="preset-btn" data-count="10">10</button>
+            <button type="button" class="preset-btn" data-count="20">20</button>
+            <button type="button" class="preset-btn" data-count="30">30</button>
+            <button type="button" class="preset-btn" data-count="50">50</button>
+          </div>
+        </div>
       </div>
 
       <div class="form-group">
         <label>Practice mode:</label>
         <div class="radio-group">
           <label>
-            <input type="radio" name="mode" value="pinyin" checked>
+            <input type="radio" name="mode" value="hanzi2pinyin" checked>
             Hanzi → Pinyin
           </label>
           <label>
-            <input type="radio" name="mode" value="english">
+            <input type="radio" name="mode" value="hanzi2english">
             Hanzi → English
           </label>
           <label>
-            <input type="radio" name="mode" value="hanzi">
+            <input type="radio" name="mode" value="english2hanzi">
             English → Hanzi
           </label>
+          <label>
+            <input type="radio" name="mode" value="english2pinyin">
+            English → Pinyin
+          </label>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="review-learned">
+          Review learned words
+        </label>
       </div>
 
       <div class="form-group">
