@@ -44,7 +44,7 @@ export interface PracticeQuestion {
 export interface StartRequest {
   count: number;
   mode: PracticeMode;
-  review: boolean;
+  wordSelection: 'mixed' | 'new' | 'review';
   label?: string;
 }
 

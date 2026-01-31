@@ -219,6 +219,30 @@ export function getWordsForReview(mode: PracticeMode, count: number, label?: str
   return result;
 }
 
+export function getNewWords(mode: PracticeMode, count: number, label?: string): Word[] {
+  const translatableFilter = (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') ? 'AND w.translatable = 1' : '';
+  const labelJoin = label ? 'JOIN word_labels wl ON w.id = wl.word_id AND wl.label = ?' : '';
+  const params: any[] = label ? [label, mode, count] : [mode, count];
+
+  const stmt = db.prepare(`
+      SELECT w.*
+      FROM words w
+               ${labelJoin}
+               LEFT JOIN progress p ON w.id = p.word_id AND p.mode = ?
+      WHERE p.id IS NULL ${translatableFilter}
+      ORDER BY w.rank ASC
+          LIMIT ?
+  `);
+  stmt.bind(params);
+
+  const result: Word[] = [];
+  while (stmt.step()) {
+    result.push(rowToWord(stmt.getAsObject()));
+  }
+  stmt.free();
+  return result;
+}
+
 export function getWordsForPractice(mode: PracticeMode, count: number, label?: string): Word[] {
   const now = new Date().toISOString();
   const translatableFilter = (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') ? 'AND w.translatable = 1' : '';

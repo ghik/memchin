@@ -12,22 +12,32 @@
       <h1>Chinese Practice</h1>
 
       <div class="form-group">
-        <label for="word-count">How many words?</label>
-        <div class="count-row">
-          <input type="number" id="word-count" value="10" min="1" max="100">
-          <div class="count-presets">
-            <button type="button" class="preset-btn" data-count="5">5</button>
-            <button type="button" class="preset-btn" data-count="10">10</button>
-            <button type="button" class="preset-btn" data-count="20">20</button>
-            <button type="button" class="preset-btn" data-count="30">30</button>
-            <button type="button" class="preset-btn" data-count="50">50</button>
+        <div class="count-label-row">
+          <div>
+            <label for="word-count">How many words?</label>
+            <div class="count-row">
+              <input type="number" id="word-count" value="10" min="1" max="100">
+              <div class="count-presets">
+                <button type="button" class="preset-btn" data-count="5">5</button>
+                <button type="button" class="preset-btn" data-count="10">10</button>
+                <button type="button" class="preset-btn" data-count="20">20</button>
+                <button type="button" class="preset-btn" data-count="30">30</button>
+                <button type="button" class="preset-btn" data-count="50">50</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label for="label-filter">Filter by label:</label>
+            <select id="label-filter">
+              <option value="">All words</option>
+            </select>
           </div>
         </div>
       </div>
 
       <div class="form-group">
         <label>Practice mode:</label>
-        <div class="radio-group">
+        <div class="radio-group radio-group--horizontal">
           <label>
             <input type="radio" name="mode" value="hanzi2pinyin" checked>
             Hanzi → Pinyin
@@ -48,17 +58,21 @@
       </div>
 
       <div class="form-group">
-        <label for="label-filter">Filter by label:</label>
-        <select id="label-filter">
-          <option value="">All words</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input type="checkbox" id="review-learned">
-          Review learned words
-        </label>
+        <label>Word selection:</label>
+        <div class="radio-group radio-group--horizontal">
+          <label>
+            <input type="radio" name="word-selection" value="mixed" checked>
+            Mixed (new + review)
+          </label>
+          <label>
+            <input type="radio" name="word-selection" value="new">
+            New words only
+          </label>
+          <label>
+            <input type="radio" name="word-selection" value="review">
+            Review only
+          </label>
+        </div>
       </div>
 
       <div class="form-group">

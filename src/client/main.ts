@@ -31,7 +31,6 @@ const resultStatsDiv = document.getElementById('result-stats')!;
 const mistakesSection = document.getElementById('mistakes-section')!;
 const mistakesList = document.getElementById('mistakes-list')!;
 const restartBtn = document.getElementById('restart-btn')!;
-const reviewCheckbox = document.getElementById('review-learned') as HTMLInputElement;
 const labelFilter = document.getElementById('label-filter') as HTMLSelectElement;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
 
@@ -131,7 +130,8 @@ async function handleStart() {
     startBtn.textContent = 'Loading...';
 
     const selectedLabel = labelFilter.value || undefined;
-    const response = await startPractice(count, currentMode, reviewCheckbox.checked, selectedLabel);
+    const wordSelection = (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
+    const response = await startPractice(count, currentMode, wordSelection, selectedLabel);
     questions = shuffle(response.questions);
     currentIndex = 0;
     results.clear();

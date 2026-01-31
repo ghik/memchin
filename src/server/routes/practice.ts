@@ -13,6 +13,7 @@ import type {
 import {
   getWordsForPractice,
   getWordsForReview,
+  getNewWords,
   getStats,
   saveDb,
   getProgress,
@@ -72,7 +73,7 @@ function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
 }
 
 router.post('/start', (req, res) => {
-  const { count, mode, review, label } = req.body as StartRequest;
+  const { count, mode, wordSelection, label } = req.body as StartRequest;
 
   if (!count || !mode) {
     return res.status(400).json({ error: 'count and mode are required' });
@@ -82,7 +83,18 @@ router.post('/start', (req, res) => {
     return res.status(400).json({ error: 'Invalid mode' });
   }
 
-  const words = review ? getWordsForReview(mode, count, label) : getWordsForPractice(mode, count, label);
+  let words: Word[];
+  switch (wordSelection) {
+    case 'new':
+      words = getNewWords(mode, count, label);
+      break;
+    case 'review':
+      words = getWordsForReview(mode, count, label);
+      break;
+    default:
+      words = getWordsForPractice(mode, count, label);
+      break;
+  }
 
   if (words.length === 0) {
     return res.status(400).json({ error: 'No words available for practice' });

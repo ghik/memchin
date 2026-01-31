@@ -59,8 +59,8 @@ interface Stats {
 
 const API_BASE = '/api';
 
-export async function startPractice(count: number, mode: PracticeMode, review: boolean, label?: string): Promise<StartResponse> {
-  const body: Record<string, unknown> = { count, mode, review };
+export async function startPractice(count: number, mode: PracticeMode, wordSelection: string, label?: string): Promise<StartResponse> {
+  const body: Record<string, unknown> = { count, mode, wordSelection };
   if (label) body.label = label;
   const response = await fetch(`${API_BASE}/practice/start`, {
     method: 'POST',
