@@ -1,11 +1,9 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { initDb, insertWords } from '../server/db.js';
 import { splitPinyin } from '../server/services/pinyin.js';
 import { generateSpeech } from '../server/services/tts.js';
 import type { Example } from '../shared/types.js';
+import { generateExamples } from './generate-examples.js';
 import { loadFrequencyData } from './migrate.js';
-
-const anthropic = new Anthropic();
 
 const frequencyData = loadFrequencyData();
 
@@ -99,87 +97,8 @@ function parseWordTable(html: string): RawWord[] {
   return words;
 }
 
-interface ExampleResponse {
-  hanzi: string;
-  examples: Example[];
-}
-
-const MAX_RETRIES = 10;
-
-async function generateExamples(
-  words: { hanzi: string; pinyin: string; english: string[]; hskLevel: number }[],
-  numExamples: number
-): Promise<Map<string, Example[]>> {
-  const wordList = words
-    .map((w) => `${w.hanzi} (${w.pinyin}) [HSK ${w.hskLevel}]: ${w.english.join(', ')}`)
-    .join('\n');
-
-  const prompt = `Generate ${numExamples} simple example sentence${numExamples > 1 ? 's' : ''} for each Chinese word below. Each sentence should:
-- Be a proper sentence with at least a subject and verb
-- Be short (5-15 characters)
-- Use simple vocabulary: only words at or below the same HSK level as the target word, unless a more advanced word is necessary to provide proper context for the target word's usage
-- Clearly demonstrate the meaning of the target word
-${numExamples > 1 ? '- Each example should show a different usage or context for the word' : ''}
-
-For each word, provide ${numExamples > 1 ? 'the examples' : 'the example'} in hanzi, pinyin (with tone marks), and English translation.
-
-Output format - one JSON array, no other text:
-[{"hanzi": "爱", "examples": [{"hanzi": "我爱你", "pinyin": "wǒ ài nǐ", "english": "I love you"}${numExamples > 1 ? ', {"hanzi": "她爱吃苹果", "pinyin": "tā ài chī píngguǒ", "english": "She loves eating apples"}' : ''}]}, ...]
-
-Words:
-${wordList}`;
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const stream = await anthropic.messages.stream({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 32000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const response = await stream.finalMessage();
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type');
-    }
-
-    console.log(`LLM output:\n${content.text}\n`);
-
-    // Extract JSON from response (handle markdown code blocks)
-    let jsonText = content.text.trim();
-    if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-    }
-
-    try {
-      const parsed: ExampleResponse[] = JSON.parse(jsonText);
-      const result = new Map<string, Example[]>();
-
-      for (const item of parsed) {
-        // Ensure example pinyin is properly split into syllables
-        const examples = item.examples.map((ex) => ({
-          ...ex,
-          pinyin: splitPinyin(ex.pinyin),
-        }));
-        result.set(item.hanzi, examples);
-      }
-
-      return result;
-    } catch (error) {
-      if (attempt < MAX_RETRIES) {
-        console.warn(`JSON parsing failed (attempt ${attempt}/${MAX_RETRIES}), retrying...`);
-      } else {
-        throw new Error(`Failed to parse JSON after ${MAX_RETRIES} attempts: ${error}`);
-      }
-    }
-  }
-
-  // Should never reach here, but TypeScript needs this
-  throw new Error('Unexpected error in generateExamples');
-}
-
 async function importLevels(
   levels: number[],
-  numExamples: number,
   start?: number,
   end?: number,
   skipAudio?: boolean
@@ -198,7 +117,7 @@ async function importLevels(
 
       const cleanedWords = rawWords.map((raw) => ({
         hanzi: cleanVariant(raw.hanzi),
-        pinyin: splitPinyin(cleanVariant(raw.pinyin)),
+        pinyin: splitPinyin(cleanVariant(raw.pinyin)).toLowerCase(),
         english: raw.english,
         hskLevel: level,
       }));
@@ -239,7 +158,7 @@ async function importLevels(
 
     let examples = new Map<string, Example[]>();
     try {
-      examples = await generateExamples(batch, numExamples);
+      examples = await generateExamples(batch);
     } catch (error) {
       console.error(`Failed to generate examples for batch:`, error);
     }
@@ -279,33 +198,25 @@ async function importLevels(
 }
 
 // Parse command line arguments
-// Usage: npm run import-hsk [--examples=N] [--start=N] [--end=N] [--skip-audio] [levels]
+// Usage: npm run import-hsk [--start=N] [--end=N] [--skip-audio] [levels]
 // Examples:
-//   npm run import-hsk                  - imports HSK 1 with 1 example per word
-//   npm run import-hsk -- --examples=3  - imports HSK 1 with 3 examples per word
+//   npm run import-hsk                  - imports HSK 1 with 3 example sentences per word
 //   npm run import-hsk -- 2 3           - imports HSK 2 and 3
-//   npm run import-hsk -- --examples=2 1-6  - imports all levels with 2 examples each
 //   npm run import-hsk -- --start=451 --end=475 1-6  - imports only words 451-475
 //   npm run import-hsk -- --skip-audio 1  - imports without generating audio
 function parseArgs(args: string[]): {
   levels: number[];
-  numExamples: number;
   start?: number;
   end?: number;
   skipAudio: boolean;
 } {
-  let numExamples = 1;
   let start: number | undefined;
   let end: number | undefined;
   let skipAudio = false;
   const levelArgs: string[] = [];
 
   for (const arg of args) {
-    if (arg.startsWith('--examples=')) {
-      numExamples = parseInt(arg.split('=')[1]) || 1;
-    } else if (arg.startsWith('-e')) {
-      numExamples = parseInt(arg.slice(2)) || 1;
-    } else if (arg.startsWith('--start=')) {
+    if (arg.startsWith('--start=')) {
       start = parseInt(arg.split('=')[1]);
     } else if (arg.startsWith('--end=')) {
       end = parseInt(arg.split('=')[1]);
@@ -317,7 +228,7 @@ function parseArgs(args: string[]): {
   }
 
   const levels = parseLevels(levelArgs);
-  return { levels, numExamples, start, end, skipAudio };
+  return { levels, start, end, skipAudio };
 }
 
 function parseLevels(args: string[]): number[] {
@@ -341,8 +252,8 @@ function parseLevels(args: string[]): number[] {
   return [...new Set(levels)].sort((a, b) => a - b);
 }
 
-const { levels, numExamples, start, end, skipAudio } = parseArgs(process.argv.slice(2));
+const { levels, start, end, skipAudio } = parseArgs(process.argv.slice(2));
 console.log(
-  `Importing HSK levels: ${levels.join(', ')} with ${numExamples} example${numExamples > 1 ? 's' : ''} per word${skipAudio ? ' (skipping audio)' : ''}`
+  `Importing HSK levels: ${levels.join(', ')} with 3 graduated examples per word${skipAudio ? ' (skipping audio)' : ''}`
 );
-importLevels(levels, numExamples, start, end, skipAudio).catch(console.error);
+importLevels(levels, start, end, skipAudio).catch(console.error);

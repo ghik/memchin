@@ -13,6 +13,7 @@
     "check-examples": "tsx src/scripts/check-examples.ts",
     "generate-audio": "tsx src/scripts/generate-audio.ts",
     "rename-audio": "tsx src/scripts/rename-audio.ts",
+    "regenerate-examples": "tsx src/scripts/regenerate-examples.ts",
     "rename-example-audio": "tsx src/scripts/rename-example-audio.ts",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\"",
@@ -24,6 +25,7 @@
     "@google-cloud/text-to-speech": "^6.4.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "openai": "^6.17.0",
     "sql.js": "^1.10.0",
     "uuid": "^9.0.0"
   },

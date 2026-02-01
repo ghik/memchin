@@ -30,7 +30,7 @@ const router = Router();
 function enrichWord(word: Word): Word {
   return {
     ...word,
-    breakdown: getCharacterBreakdown(word.hanzi),
+    breakdown: getCharacterBreakdown(word.hanzi, word.pinyin),
     labels: getLabelsForWord(word.id),
   };
 }

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { numberedToToneMarked, stripTones } from './pinyin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cedictPath = path.join(__dirname, '../../../cedict_1_0_ts_utf-8_mdbg.txt');
@@ -21,87 +22,6 @@ export interface CharacterBreakdown {
 
 // Map from simplified hanzi to entries (can have multiple readings)
 let cedictMap: Map<string, CedictEntry[]> | null = null;
-
-// Mapping from numbered pinyin to tone marks
-const TONE_MARKS: Record<string, string[]> = {
-  a: ['ā', 'á', 'ǎ', 'à', 'a'],
-  e: ['ē', 'é', 'ě', 'è', 'e'],
-  i: ['ī', 'í', 'ǐ', 'ì', 'i'],
-  o: ['ō', 'ó', 'ǒ', 'ò', 'o'],
-  u: ['ū', 'ú', 'ǔ', 'ù', 'u'],
-  v: ['ǖ', 'ǘ', 'ǚ', 'ǜ', 'ü'], // ü written as v in CEDICT
-};
-
-/**
- * Convert numbered pinyin syllable to tone-marked pinyin
- * e.g. "zhong1" -> "zhōng", "lv4" -> "lǜ"
- */
-function syllableToToneMarked(syllable: string): string {
-  const match = syllable.match(/^([a-zA-Z:]+)([1-5])?$/);
-  if (!match) return syllable;
-
-  let [, letters, toneStr] = match;
-  const tone = toneStr ? parseInt(toneStr) : 5;
-
-  // Replace ü representation
-  letters = letters.replace(/u:/g, 'v').replace(/U:/g, 'V');
-
-  if (tone === 5) {
-    // Neutral tone - just replace v with ü
-    return letters.replace(/v/g, 'ü').replace(/V/g, 'Ü');
-  }
-
-  // Find the vowel to add tone mark to (following standard rules)
-  // 1. If there's an 'a' or 'e', put tone on it
-  // 2. If there's 'ou', put tone on 'o'
-  // 3. Otherwise, put tone on the last vowel
-
-  const lowerLetters = letters.toLowerCase();
-  let toneIndex = -1;
-
-  if (lowerLetters.includes('a')) {
-    toneIndex = lowerLetters.indexOf('a');
-  } else if (lowerLetters.includes('e')) {
-    toneIndex = lowerLetters.indexOf('e');
-  } else if (lowerLetters.includes('ou')) {
-    toneIndex = lowerLetters.indexOf('o');
-  } else {
-    // Find last vowel
-    for (let i = lowerLetters.length - 1; i >= 0; i--) {
-      if ('aeiouv'.includes(lowerLetters[i])) {
-        toneIndex = i;
-        break;
-      }
-    }
-  }
-
-  if (toneIndex === -1) return letters.replace(/v/g, 'ü').replace(/V/g, 'Ü');
-
-  const vowel = lowerLetters[toneIndex];
-  const isUpper = letters[toneIndex] === letters[toneIndex].toUpperCase();
-  const toneMarked = TONE_MARKS[vowel]?.[tone - 1] ?? vowel;
-
-  let result =
-    letters.slice(0, toneIndex) +
-    (isUpper ? toneMarked.toUpperCase() : toneMarked) +
-    letters.slice(toneIndex + 1);
-
-  // Replace remaining v with ü
-  result = result.replace(/v/g, 'ü').replace(/V/g, 'Ü');
-
-  return result;
-}
-
-/**
- * Convert numbered pinyin string to tone-marked
- * e.g. "zhong1 guo2" -> "zhōng guó"
- */
-function numberedToToneMarked(pinyin: string): string {
-  return pinyin
-    .split(' ')
-    .map((s) => syllableToToneMarked(s))
-    .join(' ');
-}
 
 /**
  * Load and parse the CEDICT file
@@ -190,28 +110,48 @@ function filterEntries(entries: CedictEntry[]): CedictEntry[] {
 
 /**
  * Get character breakdown for a multi-character word
- * Returns meaning for each individual character
+ * Uses the word's pinyin to select the correct CEDICT reading for each character.
+ * Matching priority: exact pinyin match (with tones) > toneless match > all entries.
  */
-export function getCharacterBreakdown(hanzi: string): CharacterBreakdown[] {
+export function getCharacterBreakdown(hanzi: string, wordPinyin?: string): CharacterBreakdown[] {
   const map = loadCedict();
   const result: CharacterBreakdown[] = [];
+  const syllables = wordPinyin ? wordPinyin.split(/\s+/) : [];
 
-  for (const char of hanzi) {
+  const chars = [...hanzi];
+  for (let i = 0; i < chars.length; i++) {
+    const char = chars[i];
     const entries = map.get(char);
     const filtered = entries ? filterEntries(entries) : [];
-    if (filtered.length > 0) {
-      for (const entry of filtered) {
-        result.push({
-          hanzi: char,
-          pinyin: entry.pinyin,
-          meaning: entry.definitions.filter((d) => !isSurnameOrVariant(d)).join(' / '),
-        });
+
+    if (filtered.length === 0) {
+      result.push({ hanzi: char, pinyin: '?', meaning: '(not found)' });
+      continue;
+    }
+
+    const charPinyin = syllables[i];
+    let matched: CedictEntry[] = filtered;
+
+    if (charPinyin) {
+      // Try exact match (with tones)
+      const exact = filtered.filter((e) => e.pinyin === charPinyin);
+      if (exact.length > 0) {
+        matched = exact;
+      } else {
+        // Fallback: match ignoring tones
+        const toneless = stripTones(charPinyin);
+        const approx = filtered.filter((e) => stripTones(e.pinyin) === toneless);
+        if (approx.length > 0) {
+          matched = approx;
+        }
       }
-    } else {
+    }
+
+    for (const entry of matched) {
       result.push({
         hanzi: char,
-        pinyin: '?',
-        meaning: '(not found)',
+        pinyin: entry.pinyin,
+        meaning: entry.definitions.filter((d) => !isSurnameOrVariant(d)).join(' / '),
       });
     }
   }

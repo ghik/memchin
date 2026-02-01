@@ -157,6 +157,12 @@ export function insertWords(words: Omit<Word, 'id' | 'breakdown'>[]): void {
   saveDb();
 }
 
+export function updateWordExamples(wordId: number, examples: any[]): void {
+  db.run('UPDATE words SET examples = ? WHERE id = ?', [JSON.stringify(examples), wordId]);
+  // Invalidate cache so subsequent reads see the update
+  allWords = null;
+}
+
 export function getWordCount(): number {
   const result = db.exec('SELECT COUNT(*) as count FROM words');
   return (result[0]?.values[0]?.[0] as number) ?? 0;
@@ -370,7 +376,7 @@ function rowToWord(row: any): Word {
   return {
     id: row.id,
     hanzi: row.hanzi,
-    pinyin: row.pinyin,
+    pinyin: (row.pinyin as string).toLowerCase(),
     english: JSON.parse(row.english),
     hskLevel: row.hsk_level,
     frequencyRank: row.rank ?? 999999,

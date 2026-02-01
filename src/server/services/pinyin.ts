@@ -105,3 +105,91 @@ export function englishMatches(input: string, translations: string[]): boolean {
 export function hanziMatches(input: string, expected: string): boolean {
   return input.trim() === expected.trim();
 }
+
+/**
+ * Strip tone marks from pinyin, returning plain lowercase letters
+ * e.g. "zhōng" -> "zhong", "lǜ" -> "lv"
+ */
+export function stripTones(pinyin: string): string {
+  return [...pinyin]
+    .map((ch) => {
+      const entry = TONE_TO_NUMBER[ch];
+      return entry ? entry[0] : ch === 'ü' ? 'v' : ch;
+    })
+    .join('');
+}
+
+// Mapping from numbered pinyin to tone marks
+const TONE_MARKS: Record<string, string[]> = {
+  a: ['ā', 'á', 'ǎ', 'à', 'a'],
+  e: ['ē', 'é', 'ě', 'è', 'e'],
+  i: ['ī', 'í', 'ǐ', 'ì', 'i'],
+  o: ['ō', 'ó', 'ǒ', 'ò', 'o'],
+  u: ['ū', 'ú', 'ǔ', 'ù', 'u'],
+  v: ['ǖ', 'ǘ', 'ǚ', 'ǜ', 'ü'], // ü written as v in CEDICT
+};
+
+/**
+ * Convert numbered pinyin syllable to tone-marked pinyin
+ * e.g. "zhong1" -> "zhōng", "lv4" -> "lǜ"
+ */
+function syllableToToneMarked(syllable: string): string {
+  const match = syllable.match(/^([a-z:]+)([1-5])?$/);
+  if (!match) return syllable;
+
+  let [, letters, toneStr] = match;
+  const tone = toneStr ? parseInt(toneStr) : 5;
+
+  // Replace ü representation
+  letters = letters.replace(/u:/g, 'v');
+
+  if (tone === 5) {
+    // Neutral tone - just replace v with ü
+    return letters.replace(/v/g, 'ü');
+  }
+
+  // Find the vowel to add tone mark to (following standard rules)
+  // 1. If there's an 'a' or 'e', put tone on it
+  // 2. If there's 'ou', put tone on 'o'
+  // 3. Otherwise, put tone on the last vowel
+  let toneIndex = -1;
+
+  if (letters.includes('a')) {
+    toneIndex = letters.indexOf('a');
+  } else if (letters.includes('e')) {
+    toneIndex = letters.indexOf('e');
+  } else if (letters.includes('ou')) {
+    toneIndex = letters.indexOf('o');
+  } else {
+    // Find last vowel
+    for (let i = letters.length - 1; i >= 0; i--) {
+      if ('aeiouv'.includes(letters[i])) {
+        toneIndex = i;
+        break;
+      }
+    }
+  }
+
+  if (toneIndex === -1) return letters.replace(/v/g, 'ü');
+
+  const vowel = letters[toneIndex];
+  const toneMarked = TONE_MARKS[vowel]?.[tone - 1] ?? vowel;
+
+  let result = letters.slice(0, toneIndex) + toneMarked + letters.slice(toneIndex + 1);
+
+  // Replace remaining v with ü
+  result = result.replace(/v/g, 'ü');
+
+  return result;
+}
+
+/**
+ * Convert numbered pinyin string to tone-marked
+ * e.g. "zhong1 guo2" -> "zhōng guó"
+ */
+export function numberedToToneMarked(pinyin: string): string {
+  return pinyin
+    .split(' ')
+    .map((s) => syllableToToneMarked(s))
+    .join(' ');
+}

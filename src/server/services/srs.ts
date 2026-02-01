@@ -1,5 +1,5 @@
 import type { PracticeMode } from '../../shared/types.js';
-import { upsertProgress, getProgress } from '../db.js';
+import { getProgress, upsertProgress } from '../db.js';
 
 // Bucket delays in minutes
 const BUCKET_DELAYS_MINUTES = [
@@ -7,11 +7,11 @@ const BUCKET_DELAYS_MINUTES = [
   1, // 1: 1 minute
   5, // 2: 5 minutes
   30, // 3: 30 minutes
-  120, // 4: 2 hours
-  480, // 5: 8 hours
-  1440, // 6: 1 day
-  4320, // 7: 3 days
-  14400, // 8: 10 days (mastered)
+  4 * 60, // 4: 4 hours
+  24 * 60, // 5: 1 day
+  3 * 24 * 60, // 6: 3 day
+  7 * 24 * 60, // 7: 7 days
+  30 * 24 * 60, // 8: 30 days (mastered)
 ];
 
 export const MAX_BUCKET = BUCKET_DELAYS_MINUTES.length - 1;
