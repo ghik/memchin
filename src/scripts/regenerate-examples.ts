@@ -48,9 +48,9 @@ async function regenerate(start?: number, end?: number, skipAudio?: boolean): Pr
     for (const word of batch) {
       const newExamples = examples.get(word.hanzi);
       if (newExamples) {
-        updateWordExamples(word.id, newExamples);
+        updateWordExamples(word.hanzi, newExamples);
       } else {
-        console.warn(`No examples returned for "${word.hanzi}" (id=${word.id})`);
+        console.warn(`No examples returned for "${word.hanzi}"`);
       }
     }
     saveDb();

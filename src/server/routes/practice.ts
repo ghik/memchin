@@ -17,7 +17,7 @@ import {
   getStats,
   saveDb,
   getProgress,
-  getWordById,
+  getWordByHanzi,
   isAmbiguousTranslation,
   getLabelsForWord,
 } from '../db.js';
@@ -31,12 +31,12 @@ function enrichWord(word: Word): Word {
   return {
     ...word,
     breakdown: getCharacterBreakdown(word.hanzi, word.pinyin),
-    labels: getLabelsForWord(word.id),
+    labels: getLabelsForWord(word.hanzi),
   };
 }
 
 function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
-  const progress = getProgress(word.id, mode);
+  const progress = getProgress(word.hanzi, mode);
   const bucket = progress?.bucket ?? null;
   const wordWithBreakdown = enrichWord(word);
 
@@ -106,9 +106,9 @@ router.post('/start', (req, res) => {
 });
 
 router.post('/answer', (req, res) => {
-  const { mode, wordId, answer } = req.body as AnswerRequest;
+  const { mode, hanzi, answer } = req.body as AnswerRequest;
 
-  const word = getWordById(wordId);
+  const word = getWordByHanzi(hanzi);
   if (!word) {
     return res.status(404).json({ error: 'Word not found' });
   }
@@ -149,7 +149,7 @@ router.post('/complete', (req, res) => {
   let newWordsLearned = 0;
 
   for (const result of results) {
-    updateProgress(result.wordId, mode, result.correctFirstTry);
+    updateProgress(result.hanzi, mode, result.correctFirstTry);
     if (result.correctFirstTry) {
       newWordsLearned++;
     }

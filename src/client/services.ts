@@ -14,7 +14,6 @@ export interface CharacterBreakdown {
 }
 
 export interface Word {
-  id: number;
   hanzi: string;
   pinyin: string;
   english: string[];
@@ -78,13 +77,13 @@ export async function startPractice(count: number, mode: PracticeMode, wordSelec
 
 export async function submitAnswer(
   mode: PracticeMode,
-  wordId: number,
+  hanzi: string,
   answer: string
 ): Promise<AnswerResponse> {
   const response = await fetch(`${API_BASE}/practice/answer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mode, wordId, answer }),
+    body: JSON.stringify({ mode, hanzi, answer }),
   });
 
   if (!response.ok) {
@@ -97,7 +96,7 @@ export async function submitAnswer(
 
 export async function completePractice(
   mode: PracticeMode,
-  results: Array<{ wordId: number; correctFirstTry: boolean }>
+  results: Array<{ hanzi: string; correctFirstTry: boolean }>
 ): Promise<CompleteResponse> {
   const response = await fetch(`${API_BASE}/practice/complete`, {
     method: 'POST',
@@ -123,8 +122,8 @@ export async function getStats(): Promise<Stats[]> {
   return response.json();
 }
 
-export async function addLabel(wordId: number, label: string): Promise<{ labels: string[] }> {
-  const response = await fetch(`${API_BASE}/words/${wordId}/labels`, {
+export async function addLabel(hanzi: string, label: string): Promise<{ labels: string[] }> {
+  const response = await fetch(`${API_BASE}/words/${encodeURIComponent(hanzi)}/labels`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ label }),
@@ -135,8 +134,8 @@ export async function addLabel(wordId: number, label: string): Promise<{ labels:
   return response.json();
 }
 
-export async function removeLabel(wordId: number, label: string): Promise<{ labels: string[] }> {
-  const response = await fetch(`${API_BASE}/words/${wordId}/labels/${encodeURIComponent(label)}`, {
+export async function removeLabel(hanzi: string, label: string): Promise<{ labels: string[] }> {
+  const response = await fetch(`${API_BASE}/words/${encodeURIComponent(hanzi)}/labels/${encodeURIComponent(label)}`, {
     method: 'DELETE',
   });
   if (!response.ok) {

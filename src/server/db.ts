@@ -31,10 +31,8 @@ export async function initDb(): Promise<void> {
   // @formatter:off
   db.run(`
     CREATE TABLE IF NOT EXISTS words (
-      id INTEGER PRIMARY KEY,
-      hanzi TEXT NOT NULL,
+      hanzi TEXT PRIMARY KEY,
       pinyin TEXT NOT NULL,
-      pinyin_numbered TEXT NOT NULL,
       english TEXT NOT NULL,
       hsk_level INTEGER NOT NULL,
       examples TEXT NOT NULL DEFAULT '[]',
@@ -46,23 +44,23 @@ export async function initDb(): Promise<void> {
   db.run(`
     CREATE TABLE IF NOT EXISTS progress (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      word_id INTEGER NOT NULL,
+      hanzi TEXT NOT NULL,
       mode TEXT NOT NULL,
       bucket INTEGER NOT NULL DEFAULT 0,
       last_practiced TEXT,
       next_eligible TEXT,
-      FOREIGN KEY (word_id) REFERENCES words(id),
-      UNIQUE(word_id, mode)
+      FOREIGN KEY (hanzi) REFERENCES words(hanzi),
+      UNIQUE(hanzi, mode)
     );
   `);
   // @formatter:on
 
   db.run(`
     CREATE TABLE IF NOT EXISTS word_labels (
-      word_id INTEGER NOT NULL,
+      hanzi TEXT NOT NULL,
       label TEXT NOT NULL,
-      FOREIGN KEY (word_id) REFERENCES words(id),
-      UNIQUE(word_id, label)
+      FOREIGN KEY (hanzi) REFERENCES words(hanzi),
+      UNIQUE(hanzi, label)
     );
   `);
 
@@ -88,27 +86,27 @@ export function saveDb(): void {
 }
 
 // Word operations
-export function getAllWords(): Map<number, Word> {
+export function getAllWords(): Map<string, Word> {
   if (allWords !== null) {
     return allWords;
   }
 
-  const stmt = db.prepare('SELECT * FROM words ORDER BY id');
-  allWords = new Map<number, Word>();
+  const stmt = db.prepare('SELECT * FROM words ORDER BY rank ASC');
+  allWords = new Map<string, Word>();
   while (stmt.step()) {
     const row = stmt.getAsObject();
     const word = rowToWord(row);
-    allWords.set(word.id, word);
+    allWords.set(word.hanzi, word);
   }
   stmt.free();
   return allWords;
 }
 
-export function getWordById(id: number): Word {
-  return getAllWords().get(id)!;
+export function getWordByHanzi(hanzi: string): Word | undefined {
+  return getAllWords().get(hanzi);
 }
 
-let allWords: Map<number, Word> | null = null;
+let allWords: Map<string, Word> | null = null;
 let ambiguousTranslations: Set<string> | null = null;
 
 function normalizedTranslations(englishTranslations: string[]): string {
@@ -136,7 +134,7 @@ export function isAmbiguousTranslation(englishTranslations: string[]): boolean {
   return ambiguousTranslations!.has(normalizedTranslations(englishTranslations));
 }
 
-export function insertWords(words: Omit<Word, 'id' | 'breakdown'>[]): void {
+export function insertWords(words: Omit<Word, 'breakdown'>[]): void {
   for (const word of words) {
     db.run(
       `
@@ -157,8 +155,8 @@ export function insertWords(words: Omit<Word, 'id' | 'breakdown'>[]): void {
   saveDb();
 }
 
-export function updateWordExamples(wordId: number, examples: any[]): void {
-  db.run('UPDATE words SET examples = ? WHERE id = ?', [JSON.stringify(examples), wordId]);
+export function updateWordExamples(hanzi: string, examples: any[]): void {
+  db.run('UPDATE words SET examples = ? WHERE hanzi = ?', [JSON.stringify(examples), hanzi]);
   // Invalidate cache so subsequent reads see the update
   allWords = null;
 }
@@ -169,9 +167,9 @@ export function getWordCount(): number {
 }
 
 // Progress operations
-export function getProgress(wordId: number, mode: PracticeMode): Progress | null {
-  const stmt = db.prepare('SELECT * FROM progress WHERE word_id = ? AND mode = ?');
-  stmt.bind([wordId, mode]);
+export function getProgress(hanzi: string, mode: PracticeMode): Progress | null {
+  const stmt = db.prepare('SELECT * FROM progress WHERE hanzi = ? AND mode = ?');
+  stmt.bind([hanzi, mode]);
   if (stmt.step()) {
     const row = stmt.getAsObject();
     stmt.free();
@@ -182,7 +180,7 @@ export function getProgress(wordId: number, mode: PracticeMode): Progress | null
 }
 
 export function upsertProgress(
-  wordId: number,
+  hanzi: string,
   mode: PracticeMode,
   bucket: number,
   nextEligible: string
@@ -190,27 +188,27 @@ export function upsertProgress(
   const now = new Date().toISOString();
   db.run(
     `
-        INSERT INTO progress (word_id, mode, bucket, last_practiced, next_eligible)
-        VALUES (?, ?, ?, ?, ?) ON CONFLICT(word_id, mode) DO
+        INSERT INTO progress (hanzi, mode, bucket, last_practiced, next_eligible)
+        VALUES (?, ?, ?, ?, ?) ON CONFLICT(hanzi, mode) DO
         UPDATE SET
             bucket = excluded.bucket,
             last_practiced = excluded.last_practiced,
             next_eligible = excluded.next_eligible
     `,
-    [wordId, mode, bucket, now, nextEligible]
+    [hanzi, mode, bucket, now, nextEligible]
   );
 }
 
 export function getWordsForReview(mode: PracticeMode, count: number, label?: string): Word[] {
   const translatableFilter = (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') ? 'AND w.translatable = 1' : '';
-  const labelJoin = label ? 'JOIN word_labels wl ON w.id = wl.word_id AND wl.label = ?' : '';
+  const labelJoin = label ? 'JOIN word_labels wl ON w.hanzi = wl.hanzi AND wl.label = ?' : '';
   const params: any[] = label ? [label, mode, count] : [mode, count];
 
   const stmt = db.prepare(`
       SELECT w.*
       FROM words w
                ${labelJoin}
-               JOIN progress p ON w.id = p.word_id
+               JOIN progress p ON w.hanzi = p.hanzi
       WHERE p.mode = ? ${translatableFilter}
       ORDER BY p.next_eligible ASC
           LIMIT ?
@@ -227,14 +225,14 @@ export function getWordsForReview(mode: PracticeMode, count: number, label?: str
 
 export function getNewWords(mode: PracticeMode, count: number, label?: string): Word[] {
   const translatableFilter = (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') ? 'AND w.translatable = 1' : '';
-  const labelJoin = label ? 'JOIN word_labels wl ON w.id = wl.word_id AND wl.label = ?' : '';
+  const labelJoin = label ? 'JOIN word_labels wl ON w.hanzi = wl.hanzi AND wl.label = ?' : '';
   const params: any[] = label ? [label, mode, count] : [mode, count];
 
   const stmt = db.prepare(`
       SELECT w.*
       FROM words w
                ${labelJoin}
-               LEFT JOIN progress p ON w.id = p.word_id AND p.mode = ?
+               LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
       WHERE p.id IS NULL ${translatableFilter}
       ORDER BY w.rank ASC
           LIMIT ?
@@ -252,7 +250,7 @@ export function getNewWords(mode: PracticeMode, count: number, label?: string): 
 export function getWordsForPractice(mode: PracticeMode, count: number, label?: string): Word[] {
   const now = new Date().toISOString();
   const translatableFilter = (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') ? 'AND w.translatable = 1' : '';
-  const labelJoin = label ? 'JOIN word_labels wl ON w.id = wl.word_id AND wl.label = ?' : '';
+  const labelJoin = label ? 'JOIN word_labels wl ON w.hanzi = wl.hanzi AND wl.label = ?' : '';
 
   // First get words that are due for review
   const dueParams: any[] = label ? [label, mode, now, count] : [mode, now, count];
@@ -260,7 +258,7 @@ export function getWordsForPractice(mode: PracticeMode, count: number, label?: s
       SELECT w.*
       FROM words w
                ${labelJoin}
-               JOIN progress p ON w.id = p.word_id
+               JOIN progress p ON w.hanzi = p.hanzi
       WHERE p.mode = ?
         AND p.next_eligible <= ? ${translatableFilter}
       ORDER BY p.next_eligible ASC
@@ -276,15 +274,15 @@ export function getWordsForPractice(mode: PracticeMode, count: number, label?: s
 
   if (result.length < count) {
     // Get new words (no progress record for this mode)
-    const existingIds = result.map((w) => w.id);
-    const placeholders = existingIds.length > 0 ? `AND w.id NOT IN (${existingIds.join(',')})` : '';
+    const existingHanzi = result.map((w) => `'${w.hanzi.replace(/'/g, "''")}'`);
+    const placeholders = existingHanzi.length > 0 ? `AND w.hanzi NOT IN (${existingHanzi.join(',')})` : '';
 
     const newParams: any[] = label ? [label, mode, count - result.length] : [mode, count - result.length];
     const newStmt = db.prepare(`
         SELECT w.*
         FROM words w
                  ${labelJoin}
-                 LEFT JOIN progress p ON w.id = p.word_id AND p.mode = ?
+                 LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
         WHERE p.id IS NULL ${placeholders} ${translatableFilter}
         ORDER BY w.rank ASC
             LIMIT ?
@@ -337,9 +335,9 @@ export function getStats(mode: PracticeMode): {
 }
 
 // Label operations
-export function getLabelsForWord(wordId: number): string[] {
-  const stmt = db.prepare('SELECT label FROM word_labels WHERE word_id = ? ORDER BY label');
-  stmt.bind([wordId]);
+export function getLabelsForWord(hanzi: string): string[] {
+  const stmt = db.prepare('SELECT label FROM word_labels WHERE hanzi = ? ORDER BY label');
+  stmt.bind([hanzi]);
   const labels: string[] = [];
   while (stmt.step()) {
     labels.push(stmt.getAsObject().label as string);
@@ -348,17 +346,17 @@ export function getLabelsForWord(wordId: number): string[] {
   return labels;
 }
 
-export function addLabelToWord(wordId: number, label: string): void {
+export function addLabelToWord(hanzi: string, label: string): void {
   db.run(
-    'INSERT OR IGNORE INTO word_labels (word_id, label) VALUES (?, ?)',
-    [wordId, label]
+    'INSERT OR IGNORE INTO word_labels (hanzi, label) VALUES (?, ?)',
+    [hanzi, label]
   );
 }
 
-export function removeLabelFromWord(wordId: number, label: string): void {
+export function removeLabelFromWord(hanzi: string, label: string): void {
   db.run(
-    'DELETE FROM word_labels WHERE word_id = ? AND label = ?',
-    [wordId, label]
+    'DELETE FROM word_labels WHERE hanzi = ? AND label = ?',
+    [hanzi, label]
   );
 }
 
@@ -374,7 +372,6 @@ export function getAllLabels(): string[] {
 
 function rowToWord(row: any): Word {
   return {
-    id: row.id,
     hanzi: row.hanzi,
     pinyin: (row.pinyin as string).toLowerCase(),
     english: JSON.parse(row.english),
@@ -388,7 +385,7 @@ function rowToWord(row: any): Word {
 function rowToProgress(row: any): Progress {
   return {
     id: row.id,
-    wordId: row.word_id,
+    hanzi: row.hanzi,
     mode: row.mode as PracticeMode,
     bucket: row.bucket,
     lastPracticed: row.last_practiced,

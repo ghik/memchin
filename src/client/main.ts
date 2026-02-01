@@ -44,10 +44,10 @@ autoplayCheckbox.addEventListener('change', () => {
 let currentMode: PracticeMode = 'hanzi2pinyin';
 let questions: PracticeQuestion[] = [];
 let currentIndex = 0;
-let results: Map<number, boolean> = new Map(); // wordId -> correctFirstTry
+let results: Map<string, boolean> = new Map(); // hanzi -> correctFirstTry
 let incorrectThisRound: PracticeQuestion[] = [];
 let submitBlocked = false;
-let wordLabels: Map<number, string[]> = new Map();
+let wordLabels: Map<string, string[]> = new Map();
 let allKnownLabels: string[] = [];
 
 // Utility functions
@@ -138,7 +138,7 @@ async function handleStart() {
     incorrectThisRound = [];
     wordLabels.clear();
     for (const q of response.questions) {
-      wordLabels.set(q.word.id, q.word.labels || []);
+      wordLabels.set(q.word.hanzi, q.word.labels || []);
     }
 
     showScreen(practiceScreen);
@@ -265,10 +265,10 @@ function formatFullAnswer(question: PracticeQuestion): string {
 }
 
 // Label UI in feedback area
-function renderLabelsUI(wordId: number): string {
-  const labels = wordLabels.get(wordId) || [];
+function renderLabelsUI(hanzi: string): string {
+  const labels = wordLabels.get(hanzi) || [];
   const tags = labels.map(
-    (l) => `<span class="label-tag" data-word-id="${wordId}" data-label="${l}">${l}<button class="label-remove" data-word-id="${wordId}" data-label="${l}">&times;</button></span>`
+    (l) => `<span class="label-tag" data-hanzi="${hanzi}" data-label="${l}">${l}<button class="label-remove" data-hanzi="${hanzi}" data-label="${l}">&times;</button></span>`
   ).join('');
 
   const datalistOptions = allKnownLabels
@@ -279,9 +279,9 @@ function renderLabelsUI(wordId: number): string {
   return `<div class="labels-section">
     <div class="labels-tags">${tags}</div>
     <div class="label-add-row">
-      <input type="text" class="label-input" placeholder="Add label..." list="label-suggestions-${wordId}" data-word-id="${wordId}">
-      <datalist id="label-suggestions-${wordId}">${datalistOptions}</datalist>
-      <button class="label-add-btn" data-word-id="${wordId}">Add</button>
+      <input type="text" class="label-input" placeholder="Add label..." list="label-suggestions-${hanzi}" data-hanzi="${hanzi}">
+      <datalist id="label-suggestions-${hanzi}">${datalistOptions}</datalist>
+      <button class="label-add-btn" data-hanzi="${hanzi}">Add</button>
     </div>
   </div>`;
 }
@@ -291,29 +291,29 @@ function attachLabelHandlers() {
   feedbackDiv.querySelectorAll('.label-remove').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       const el = e.currentTarget as HTMLElement;
-      const wordId = parseInt(el.dataset.wordId!);
+      const hanzi = el.dataset.hanzi!;
       const label = el.dataset.label!;
-      const result = await removeLabel(wordId, label);
-      wordLabels.set(wordId, result.labels);
-      updateLabelsDisplay(wordId);
+      const result = await removeLabel(hanzi, label);
+      wordLabels.set(hanzi, result.labels);
+      updateLabelsDisplay(hanzi);
     });
   });
 
   // Add label handlers
   feedbackDiv.querySelectorAll('.label-add-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      const wordId = parseInt((btn as HTMLElement).dataset.wordId!);
-      const input = feedbackDiv.querySelector(`.label-input[data-word-id="${wordId}"]`) as HTMLInputElement;
+      const hanzi = (btn as HTMLElement).dataset.hanzi!;
+      const input = feedbackDiv.querySelector(`.label-input[data-hanzi="${hanzi}"]`) as HTMLInputElement;
       const label = input.value.trim();
       if (!label) return;
-      const result = await addLabel(wordId, label);
-      wordLabels.set(wordId, result.labels);
+      const result = await addLabel(hanzi, label);
+      wordLabels.set(hanzi, result.labels);
       if (!allKnownLabels.includes(label)) {
         allKnownLabels.push(label);
         allKnownLabels.sort();
       }
       input.value = '';
-      updateLabelsDisplay(wordId);
+      updateLabelsDisplay(hanzi);
     });
   });
 
@@ -323,18 +323,18 @@ function attachLabelHandlers() {
       if ((e as KeyboardEvent).key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
-        const wordId = (input as HTMLElement).dataset.wordId!;
-        const btn = feedbackDiv.querySelector(`.label-add-btn[data-word-id="${wordId}"]`) as HTMLButtonElement;
+        const hanzi = (input as HTMLElement).dataset.hanzi!;
+        const btn = feedbackDiv.querySelector(`.label-add-btn[data-hanzi="${hanzi}"]`) as HTMLButtonElement;
         btn?.click();
       }
     });
   });
 }
 
-function updateLabelsDisplay(wordId: number) {
+function updateLabelsDisplay(hanzi: string) {
   const section = feedbackDiv.querySelector('.labels-section');
   if (section) {
-    section.outerHTML = renderLabelsUI(wordId);
+    section.outerHTML = renderLabelsUI(hanzi);
     attachLabelHandlers();
   }
 }
@@ -348,7 +348,7 @@ async function handleSubmit() {
 
   try {
     submitBtn.disabled = true;
-    const response = await submitAnswer(currentMode, question.word.id, answer);
+    const response = await submitAnswer(currentMode, question.word.hanzi, answer);
 
     // Handle synonym case - valid word but not the target
     if (response.synonym) {
@@ -372,8 +372,8 @@ async function handleSubmit() {
     }
 
     // Track first attempt for bucket calculation
-    if (!results.has(question.word.id)) {
-      results.set(question.word.id, response.correct);
+    if (!results.has(question.word.hanzi)) {
+      results.set(question.word.hanzi, response.correct);
     }
     // Track for iteration retry (always, if wrong)
     if (!response.correct) {
@@ -385,9 +385,9 @@ async function handleSubmit() {
     feedbackDiv.classList.add(response.correct ? 'correct' : 'incorrect');
 
     if (response.correct) {
-      feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.id)}`;
+      feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.hanzi)}`;
     } else {
-      feedbackDiv.innerHTML = `✗ Incorrect<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.id)}`;
+      feedbackDiv.innerHTML = `✗ Incorrect<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.hanzi)}`;
     }
     attachLabelHandlers();
 
@@ -410,8 +410,8 @@ function handleSkip() {
   const question = questions[currentIndex];
 
   // Track first attempt for bucket calculation
-  if (!results.has(question.word.id)) {
-    results.set(question.word.id, false);
+  if (!results.has(question.word.hanzi)) {
+    results.set(question.word.hanzi, false);
   }
   // Track for iteration retry
   incorrectThisRound.push(question);
@@ -419,7 +419,7 @@ function handleSkip() {
   // Show the correct answer
   feedbackDiv.classList.remove('hidden', 'correct', 'incorrect');
   feedbackDiv.classList.add('incorrect');
-  feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.id)}`;
+  feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.hanzi)}`;
   attachLabelHandlers();
 
   // Play word pronunciation (auto)
@@ -455,8 +455,8 @@ function handleNext() {
 // Finish practice session
 async function finishPractice() {
   try {
-    const resultArray = Array.from(results.entries()).map(([wordId, correctFirstTry]) => ({
-      wordId,
+    const resultArray = Array.from(results.entries()).map(([hanzi, correctFirstTry]) => ({
+      hanzi,
       correctFirstTry,
     }));
 
@@ -474,7 +474,7 @@ async function finishPractice() {
     // Show mistakes
     const mistakes = resultArray
       .filter((r) => !r.correctFirstTry)
-      .map((r) => questions.find((q) => q.word.id === r.wordId)!)
+      .map((r) => questions.find((q) => q.word.hanzi === r.hanzi)!)
       .filter(Boolean);
 
     if (mistakes.length > 0) {

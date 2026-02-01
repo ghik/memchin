@@ -24,8 +24,8 @@ export function calculateNextEligible(bucket: number): string {
   return nextEligible.toISOString();
 }
 
-export function updateProgress(wordId: number, mode: PracticeMode, correct: boolean): void {
-  const currentProgress = getProgress(wordId, mode);
+export function updateProgress(hanzi: string, mode: PracticeMode, correct: boolean): void {
+  const currentProgress = getProgress(hanzi, mode);
   const currentBucket = currentProgress?.bucket ?? 0;
 
   let newBucket: number;
@@ -36,5 +36,5 @@ export function updateProgress(wordId: number, mode: PracticeMode, correct: bool
   }
 
   const nextEligible = calculateNextEligible(newBucket);
-  upsertProgress(wordId, mode, newBucket, nextEligible);
+  upsertProgress(hanzi, mode, newBucket, nextEligible);
 }

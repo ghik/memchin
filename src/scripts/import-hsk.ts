@@ -1,9 +1,32 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { initDb, insertWords } from '../server/db.js';
 import { splitPinyin } from '../server/services/pinyin.js';
 import { generateSpeech } from '../server/services/tts.js';
 import type { Example } from '../shared/types.js';
 import { generateExamples } from './generate-examples.js';
-import { loadFrequencyData } from './migrate.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+function loadFrequencyData(): Map<string, number> {
+  const freqPath = path.join(__dirname, '../../internet-zh.num.txt');
+  const hanziToRank = new Map<string, number>();
+
+  if (fs.existsSync(freqPath)) {
+    const data = fs.readFileSync(freqPath, 'utf-8');
+    for (const line of data.split('\n')) {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length >= 3) {
+        const rank = parseInt(parts[0]);
+        const hanzi = parts[2];
+        hanziToRank.set(hanzi, rank);
+      }
+    }
+  }
+
+  return hanziToRank;
+}
 
 const frequencyData = loadFrequencyData();
 

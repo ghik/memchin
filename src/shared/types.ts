@@ -11,7 +11,6 @@ export interface CharacterBreakdown {
 }
 
 export interface Word {
-  id: number;
   hanzi: string;
   pinyin: string;
   english: string[];
@@ -27,7 +26,7 @@ export type PracticeMode = 'hanzi2pinyin' | 'hanzi2english' | 'english2hanzi' | 
 
 export interface Progress {
   id: number;
-  wordId: number;
+  hanzi: string;
   mode: PracticeMode;
   bucket: number;
   lastPracticed: string | null;
@@ -54,7 +53,7 @@ export interface StartResponse {
 
 export interface AnswerRequest {
   mode: PracticeMode;
-  wordId: number;
+  hanzi: string;
   answer: string;
 }
 
@@ -66,7 +65,7 @@ export interface AnswerResponse {
 
 export interface CompleteRequest {
   mode: PracticeMode;
-  results: Array<{ wordId: number; correctFirstTry: boolean }>;
+  results: Array<{ hanzi: string; correctFirstTry: boolean }>;
 }
 
 export interface CompleteResponse {

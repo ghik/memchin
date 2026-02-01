@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAllWords, getWordById, getWordCount, getLabelsForWord, addLabelToWord, removeLabelFromWord, getAllLabels, saveDb } from '../db.js';
+import { getAllWords, getWordByHanzi, getWordCount, getLabelsForWord, addLabelToWord, removeLabelFromWord, getAllLabels, saveDb } from '../db.js';
 
 const router = Router();
 
@@ -13,18 +13,18 @@ router.get('/count', (req, res) => {
   res.json({ count });
 });
 
-router.get('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const word = getWordById(id);
+router.get('/:hanzi', (req, res) => {
+  const hanzi = decodeURIComponent(req.params.hanzi);
+  const word = getWordByHanzi(hanzi);
   if (!word) {
     return res.status(404).json({ error: 'Word not found' });
   }
   res.json(word);
 });
 
-router.post('/:id/labels', (req, res) => {
-  const id = parseInt(req.params.id);
-  const word = getWordById(id);
+router.post('/:hanzi/labels', (req, res) => {
+  const hanzi = decodeURIComponent(req.params.hanzi);
+  const word = getWordByHanzi(hanzi);
   if (!word) {
     return res.status(404).json({ error: 'Word not found' });
   }
@@ -32,20 +32,20 @@ router.post('/:id/labels', (req, res) => {
   if (!label || typeof label !== 'string') {
     return res.status(400).json({ error: 'label is required' });
   }
-  addLabelToWord(id, label.trim());
+  addLabelToWord(hanzi, label.trim());
   saveDb();
-  res.json({ labels: getLabelsForWord(id) });
+  res.json({ labels: getLabelsForWord(hanzi) });
 });
 
-router.delete('/:id/labels/:label', (req, res) => {
-  const id = parseInt(req.params.id);
-  const word = getWordById(id);
+router.delete('/:hanzi/labels/:label', (req, res) => {
+  const hanzi = decodeURIComponent(req.params.hanzi);
+  const word = getWordByHanzi(hanzi);
   if (!word) {
     return res.status(404).json({ error: 'Word not found' });
   }
-  removeLabelFromWord(id, req.params.label);
+  removeLabelFromWord(hanzi, req.params.label);
   saveDb();
-  res.json({ labels: getLabelsForWord(id) });
+  res.json({ labels: getLabelsForWord(hanzi) });
 });
 
 export default router;
