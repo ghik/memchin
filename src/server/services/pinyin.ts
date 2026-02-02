@@ -68,7 +68,7 @@ export function splitPinyin(pinyin: string): string {
 }
 
 export function toNumberedPinyin(pinyin: string): string {
-  const syllables = pinyin.toLowerCase().split(/\s+/);
+  const syllables = splitPinyin(pinyin.toLowerCase()).split(/\s+/);
   return syllables
     .map((syllable) => {
       let tone = 5; // neutral tone

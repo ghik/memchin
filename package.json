@@ -8,6 +8,7 @@
     "dev:client": "vite",
     "build": "tsc && vite build",
     "import-hsk": "tsx src/scripts/import-hsk.ts",
+    "hsk-to-json": "tsx src/scripts/hsk-to-json.ts",
     "migrate-hanzi-pk": "tsx src/scripts/migrate-hanzi-pk.ts",
     "regenerate-examples": "tsx src/scripts/regenerate-examples.ts",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\"",

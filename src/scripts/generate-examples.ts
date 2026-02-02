@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { splitPinyin } from '../server/services/pinyin.js';
 import type { Example } from '../shared/types.js';
 
 const openai = new OpenAI();
@@ -62,14 +61,8 @@ ${wordList}`;
     try {
       const parsed: ExampleResponse[] = JSON.parse(jsonText);
       const result = new Map<string, Example[]>();
-
       for (const item of parsed) {
-        // Ensure example pinyin is properly split into syllables
-        const examples = item.examples.map((ex) => ({
-          ...ex,
-          pinyin: splitPinyin(ex.pinyin),
-        }));
-        result.set(item.hanzi, examples);
+        result.set(item.hanzi, item.examples);
       }
 
       return result;

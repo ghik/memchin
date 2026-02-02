@@ -280,7 +280,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 27
   },
@@ -569,7 +570,9 @@
     "hanzi": "两",
     "pinyin": "liǎng",
     "english": [
-      "two (of something)"
+      "two (of something)",
+      "two",
+      "2"
     ],
     "hskLevel": 2,
     "categories": [
@@ -622,7 +625,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 62
   },
@@ -724,11 +728,13 @@
     "english": [
       "point",
       "dot",
-      "spot"
+      "spot",
+      "to ignite"
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 73
   },
@@ -752,9 +758,10 @@
       "day",
       "Japan"
     ],
-    "hskLevel": 2,
+    "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 79
   },
@@ -911,11 +918,13 @@
     "hanzi": "时候",
     "pinyin": "shíhou",
     "english": [
-      "time"
+      "time",
+      "time (when)"
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 95
   },
@@ -923,11 +932,13 @@
     "hanzi": "现在",
     "pinyin": "xiànzài",
     "english": [
-      "now"
+      "now",
+      "nowadays"
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 97
   },
@@ -1080,7 +1091,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 113
   },
@@ -1227,7 +1239,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "verb"
+      "verb",
+      "summer"
     ],
     "frequencyRank": 125
   },
@@ -1317,7 +1330,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 135
   },
@@ -1885,7 +1899,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 209
   },
@@ -2023,7 +2038,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "office"
     ],
     "frequencyRank": 222
   },
@@ -2084,7 +2100,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 228
   },
@@ -2217,6 +2234,17 @@
     "frequencyRank": 241
   },
   {
+    "hanzi": "手",
+    "pinyin": "shǒu",
+    "english": [
+      "hand"
+    ],
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 242
+  },
+  {
     "hanzi": "告诉",
     "pinyin": "gàosu",
     "english": [
@@ -2262,7 +2290,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 247
   },
@@ -2274,7 +2303,9 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "careers",
+      "education"
     ],
     "frequencyRank": 248
   },
@@ -2287,7 +2318,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "verb"
+      "verb",
+      "education"
     ],
     "frequencyRank": 249
   },
@@ -2491,7 +2523,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 273
   },
@@ -2598,6 +2631,19 @@
     "frequencyRank": 290
   },
   {
+    "hanzi": "头",
+    "pinyin": "tóu",
+    "english": [
+      "head",
+      "boss",
+      "[measure word for large animals]"
+    ],
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 293
+  },
+  {
     "hanzi": "正",
     "pinyin": "zhèng",
     "english": [
@@ -2655,7 +2701,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "beverage"
     ],
     "frequencyRank": 301
   },
@@ -2690,11 +2737,14 @@
     "hanzi": "同学",
     "pinyin": "tóngxué",
     "english": [
-      "shoolmate"
+      "shoolmate",
+      "classmate"
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "education",
+      "shenfenguanxi"
     ],
     "frequencyRank": 304
   },
@@ -2771,7 +2821,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 312
   },
@@ -2887,7 +2938,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "flower"
     ],
     "frequencyRank": 321
   },
@@ -3047,7 +3099,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "verb"
+      "verb",
+      "time"
     ],
     "frequencyRank": 338
   },
@@ -3072,9 +3125,21 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 341
+  },
+  {
+    "hanzi": "大学",
+    "pinyin": "dàxué",
+    "english": [
+      "university"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 343
   },
   {
     "hanzi": "主要",
@@ -3135,7 +3200,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "sexual identity"
     ],
     "frequencyRank": 348
   },
@@ -3324,7 +3390,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 368
   },
@@ -3513,7 +3580,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 395
   },
@@ -3765,7 +3833,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 426
   },
@@ -3778,7 +3847,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 427
   },
@@ -3787,11 +3857,13 @@
     "pinyin": "wán",
     "english": [
       "to play (with)",
-      "to have fun"
+      "to have fun",
+      "to play"
     ],
-    "hskLevel": 2,
+    "hskLevel": 1,
     "categories": [
-      "verb"
+      "verb",
+      "video games"
     ],
     "frequencyRank": 428
   },
@@ -3917,7 +3989,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 442
   },
@@ -3965,7 +4038,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 447
   },
@@ -3992,7 +4066,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "verb"
+      "verb",
+      "summer"
     ],
     "frequencyRank": 451
   },
@@ -4275,7 +4350,8 @@
     "hskLevel": 4,
     "categories": [
       "adjective",
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 481
   },
@@ -4336,7 +4412,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 494
   },
@@ -4586,7 +4663,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 526
   },
@@ -4845,7 +4923,8 @@
     "hskLevel": 4,
     "categories": [
       "adverb",
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 560
   },
@@ -4947,7 +5026,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 571
   },
@@ -5096,11 +5176,13 @@
     "hanzi": "下午",
     "pinyin": "xiàwǔ",
     "english": [
-      "afternoon"
+      "afternoon",
+      "p.m."
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 593
   },
@@ -5197,11 +5279,13 @@
     "hanzi": "网络",
     "pinyin": "wǎngluò",
     "english": [
-      "internet"
+      "internet",
+      "network"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 608
   },
@@ -5333,7 +5417,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "sexual identity"
     ],
     "frequencyRank": 628
   },
@@ -5432,7 +5517,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 648
   },
@@ -5534,7 +5620,9 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "careers",
+      "shenfenguanxi"
     ],
     "frequencyRank": 658
   },
@@ -5762,7 +5850,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "covid-19"
     ],
     "frequencyRank": 684
   },
@@ -5822,7 +5911,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "verb"
+      "verb",
+      "education"
     ],
     "frequencyRank": 693
   },
@@ -6150,7 +6240,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 732
   },
@@ -6201,7 +6292,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 739
   },
@@ -6221,7 +6313,8 @@
     "hanzi": "百",
     "pinyin": "bǎi",
     "english": [
-      "hundred"
+      "hundred",
+      "bǎi"
     ],
     "hskLevel": 2,
     "categories": [
@@ -6310,7 +6403,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "coffee"
     ],
     "frequencyRank": 751
   },
@@ -6334,7 +6428,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 757
   },
@@ -6383,7 +6478,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 764
   },
@@ -6407,7 +6503,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 767
   },
@@ -6548,7 +6645,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 782
   },
@@ -6562,7 +6660,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "vegetables"
     ],
     "frequencyRank": 784
   },
@@ -6628,7 +6727,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "covid-19"
     ],
     "frequencyRank": 794
   },
@@ -6666,7 +6766,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 799
   },
@@ -6755,7 +6856,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 809
   },
@@ -6792,7 +6894,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "office"
     ],
     "frequencyRank": 820
   },
@@ -6931,7 +7034,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 833
   },
@@ -6985,7 +7089,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 838
   },
@@ -7221,7 +7326,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 872
   },
@@ -7270,7 +7376,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 877
   },
@@ -7294,7 +7401,10 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers",
+      "office",
+      "shenfenguanxi"
     ],
     "frequencyRank": 885
   },
@@ -7552,7 +7662,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 915
   },
@@ -7602,7 +7713,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 919
   },
@@ -7853,7 +7965,10 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "adjective"
+      "adjective",
+      "coffee",
+      "summer",
+      "weather"
     ],
     "frequencyRank": 953
   },
@@ -8059,7 +8174,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 974
   },
@@ -8167,7 +8283,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "weather"
     ],
     "frequencyRank": 991
   },
@@ -8181,7 +8298,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "summer"
     ],
     "frequencyRank": 995
   },
@@ -8217,7 +8335,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "office"
     ],
     "frequencyRank": 1005
   },
@@ -8393,7 +8512,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 1026
   },
@@ -8437,6 +8557,19 @@
     "frequencyRank": 1029
   },
   {
+    "hanzi": "同志",
+    "pinyin": "tóngzhì",
+    "english": [
+      "comrade"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "sexual identity",
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 1030
+  },
+  {
     "hanzi": "咱们",
     "pinyin": "zánmen",
     "english": [
@@ -8459,7 +8592,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "video games"
     ],
     "frequencyRank": 1033
   },
@@ -8718,12 +8852,15 @@
     "english": [
       "translation",
       "translator",
-      "to translate"
+      "to translate",
+      "translate",
+      "interpret"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "careers"
     ],
     "frequencyRank": 1072
   },
@@ -8885,7 +9022,9 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "adjective"
+      "adjective",
+      "summer",
+      "weather"
     ],
     "frequencyRank": 1099
   },
@@ -9050,7 +9189,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 1122
   },
@@ -9062,7 +9202,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 1124
   },
@@ -9123,7 +9264,9 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "careers",
+      "car-related"
     ],
     "frequencyRank": 1131
   },
@@ -9185,7 +9328,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 1138
   },
@@ -9266,6 +9410,18 @@
     "frequencyRank": 1148
   },
   {
+    "hanzi": "肉",
+    "pinyin": "ròu",
+    "english": [
+      "meat",
+      "flesh"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 1149
+  },
+  {
     "hanzi": "功能",
     "pinyin": "gōngnéng",
     "english": [
@@ -9285,7 +9441,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "adjective"
+      "adjective",
+      "weather"
     ],
     "frequencyRank": 1152
   },
@@ -9297,7 +9454,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "weather"
     ],
     "frequencyRank": 1155
   },
@@ -9499,7 +9657,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 1173
   },
@@ -9596,6 +9755,17 @@
     "frequencyRank": 1184
   },
   {
+    "hanzi": "电子",
+    "pinyin": "diànzǐ",
+    "english": [
+      "electronic;electron"
+    ],
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 1187
+  },
+  {
     "hanzi": "交通",
     "pinyin": "jiāotōng",
     "english": [
@@ -9651,11 +9821,13 @@
     "pinyin": "rènwu",
     "english": [
       "task",
-      "assignment"
+      "assignment",
+      "mission"
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 1197
   },
@@ -9699,11 +9871,13 @@
     "hanzi": "上午",
     "pinyin": "shàngwǔ",
     "english": [
-      "morning"
+      "morning",
+      "a.m."
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 1201
   },
@@ -9719,7 +9893,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "sports"
     ],
     "frequencyRank": 1202
   },
@@ -9895,7 +10070,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1226
   },
@@ -9960,7 +10136,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1234
   },
@@ -10158,7 +10335,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "office"
     ],
     "frequencyRank": 1256
   },
@@ -10316,7 +10494,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 1287
   },
@@ -10377,7 +10556,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "tableware"
     ],
     "frequencyRank": 1296
   },
@@ -10401,7 +10581,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 1303
   },
@@ -10461,7 +10642,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 1311
   },
@@ -10899,7 +11081,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 1374
   },
@@ -10987,7 +11170,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 1384
   },
@@ -11027,7 +11211,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "beverage"
     ],
     "frequencyRank": 1391
   },
@@ -11142,7 +11327,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 1410
   },
@@ -11172,6 +11358,17 @@
       "adjective"
     ],
     "frequencyRank": 1413
+  },
+  {
+    "hanzi": "小学",
+    "pinyin": "xiǎoxué",
+    "english": [
+      "primary school"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 1414
   },
   {
     "hanzi": "年龄",
@@ -11247,6 +11444,17 @@
       "noun"
     ],
     "frequencyRank": 1422
+  },
+  {
+    "hanzi": "大学生",
+    "pinyin": "dàxuéshēng",
+    "english": [
+      "university student/college student"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 1423
   },
   {
     "hanzi": "便宜",
@@ -11575,6 +11783,19 @@
     "frequencyRank": 1483
   },
   {
+    "hanzi": "客户",
+    "pinyin": "kèhù",
+    "english": [
+      "client"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "office",
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 1485
+  },
+  {
     "hanzi": "热情",
     "pinyin": "rèqíng",
     "english": [
@@ -11700,6 +11921,17 @@
     "frequencyRank": 1502
   },
   {
+    "hanzi": "女性",
+    "pinyin": "nǚxìng",
+    "english": [
+      "female"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 1503
+  },
+  {
     "hanzi": "奶奶",
     "pinyin": "nǎinai",
     "english": [
@@ -11733,7 +11965,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 1509
   },
@@ -11746,7 +11979,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "covid-19"
     ],
     "frequencyRank": 1510
   },
@@ -11946,7 +12180,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "national leader"
     ],
     "frequencyRank": 1541
   },
@@ -11971,7 +12206,9 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "office",
+      "shenfenguanxi"
     ],
     "frequencyRank": 1544
   },
@@ -12026,7 +12263,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 1554
   },
@@ -12079,7 +12317,9 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "allergy",
+      "education"
     ],
     "frequencyRank": 1559
   },
@@ -12091,7 +12331,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 1560
   },
@@ -12141,7 +12382,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "office"
     ],
     "frequencyRank": 1564
   },
@@ -12281,7 +12523,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "national leader"
     ],
     "frequencyRank": 1585
   },
@@ -12464,6 +12707,17 @@
     "frequencyRank": 1612
   },
   {
+    "hanzi": "中学",
+    "pinyin": "zhōngxué",
+    "english": [
+      "middle school"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 1613
+  },
+  {
     "hanzi": "至今",
     "pinyin": "zhìjīn",
     "english": [
@@ -12640,7 +12894,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "covid-19"
     ],
     "frequencyRank": 1635
   },
@@ -12679,7 +12934,9 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "beverage",
+      "coffee"
     ],
     "frequencyRank": 1638
   },
@@ -12728,7 +12985,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1645
   },
@@ -12754,7 +13012,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1650
   },
@@ -12771,6 +13030,18 @@
       "verb"
     ],
     "frequencyRank": 1654
+  },
+  {
+    "hanzi": "学院",
+    "pinyin": "xuéyuàn",
+    "english": [
+      "college",
+      "educational institute"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 1655
   },
   {
     "hanzi": "设备",
@@ -12805,7 +13076,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1663
   },
@@ -12929,6 +13201,20 @@
     "frequencyRank": 1692
   },
   {
+    "hanzi": "冰",
+    "pinyin": "bīng",
+    "english": [
+      "ice",
+      "iced",
+      "icy"
+    ],
+    "hskLevel": 3,
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 1694
+  },
+  {
     "hanzi": "追",
     "pinyin": "zhuī",
     "english": [
@@ -12973,7 +13259,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "car-related"
     ],
     "frequencyRank": 1700
   },
@@ -13011,7 +13298,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1708
   },
@@ -13099,7 +13387,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1719
   },
@@ -13125,7 +13414,8 @@
     "hskLevel": 3,
     "categories": [
       "measure word",
-      "noun"
+      "noun",
+      "tableware"
     ],
     "frequencyRank": 1724
   },
@@ -13149,7 +13439,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "summer"
     ],
     "frequencyRank": 1729
   },
@@ -13268,6 +13559,17 @@
     "frequencyRank": 1746
   },
   {
+    "hanzi": "高中",
+    "pinyin": "gāozhōng",
+    "english": [
+      "senior high school"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 1748
+  },
+  {
     "hanzi": "体育",
     "pinyin": "tǐyù",
     "english": [
@@ -13276,7 +13578,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1750
   },
@@ -13296,11 +13599,13 @@
     "hanzi": "作家",
     "pinyin": "zuòjiā",
     "english": [
-      "writer"
+      "writer",
+      "author"
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 1754
   },
@@ -13466,7 +13771,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1777
   },
@@ -13626,7 +13932,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 1802
   },
@@ -13687,7 +13994,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "sexual identity"
     ],
     "frequencyRank": 1815
   },
@@ -13741,7 +14049,9 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "careers",
+      "education"
     ],
     "frequencyRank": 1822
   },
@@ -13753,7 +14063,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 1824
   },
@@ -14003,6 +14314,18 @@
     "frequencyRank": 1869
   },
   {
+    "hanzi": "书记",
+    "pinyin": "shūji",
+    "english": [
+      "secretary (chief official of a branch of a socialist or communist party)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 1872
+  },
+  {
     "hanzi": "恨",
     "pinyin": "hèn",
     "english": [
@@ -14022,7 +14345,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1875
   },
@@ -14081,11 +14405,13 @@
     "pinyin": "duìxiàng",
     "english": [
       "object",
-      "(romantic) partner"
+      "(romantic) partner",
+      "target;object;partner;boyfriend;girlfriend;CL:個"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 1885
   },
@@ -14108,9 +14434,10 @@
     "english": [
       "second (unit of time)"
     ],
-    "hskLevel": 4,
+    "hskLevel": 3,
     "categories": [
-      "measure word"
+      "measure word",
+      "time"
     ],
     "frequencyRank": 1890
   },
@@ -14258,6 +14585,17 @@
     "frequencyRank": 1911
   },
   {
+    "hanzi": "游客",
+    "pinyin": "yóukè",
+    "english": [
+      "tourist"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 1912
+  },
+  {
     "hanzi": "指导",
     "pinyin": "zhǐdǎo",
     "english": [
@@ -14360,6 +14698,17 @@
     "frequencyRank": 1928
   },
   {
+    "hanzi": "语文",
+    "pinyin": "yǔwén",
+    "english": [
+      "literature and language"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 1929
+  },
+  {
     "hanzi": "照顾",
     "pinyin": "zhàogu",
     "english": [
@@ -14424,6 +14773,18 @@
     "frequencyRank": 1940
   },
   {
+    "hanzi": "夫人",
+    "pinyin": "fūren",
+    "english": [
+      "lady"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 1944
+  },
+  {
     "hanzi": "主人",
     "pinyin": "zhǔrén",
     "english": [
@@ -14432,7 +14793,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 1946
   },
@@ -14494,7 +14856,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 1967
   },
@@ -14506,7 +14869,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "car-related"
     ],
     "frequencyRank": 1968
   },
@@ -14594,9 +14958,22 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "christmas"
     ],
     "frequencyRank": 1980
+  },
+  {
+    "hanzi": "成员",
+    "pinyin": "chéngyuán",
+    "english": [
+      "member"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 1981
   },
   {
     "hanzi": "退",
@@ -14631,7 +15008,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 1990
   },
@@ -14768,7 +15146,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 2015
   },
@@ -14781,7 +15160,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 2016
   },
@@ -14801,11 +15181,13 @@
     "hanzi": "流行",
     "pinyin": "liúxíng",
     "english": [
-      "to be popular"
+      "to be popular",
+      "popular"
     ],
     "hskLevel": 4,
     "categories": [
-      "verb"
+      "verb",
+      "music type"
     ],
     "frequencyRank": 2023
   },
@@ -14879,7 +15261,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2046
   },
@@ -14935,6 +15318,29 @@
     "frequencyRank": 2061
   },
   {
+    "hanzi": "夏天",
+    "pinyin": "xiàtiān",
+    "english": [
+      "summer"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 2064
+  },
+  {
+    "hanzi": "酒店",
+    "pinyin": "jiǔdiàn",
+    "english": [
+      "hotel",
+      "restaurant"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 2066
+  },
+  {
     "hanzi": "鼓励",
     "pinyin": "gǔlì",
     "english": [
@@ -14978,12 +15384,14 @@
     "pinyin": "shībài",
     "english": [
       "failure",
-      "to fail"
+      "to fail",
+      "defeat"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "video games"
     ],
     "frequencyRank": 2080
   },
@@ -15045,7 +15453,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 2088
   },
@@ -15072,6 +15481,17 @@
       "noun"
     ],
     "frequencyRank": 2092
+  },
+  {
+    "hanzi": "研究生",
+    "pinyin": "yánjiūshēng",
+    "english": [
+      "postgraduate student"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 2097
   },
   {
     "hanzi": "命运",
@@ -15171,7 +15591,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2111
   },
@@ -15387,7 +15808,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 2161
   },
@@ -15511,7 +15933,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2189
   },
@@ -15523,7 +15946,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 2192
   },
@@ -15572,7 +15996,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2202
   },
@@ -15597,7 +16022,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 2209
   },
@@ -15735,7 +16161,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "weather"
     ],
     "frequencyRank": 2230
   },
@@ -15942,14 +16369,28 @@
     "frequencyRank": 2269
   },
   {
+    "hanzi": "十二",
+    "pinyin": "shí'èr",
+    "english": [
+      "twelve",
+      "12"
+    ],
+    "categories": [
+      "numeral"
+    ],
+    "frequencyRank": 2270
+  },
+  {
     "hanzi": "角色",
     "pinyin": "juésè",
     "english": [
-      "role (in a story)"
+      "role (in a story)",
+      "character"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 2272
   },
@@ -16127,6 +16568,17 @@
     "frequencyRank": 2302
   },
   {
+    "hanzi": "外语",
+    "pinyin": "wàiyǔ",
+    "english": [
+      "foreign language"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 2305
+  },
+  {
     "hanzi": "自动",
     "pinyin": "zìdòng",
     "english": [
@@ -16208,7 +16660,10 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "alcohol",
+      "beverage",
+      "summer"
     ],
     "frequencyRank": 2319
   },
@@ -16321,7 +16776,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "video games"
     ],
     "frequencyRank": 2341
   },
@@ -16463,7 +16919,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "alcohol"
     ],
     "frequencyRank": 2374
   },
@@ -16553,7 +17010,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2385
   },
@@ -16619,7 +17077,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 2406
   },
@@ -16767,7 +17226,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "car-related"
     ],
     "frequencyRank": 2437
   },
@@ -16914,7 +17374,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 2466
   },
@@ -16951,7 +17412,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 2477
   },
@@ -16966,6 +17428,18 @@
       "verb"
     ],
     "frequencyRank": 2481
+  },
+  {
+    "hanzi": "足球",
+    "pinyin": "zúqiú",
+    "english": [
+      "football"
+    ],
+    "hskLevel": 2,
+    "categories": [
+      "sports"
+    ],
+    "frequencyRank": 2482
   },
   {
     "hanzi": "暗",
@@ -17140,7 +17614,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "allergy"
     ],
     "frequencyRank": 2511
   },
@@ -17164,7 +17639,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 2514
   },
@@ -17568,7 +18044,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "car-related"
     ],
     "frequencyRank": 2581
   },
@@ -17716,7 +18193,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 2616
   },
@@ -17805,7 +18283,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2637
   },
@@ -17844,7 +18323,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 2646
   },
@@ -17877,11 +18357,13 @@
     "hanzi": "阴",
     "pinyin": "yīn",
     "english": [
-      "overcast (in 阴天)"
+      "overcast (in 阴天)",
+      "overcast"
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "weather"
     ],
     "frequencyRank": 2663
   },
@@ -17920,7 +18402,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2668
   },
@@ -17932,7 +18415,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 2672
   },
@@ -17944,7 +18428,9 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers",
+      "national leader"
     ],
     "frequencyRank": 2673
   },
@@ -18018,7 +18504,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 2686
   },
@@ -18054,7 +18541,9 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "careers",
+      "covid-19"
     ],
     "frequencyRank": 2692
   },
@@ -18221,7 +18710,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "car-related"
     ],
     "frequencyRank": 2724
   },
@@ -18322,6 +18812,18 @@
       "verb"
     ],
     "frequencyRank": 2736
+  },
+  {
+    "hanzi": "学位",
+    "pinyin": "xuéwèi",
+    "english": [
+      "academic degree/place in school"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 2747
   },
   {
     "hanzi": "安装",
@@ -18482,6 +18984,17 @@
     "frequencyRank": 2797
   },
   {
+    "hanzi": "十一",
+    "pinyin": "shíyī",
+    "english": [
+      "eleven"
+    ],
+    "categories": [
+      "numeral"
+    ],
+    "frequencyRank": 2798
+  },
+  {
     "hanzi": "对待",
     "pinyin": "duìdài",
     "english": [
@@ -18586,7 +19099,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 2825
   },
@@ -18612,7 +19126,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2829
   },
@@ -19064,7 +19579,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 2938
   },
@@ -19124,7 +19640,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2947
   },
@@ -19202,6 +19719,18 @@
     "frequencyRank": 2962
   },
   {
+    "hanzi": "夫妇",
+    "pinyin": "fūfù",
+    "english": [
+      "a (married) couple"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 2963
+  },
+  {
     "hanzi": "冠军",
     "pinyin": "guànjūn",
     "english": [
@@ -19212,6 +19741,18 @@
       "noun"
     ],
     "frequencyRank": 2969
+  },
+  {
+    "hanzi": "面试",
+    "pinyin": "miànshì",
+    "english": [
+      "(job) interview",
+      "to interview (for a job)"
+    ],
+    "categories": [
+      "office"
+    ],
+    "frequencyRank": 2973
   },
   {
     "hanzi": "分配",
@@ -19234,7 +19775,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 2980
   },
@@ -19333,7 +19875,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 3003
   },
@@ -19349,6 +19892,18 @@
       "verb"
     ],
     "frequencyRank": 3006
+  },
+  {
+    "hanzi": "将军",
+    "pinyin": "jiāngjūn",
+    "english": [
+      "general (in the military)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 3008
   },
   {
     "hanzi": "手续",
@@ -19470,6 +20025,21 @@
       "verb"
     ],
     "frequencyRank": 3039
+  },
+  {
+    "hanzi": "屁股",
+    "pinyin": "pìgu",
+    "english": [
+      "buttocks",
+      "bottom",
+      "butt",
+      "back part"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 3042
   },
   {
     "hanzi": "广泛",
@@ -19717,6 +20287,17 @@
     "frequencyRank": 3124
   },
   {
+    "hanzi": "初中",
+    "pinyin": "chūzhōng",
+    "english": [
+      "junior high school"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 3125
+  },
+  {
     "hanzi": "装修",
     "pinyin": "zhuāngxiū",
     "english": [
@@ -19809,11 +20390,13 @@
     "pinyin": "bǎobèi",
     "english": [
       "treasure",
-      "baby (term of affection)"
+      "baby (term of affection)",
+      "treasured object"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 3161
   },
@@ -20046,7 +20629,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "tableware"
     ],
     "frequencyRank": 3213
   },
@@ -20246,6 +20830,18 @@
     "frequencyRank": 3263
   },
   {
+    "hanzi": "凌晨",
+    "pinyin": "língchén",
+    "english": [
+      "the early hours of the morning"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "time"
+    ],
+    "frequencyRank": 3273
+  },
+  {
     "hanzi": "牛奶",
     "pinyin": "niúnǎi",
     "english": [
@@ -20253,7 +20849,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "beverage"
     ],
     "frequencyRank": 3275
   },
@@ -20268,6 +20865,18 @@
       "verb"
     ],
     "frequencyRank": 3278
+  },
+  {
+    "hanzi": "零",
+    "pinyin": "líng",
+    "english": [
+      "zero"
+    ],
+    "hskLevel": 1,
+    "categories": [
+      "numeral"
+    ],
+    "frequencyRank": 3279
   },
   {
     "hanzi": "善良",
@@ -20302,7 +20911,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 3291
   },
@@ -20343,6 +20953,17 @@
       "noun"
     ],
     "frequencyRank": 3300
+  },
+  {
+    "hanzi": "男性",
+    "pinyin": "nánxìng",
+    "english": [
+      "the male sex;a male"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 3301
   },
   {
     "hanzi": "批准",
@@ -20441,7 +21062,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "go travelling"
     ],
     "frequencyRank": 3340
   },
@@ -20662,7 +21284,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "national leader"
     ],
     "frequencyRank": 3380
   },
@@ -20756,6 +21379,18 @@
     "frequencyRank": 3410
   },
   {
+    "hanzi": "歌手",
+    "pinyin": "gēshǒu",
+    "english": [
+      "singer",
+      "vocalist"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 3416
+  },
+  {
     "hanzi": "完善",
     "pinyin": "wánshàn",
     "english": [
@@ -20776,7 +21411,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 3419
   },
@@ -20941,6 +21577,18 @@
     "frequencyRank": 3476
   },
   {
+    "hanzi": "浑身",
+    "pinyin": "húnshēn",
+    "english": [
+      "all over"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 3479
+  },
+  {
     "hanzi": "平衡",
     "pinyin": "pínghéng",
     "english": [
@@ -20976,7 +21624,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 3486
   },
@@ -21117,6 +21766,17 @@
     "frequencyRank": 3532
   },
   {
+    "hanzi": "科学家",
+    "pinyin": "kēxuéjiā",
+    "english": [
+      "scientist"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 3542
+  },
+  {
     "hanzi": "商务",
     "pinyin": "shāngwù",
     "english": [
@@ -21148,7 +21808,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 3558
   },
@@ -21259,7 +21920,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "verb"
+      "verb",
+      "summer"
     ],
     "frequencyRank": 3588
   },
@@ -21385,7 +22047,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 3613
   },
@@ -21556,6 +22219,18 @@
     "frequencyRank": 3672
   },
   {
+    "hanzi": "嘴唇",
+    "pinyin": "zuǐchún",
+    "english": [
+      "lips"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 3675
+  },
+  {
     "hanzi": "地理",
     "pinyin": "dìlǐ",
     "english": [
@@ -21563,7 +22238,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 3676
   },
@@ -21599,7 +22275,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "national leader"
     ],
     "frequencyRank": 3694
   },
@@ -21678,6 +22355,18 @@
     "frequencyRank": 3707
   },
   {
+    "hanzi": "领袖",
+    "pinyin": "lǐngxiù",
+    "english": [
+      "(prestigious) leader"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 3713
+  },
+  {
     "hanzi": "列车",
     "pinyin": "lièchē",
     "english": [
@@ -21742,6 +22431,17 @@
     "frequencyRank": 3727
   },
   {
+    "hanzi": "策略",
+    "pinyin": "cèlüè",
+    "english": [
+      "strategy"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 3728
+  },
+  {
     "hanzi": "聚会",
     "pinyin": "jùhuì",
     "english": [
@@ -21765,7 +22465,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "summer"
     ],
     "frequencyRank": 3734
   },
@@ -21786,11 +22487,13 @@
     "hanzi": "王子",
     "pinyin": "wángzǐ",
     "english": [
-      "prince"
+      "prince",
+      "prince;son of a king"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "national leader"
     ],
     "frequencyRank": 3740
   },
@@ -21814,7 +22517,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "verb"
+      "verb",
+      "weather"
     ],
     "frequencyRank": 3746
   },
@@ -21826,7 +22530,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 3752
   },
@@ -21855,6 +22560,18 @@
       "verb"
     ],
     "frequencyRank": 3756
+  },
+  {
+    "hanzi": "屏幕",
+    "pinyin": "píngmù",
+    "english": [
+      "screen"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 3758
   },
   {
     "hanzi": "顺便",
@@ -21915,7 +22632,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 3775
   },
@@ -21943,6 +22661,18 @@
       "verb"
     ],
     "frequencyRank": 3780
+  },
+  {
+    "hanzi": "开会",
+    "pinyin": "kāihuì",
+    "english": [
+      "to have a meeting",
+      "to attend a meeting"
+    ],
+    "categories": [
+      "office"
+    ],
+    "frequencyRank": 3782
   },
   {
     "hanzi": "碎",
@@ -22118,7 +22848,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 3822
   },
@@ -22176,6 +22907,17 @@
     "frequencyRank": 3828
   },
   {
+    "hanzi": "玫瑰",
+    "pinyin": "méiguī",
+    "english": [
+      "rugosa rose (shrub) (Rosa rugosa)/rose flower/CL:朵"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 3829
+  },
+  {
     "hanzi": "蹲",
     "pinyin": "dūn",
     "english": [
@@ -22197,7 +22939,8 @@
     "hskLevel": 5,
     "categories": [
       "adjective",
-      "noun"
+      "noun",
+      "sexual identity"
     ],
     "frequencyRank": 3832
   },
@@ -22378,6 +23121,30 @@
     "frequencyRank": 3883
   },
   {
+    "hanzi": "鼓",
+    "pinyin": "gǔ",
+    "english": [
+      "old variant of 鼓"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 3886
+  },
+  {
+    "hanzi": "生物",
+    "pinyin": "shēngwù",
+    "english": [
+      "organism",
+      "living creature"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 3892
+  },
+  {
     "hanzi": "火车站",
     "pinyin": "huǒchēzhàn",
     "english": [
@@ -22409,7 +23176,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 3901
   },
@@ -22520,7 +23288,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "verb"
+      "verb",
+      "sports"
     ],
     "frequencyRank": 3961
   },
@@ -22547,6 +23316,18 @@
       "adjective"
     ],
     "frequencyRank": 3963
+  },
+  {
+    "hanzi": "家属",
+    "pinyin": "jiāshǔ",
+    "english": [
+      "family member"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 3965
   },
   {
     "hanzi": "原谅",
@@ -22600,11 +23381,13 @@
     "hanzi": "傍晚",
     "pinyin": "bàngwǎn",
     "english": [
-      "evening"
+      "evening",
+      "when night falls"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "time"
     ],
     "frequencyRank": 3978
   },
@@ -22731,7 +23514,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 4023
   },
@@ -22796,6 +23580,17 @@
       "adjective"
     ],
     "frequencyRank": 4041
+  },
+  {
+    "hanzi": "景点",
+    "pinyin": "jǐngdiǎn",
+    "english": [
+      "scenic spot"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 4046
   },
   {
     "hanzi": "毛病",
@@ -22890,11 +23685,13 @@
     "hanzi": "嘉宾",
     "pinyin": "jiābīn",
     "english": [
-      "honored guest"
+      "honored guest",
+      "esteemed guest/honored guest/guest (on a show)"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 4102
   },
@@ -22907,7 +23704,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "car-related"
     ],
     "frequencyRank": 4106
   },
@@ -22982,7 +23780,9 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "verb"
+      "verb",
+      "sports",
+      "summer"
     ],
     "frequencyRank": 4120
   },
@@ -23023,6 +23823,18 @@
       "adjective"
     ],
     "frequencyRank": 4135
+  },
+  {
+    "hanzi": "钢琴",
+    "pinyin": "gāngqín",
+    "english": [
+      "piano"
+    ],
+    "hskLevel": 4,
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 4145
   },
   {
     "hanzi": "坚强",
@@ -23102,6 +23914,17 @@
     "frequencyRank": 4182
   },
   {
+    "hanzi": "暑假",
+    "pinyin": "shǔjià",
+    "english": [
+      "summer vacation"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 4183
+  },
+  {
     "hanzi": "叶子",
     "pinyin": "yèzi",
     "english": [
@@ -23117,11 +23940,13 @@
     "hanzi": "病毒",
     "pinyin": "bìngdú",
     "english": [
-      "virus"
+      "virus",
+      "viral"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "covid-19"
     ],
     "frequencyRank": 4188
   },
@@ -23208,7 +24033,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "summer"
     ],
     "frequencyRank": 4219
   },
@@ -23407,6 +24233,17 @@
     "frequencyRank": 4267
   },
   {
+    "hanzi": "身份证",
+    "pinyin": "shēnfènzhèng",
+    "english": [
+      "government ID (all Chinese citizens have one)"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 4271
+  },
+  {
     "hanzi": "佩服",
     "pinyin": "pèifú",
     "english": [
@@ -23445,6 +24282,18 @@
     "frequencyRank": 4281
   },
   {
+    "hanzi": "神经",
+    "pinyin": "shénjīng",
+    "english": [
+      "nerve"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 4282
+  },
+  {
     "hanzi": "拥抱",
     "pinyin": "yōngbào",
     "english": [
@@ -23478,7 +24327,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "go travelling"
     ],
     "frequencyRank": 4292
   },
@@ -23503,7 +24353,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "verb"
+      "verb",
+      "car-related"
     ],
     "frequencyRank": 4314
   },
@@ -23596,6 +24447,17 @@
     "frequencyRank": 4338
   },
   {
+    "hanzi": "乡村",
+    "pinyin": "xiāngcūn",
+    "english": [
+      "countryside"
+    ],
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 4342
+  },
+  {
     "hanzi": "冷静",
     "pinyin": "lěngjìng",
     "english": [
@@ -23640,7 +24502,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "vegetables"
     ],
     "frequencyRank": 4354
   },
@@ -23652,7 +24515,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 4359
   },
@@ -23701,9 +24565,23 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 4386
+  },
+  {
+    "hanzi": "媳妇",
+    "pinyin": "xífù",
+    "english": [
+      "daughter-in-law",
+      "wife"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 4389
   },
   {
     "hanzi": "万一",
@@ -23780,7 +24658,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 4424
   },
@@ -23794,7 +24673,9 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "verb"
+      "verb",
+      "covid-19",
+      "sick"
     ],
     "frequencyRank": 4428
   },
@@ -23873,6 +24754,17 @@
       "adverb"
     ],
     "frequencyRank": 4448
+  },
+  {
+    "hanzi": "升级",
+    "pinyin": "shēngjí",
+    "english": [
+      "to level up"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 4450
   },
   {
     "hanzi": "否认",
@@ -24054,9 +24946,21 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "adjective"
+      "adjective",
+      "music type"
     ],
     "frequencyRank": 4513
+  },
+  {
+    "hanzi": "保安",
+    "pinyin": "bǎoān",
+    "english": [
+      "security guard"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 4516
   },
   {
     "hanzi": "青少年",
@@ -24134,6 +25038,18 @@
     "frequencyRank": 4534
   },
   {
+    "hanzi": "佛教",
+    "pinyin": "Fójiào",
+    "english": [
+      "Buddhism",
+      "Buddhist"
+    ],
+    "categories": [
+      "religion"
+    ],
+    "frequencyRank": 4540
+  },
+  {
     "hanzi": "怀孕",
     "pinyin": "huáiyùn",
     "english": [
@@ -24170,6 +25086,18 @@
       "verb"
     ],
     "frequencyRank": 4558
+  },
+  {
+    "hanzi": "白酒",
+    "pinyin": "báijiǔ",
+    "english": [
+      "traditional Chinese liquor usually distilled from sorghum or maize"
+    ],
+    "categories": [
+      "alcohol",
+      "beverage"
+    ],
+    "frequencyRank": 4563
   },
   {
     "hanzi": "迎接",
@@ -24225,6 +25153,18 @@
     "frequencyRank": 4590
   },
   {
+    "hanzi": "同胞",
+    "pinyin": "tóngbāo",
+    "english": [
+      "born of the same parents"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 4594
+  },
+  {
     "hanzi": "疑问",
     "pinyin": "yíwèn",
     "english": [
@@ -24249,6 +25189,18 @@
       "noun"
     ],
     "frequencyRank": 4599
+  },
+  {
+    "hanzi": "莫名其妙",
+    "pinyin": "mòmíngqímiào",
+    "english": [
+      "baffling"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 4619
   },
   {
     "hanzi": "衬衫",
@@ -24332,6 +25284,17 @@
       "adverb"
     ],
     "frequencyRank": 4645
+  },
+  {
+    "hanzi": "导师",
+    "pinyin": "dǎoshī",
+    "english": [
+      "academic advisor"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 4653
   },
   {
     "hanzi": "甩",
@@ -24456,9 +25419,22 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "verb"
+      "verb",
+      "sports"
     ],
     "frequencyRank": 4714
+  },
+  {
+    "hanzi": "篮球",
+    "pinyin": "lánqiú",
+    "english": [
+      "basketball"
+    ],
+    "hskLevel": 2,
+    "categories": [
+      "sports"
+    ],
+    "frequencyRank": 4716
   },
   {
     "hanzi": "气候",
@@ -24484,6 +25460,17 @@
       "noun"
     ],
     "frequencyRank": 4730
+  },
+  {
+    "hanzi": "工程师",
+    "pinyin": "gōngchéngshī",
+    "english": [
+      "engineer"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 4731
   },
   {
     "hanzi": "辅导",
@@ -24669,7 +25656,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 4859
   },
@@ -24779,7 +25767,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 4898
   },
@@ -24794,6 +25783,17 @@
       "verb"
     ],
     "frequencyRank": 4902
+  },
+  {
+    "hanzi": "模拟",
+    "pinyin": "mónǐ",
+    "english": [
+      "simulation"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 4906
   },
   {
     "hanzi": "蛋糕",
@@ -24839,7 +25839,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "weather"
     ],
     "frequencyRank": 4917
   },
@@ -24879,6 +25880,18 @@
       "verb"
     ],
     "frequencyRank": 4960
+  },
+  {
+    "hanzi": "课题",
+    "pinyin": "kètí",
+    "english": [
+      "task/problem/issue"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 4969
   },
   {
     "hanzi": "规矩",
@@ -25043,6 +26056,30 @@
     "frequencyRank": 5044
   },
   {
+    "hanzi": "股东",
+    "pinyin": "gǔdōng",
+    "english": [
+      "shareholder",
+      "stockholder"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 5045
+  },
+  {
+    "hanzi": "公务员",
+    "pinyin": "gōngwùyuán",
+    "english": [
+      "government employee"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 5046
+  },
+  {
     "hanzi": "华裔",
     "pinyin": "huáyì",
     "english": [
@@ -25062,7 +26099,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "verb"
+      "verb",
+      "office"
     ],
     "frequencyRank": 5063
   },
@@ -25159,6 +26197,18 @@
     "frequencyRank": 5084
   },
   {
+    "hanzi": "顾问",
+    "pinyin": "gùwèn",
+    "english": [
+      "consultant"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 5090
+  },
+  {
     "hanzi": "孙子",
     "pinyin": "sūnzi",
     "english": [
@@ -25214,7 +26264,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 5123
   },
@@ -25243,6 +26294,18 @@
     "frequencyRank": 5130
   },
   {
+    "hanzi": "文献",
+    "pinyin": "wénxiàn",
+    "english": [
+      "document"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 5134
+  },
+  {
     "hanzi": "想念",
     "pinyin": "xiǎngniàn",
     "english": [
@@ -25269,6 +26332,18 @@
     "frequencyRank": 5144
   },
   {
+    "hanzi": "黄昏",
+    "pinyin": "huánghūn",
+    "english": [
+      "dusk"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "time"
+    ],
+    "frequencyRank": 5146
+  },
+  {
     "hanzi": "生病",
     "pinyin": "shēngbìng",
     "english": [
@@ -25277,7 +26352,9 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "verb"
+      "verb",
+      "covid-19",
+      "sick"
     ],
     "frequencyRank": 5154
   },
@@ -25352,7 +26429,9 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "covid-19",
+      "sick"
     ],
     "frequencyRank": 5200
   },
@@ -25377,9 +26456,34 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "music type"
     ],
     "frequencyRank": 5217
+  },
+  {
+    "hanzi": "舌头",
+    "pinyin": "shétou",
+    "english": [
+      "tongue"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 5222
+  },
+  {
+    "hanzi": "上级",
+    "pinyin": "shàngjí",
+    "english": [
+      "higher level"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 5225
   },
   {
     "hanzi": "优点",
@@ -25429,7 +26533,8 @@
     ],
     "hskLevel": 1,
     "categories": [
-      "noun"
+      "noun",
+      "tableware"
     ],
     "frequencyRank": 5257
   },
@@ -25465,7 +26570,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "verb"
+      "verb",
+      "covid-19"
     ],
     "frequencyRank": 5264
   },
@@ -25480,6 +26586,17 @@
       "noun"
     ],
     "frequencyRank": 5268
+  },
+  {
+    "hanzi": "寒冷",
+    "pinyin": "hánlěng",
+    "english": [
+      "cold (climate)"
+    ],
+    "categories": [
+      "weather"
+    ],
+    "frequencyRank": 5294
   },
   {
     "hanzi": "黄河",
@@ -25522,11 +26639,13 @@
     "hanzi": "心脏",
     "pinyin": "xīnzàng",
     "english": [
-      "heart (the organ)"
+      "heart (the organ)",
+      "heart"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 5329
   },
@@ -25538,7 +26657,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 5332
   },
@@ -25664,6 +26784,17 @@
     "frequencyRank": 5394
   },
   {
+    "hanzi": "小学生",
+    "pinyin": "xiǎoxuéshēng",
+    "english": [
+      "primary school student/schoolchild/CL:個|个/(fig.) beginner"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 5426
+  },
+  {
     "hanzi": "口味",
     "pinyin": "kǒuwèi",
     "english": [
@@ -25726,6 +26857,17 @@
     "frequencyRank": 5468
   },
   {
+    "hanzi": "牛肉",
+    "pinyin": "niúròu",
+    "english": [
+      "beef"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 5473
+  },
+  {
     "hanzi": "披",
     "pinyin": "pī",
     "english": [
@@ -25779,6 +26921,17 @@
     "frequencyRank": 5492
   },
   {
+    "hanzi": "药物",
+    "pinyin": "yàowù",
+    "english": [
+      "medicaments"
+    ],
+    "categories": [
+      "allergy"
+    ],
+    "frequencyRank": 5502
+  },
+  {
     "hanzi": "艰苦",
     "pinyin": "jiānkǔ",
     "english": [
@@ -25789,6 +26942,18 @@
       "adjective"
     ],
     "frequencyRank": 5503
+  },
+  {
+    "hanzi": "董事长",
+    "pinyin": "dǒngshìzhǎng",
+    "english": [
+      "chairman of the board/chairman"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 5514
   },
   {
     "hanzi": "业余",
@@ -25847,7 +27012,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 5554
   },
@@ -25859,9 +27025,21 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 5558
+  },
+  {
+    "hanzi": "功课",
+    "pinyin": "gōngkè",
+    "english": [
+      "homework"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 5568
   },
   {
     "hanzi": "壶",
@@ -25938,6 +27116,17 @@
     "frequencyRank": 5616
   },
   {
+    "hanzi": "中学生",
+    "pinyin": "zhōngxuéshēng",
+    "english": [
+      "middle-school student/high school student"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 5619
+  },
+  {
     "hanzi": "误会",
     "pinyin": "wùhuì",
     "english": [
@@ -25950,6 +27139,19 @@
       "verb"
     ],
     "frequencyRank": 5629
+  },
+  {
+    "hanzi": "助理",
+    "pinyin": "zhùlǐ",
+    "english": [
+      "assistant"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers",
+      "office"
+    ],
+    "frequencyRank": 5648
   },
   {
     "hanzi": "糟糕",
@@ -25974,6 +27176,18 @@
       "verb"
     ],
     "frequencyRank": 5653
+  },
+  {
+    "hanzi": "班级",
+    "pinyin": "bānjí",
+    "english": [
+      "class (of students)",
+      "grade (in school)"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 5658
   },
   {
     "hanzi": "入口",
@@ -26111,6 +27325,18 @@
     "frequencyRank": 5769
   },
   {
+    "hanzi": "小心翼翼",
+    "pinyin": "xiǎoxīnyìyì",
+    "english": [
+      "be careful"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 5773
+  },
+  {
     "hanzi": "操场",
     "pinyin": "cāochǎng",
     "english": [
@@ -26130,7 +27356,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "sexual identity"
     ],
     "frequencyRank": 5783
   },
@@ -26147,6 +27374,17 @@
       "verb"
     ],
     "frequencyRank": 5784
+  },
+  {
+    "hanzi": "设计师",
+    "pinyin": "shèjìshī",
+    "english": [
+      "designer"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 5793
   },
   {
     "hanzi": "熟练",
@@ -26187,6 +27425,17 @@
     "frequencyRank": 5814
   },
   {
+    "hanzi": "权益",
+    "pinyin": "quányì",
+    "english": [
+      "rights"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 5815
+  },
+  {
     "hanzi": "罚款",
     "pinyin": "fákuǎn",
     "english": [
@@ -26201,6 +27450,18 @@
     "frequencyRank": 5827
   },
   {
+    "hanzi": "不可思议",
+    "pinyin": "bùkěsīyì",
+    "english": [
+      "inconceivable"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 5831
+  },
+  {
     "hanzi": "来得及",
     "pinyin": "láidejí",
     "english": [
@@ -26211,6 +27472,19 @@
       "verb"
     ],
     "frequencyRank": 5833
+  },
+  {
+    "hanzi": "症状",
+    "pinyin": "zhèngzhuàng",
+    "english": [
+      "symptoms of an illness"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "covid-19",
+      "sick"
+    ],
+    "frequencyRank": 5836
   },
   {
     "hanzi": "尾巴",
@@ -26300,6 +27574,18 @@
     "frequencyRank": 5889
   },
   {
+    "hanzi": "当事人",
+    "pinyin": "dāngshìrén",
+    "english": [
+      "persons involved or implicated"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 5891
+  },
+  {
     "hanzi": "排列",
     "pinyin": "páiliè",
     "english": [
@@ -26324,6 +27610,17 @@
     "frequencyRank": 5901
   },
   {
+    "hanzi": "玩家",
+    "pinyin": "wánjiā",
+    "english": [
+      "player"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 5904
+  },
+  {
     "hanzi": "包裹",
     "pinyin": "bāoguǒ",
     "english": [
@@ -26334,6 +27631,17 @@
       "noun"
     ],
     "frequencyRank": 5909
+  },
+  {
+    "hanzi": "大腿",
+    "pinyin": "dàtuǐ",
+    "english": [
+      "thigh"
+    ],
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 5910
   },
   {
     "hanzi": "光盘",
@@ -26397,6 +27705,18 @@
     "frequencyRank": 5943
   },
   {
+    "hanzi": "文凭",
+    "pinyin": "wénpíng",
+    "english": [
+      "diploma"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 5945
+  },
+  {
     "hanzi": "筷子",
     "pinyin": "kuàizi",
     "english": [
@@ -26404,7 +27724,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "tableware"
     ],
     "frequencyRank": 5948
   },
@@ -26468,7 +27789,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 5991
   },
@@ -26480,7 +27802,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 5994
   },
@@ -26492,7 +27815,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "summer"
     ],
     "frequencyRank": 6000
   },
@@ -26509,6 +27833,17 @@
     "frequencyRank": 6003
   },
   {
+    "hanzi": "圣诞节",
+    "pinyin": "Shèngdàn Jié",
+    "english": [
+      "Christmas"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 6016
+  },
+  {
     "hanzi": "房东",
     "pinyin": "fángdōng",
     "english": [
@@ -26516,7 +27851,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 6027
   },
@@ -26700,7 +28036,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 6170
   },
@@ -26750,7 +28087,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 6186
   },
@@ -26813,9 +28151,35 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "verb"
+      "verb",
+      "office"
     ],
     "frequencyRank": 6225
+  },
+  {
+    "hanzi": "保姆",
+    "pinyin": "bǎomǔ",
+    "english": [
+      "nanny",
+      "housekeeper"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 6230
+  },
+  {
+    "hanzi": "歧视",
+    "pinyin": "qíshì",
+    "english": [
+      "to discriminate against"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 6232
   },
   {
     "hanzi": "单元",
@@ -26828,6 +28192,18 @@
       "noun"
     ],
     "frequencyRank": 6236
+  },
+  {
+    "hanzi": "摇滚",
+    "pinyin": "yáogǔn",
+    "english": [
+      "rock 'n' roll (music)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 6245
   },
   {
     "hanzi": "袜子",
@@ -26957,11 +28333,13 @@
     "hanzi": "键盘",
     "pinyin": "jiànpán",
     "english": [
-      "keyboard (of a computer)"
+      "keyboard (of a computer)",
+      "keyboard"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 6305
   },
@@ -27019,11 +28397,13 @@
     "hanzi": "鼠标",
     "pinyin": "shǔbiāo",
     "english": [
-      "mouse (computing)"
+      "mouse (computing)",
+      "mouse"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "video games"
     ],
     "frequencyRank": 6340
   },
@@ -27048,7 +28428,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "vegetables"
     ],
     "frequencyRank": 6346
   },
@@ -27087,6 +28468,18 @@
       "verb"
     ],
     "frequencyRank": 6378
+  },
+  {
+    "hanzi": "基督教",
+    "pinyin": "Jīdūjiào",
+    "english": [
+      "Christianity",
+      "Christian"
+    ],
+    "categories": [
+      "religion"
+    ],
+    "frequencyRank": 6380
   },
   {
     "hanzi": "尽力",
@@ -27259,6 +28652,17 @@
     "frequencyRank": 6511
   },
   {
+    "hanzi": "发动机",
+    "pinyin": "fādòngjī",
+    "english": [
+      "engine"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 6520
+  },
+  {
     "hanzi": "概括",
     "pinyin": "gàikuò",
     "english": [
@@ -27278,7 +28682,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 6530
   },
@@ -27317,6 +28722,17 @@
       "verb"
     ],
     "frequencyRank": 6592
+  },
+  {
+    "hanzi": "前天",
+    "pinyin": "qiántiān",
+    "english": [
+      "the day before yesterday"
+    ],
+    "categories": [
+      "time"
+    ],
+    "frequencyRank": 6594
   },
   {
     "hanzi": "随手",
@@ -27366,7 +28782,8 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "tableware"
     ],
     "frequencyRank": 6657
   },
@@ -27409,6 +28826,17 @@
     "frequencyRank": 6694
   },
   {
+    "hanzi": "可乐",
+    "pinyin": "kělè",
+    "english": [
+      "cola"
+    ],
+    "categories": [
+      "beverage"
+    ],
+    "frequencyRank": 6695
+  },
+  {
     "hanzi": "延长",
     "pinyin": "yáncháng",
     "english": [
@@ -27434,6 +28862,17 @@
     "frequencyRank": 6701
   },
   {
+    "hanzi": "校友",
+    "pinyin": "xiàoyǒu",
+    "english": [
+      "schoolmate"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 6708
+  },
+  {
     "hanzi": "启发",
     "pinyin": "qǐfā",
     "english": [
@@ -27455,7 +28894,9 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "verb"
+      "verb",
+      "covid-19",
+      "sick"
     ],
     "frequencyRank": 6738
   },
@@ -27498,6 +28939,18 @@
     "frequencyRank": 6758
   },
   {
+    "hanzi": "拳头",
+    "pinyin": "quántou",
+    "english": [
+      "fist"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 6764
+  },
+  {
     "hanzi": "地毯",
     "pinyin": "dìtǎn",
     "english": [
@@ -27534,6 +28987,30 @@
     "frequencyRank": 6787
   },
   {
+    "hanzi": "周一",
+    "pinyin": "Zhōuyī",
+    "english": [
+      "Monday"
+    ],
+    "categories": [
+      "time"
+    ],
+    "frequencyRank": 6798
+  },
+  {
+    "hanzi": "肿",
+    "pinyin": "zhǒng",
+    "english": [
+      "to swell",
+      "swollen"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "allergy"
+    ],
+    "frequencyRank": 6812
+  },
+  {
     "hanzi": "表扬",
     "pinyin": "biǎoyáng",
     "english": [
@@ -27559,6 +29036,18 @@
     "frequencyRank": 6835
   },
   {
+    "hanzi": "臂",
+    "pinyin": "bì",
+    "english": [
+      "arm"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 6844
+  },
+  {
     "hanzi": "初级",
     "pinyin": "chūjí",
     "english": [
@@ -27582,6 +29071,17 @@
       "noun"
     ],
     "frequencyRank": 6868
+  },
+  {
+    "hanzi": "吉他",
+    "pinyin": "jítā",
+    "english": [
+      "guitar (loanword)/CL:把"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 6878
   },
   {
     "hanzi": "多余",
@@ -27629,7 +29129,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "summer"
     ],
     "frequencyRank": 6896
   },
@@ -27656,7 +29157,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "verb"
+      "verb",
+      "sports"
     ],
     "frequencyRank": 6915
   },
@@ -27704,9 +29206,21 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "beverage"
     ],
     "frequencyRank": 6978
+  },
+  {
+    "hanzi": "二十一",
+    "pinyin": "èrshí-yī",
+    "english": [
+      "twenty one"
+    ],
+    "categories": [
+      "numeral"
+    ],
+    "frequencyRank": 6986
   },
   {
     "hanzi": "葡萄",
@@ -27783,6 +29297,18 @@
     "frequencyRank": 7028
   },
   {
+    "hanzi": "喉咙",
+    "pinyin": "hóulóng",
+    "english": [
+      "throat"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 7037
+  },
+  {
     "hanzi": "诚实",
     "pinyin": "chéngshí",
     "english": [
@@ -27832,6 +29358,18 @@
     "frequencyRank": 7164
   },
   {
+    "hanzi": "葡萄酒",
+    "pinyin": "pútaojiǔ",
+    "english": [
+      "(grape) wine"
+    ],
+    "categories": [
+      "alcohol",
+      "beverage"
+    ],
+    "frequencyRank": 7188
+  },
+  {
     "hanzi": "撕",
     "pinyin": "sī",
     "english": [
@@ -27857,6 +29395,17 @@
     "frequencyRank": 7204
   },
   {
+    "hanzi": "海滩",
+    "pinyin": "hǎitān",
+    "english": [
+      "the beach"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 7212
+  },
+  {
     "hanzi": "郊区",
     "pinyin": "jiāoqū",
     "english": [
@@ -27870,6 +29419,18 @@
     "frequencyRank": 7222
   },
   {
+    "hanzi": "被告",
+    "pinyin": "bèigào",
+    "english": [
+      "defendant"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 7223
+  },
+  {
     "hanzi": "黑板",
     "pinyin": "hēibǎn",
     "english": [
@@ -27880,6 +29441,19 @@
       "noun"
     ],
     "frequencyRank": 7232
+  },
+  {
+    "hanzi": "助手",
+    "pinyin": "zhùshǒu",
+    "english": [
+      "helper",
+      "assistant"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 7238
   },
   {
     "hanzi": "决赛",
@@ -27905,6 +29479,18 @@
       "verb"
     ],
     "frequencyRank": 7255
+  },
+  {
+    "hanzi": "厨师",
+    "pinyin": "chúshī",
+    "english": [
+      "cook",
+      "chef"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 7262
   },
   {
     "hanzi": "出示",
@@ -27980,6 +29566,18 @@
     "frequencyRank": 7412
   },
   {
+    "hanzi": "黎明",
+    "pinyin": "límíng",
+    "english": [
+      "dawn"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "time"
+    ],
+    "frequencyRank": 7420
+  },
+  {
     "hanzi": "幸亏",
     "pinyin": "xìngkuī",
     "english": [
@@ -28011,7 +29609,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "vegetables"
     ],
     "frequencyRank": 7454
   },
@@ -28023,7 +29622,9 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "verb"
+      "verb",
+      "covid-19",
+      "sick"
     ],
     "frequencyRank": 7458
   },
@@ -28052,6 +29653,19 @@
     "frequencyRank": 7468
   },
   {
+    "hanzi": "隔离",
+    "pinyin": "gélí",
+    "english": [
+      "to isolate",
+      "to quarantine"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 7521
+  },
+  {
     "hanzi": "胃口",
     "pinyin": "wèikǒu",
     "english": [
@@ -28074,6 +29688,18 @@
       "noun"
     ],
     "frequencyRank": 7530
+  },
+  {
+    "hanzi": "乞丐",
+    "pinyin": "qǐgài",
+    "english": [
+      "beggar"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 7534
   },
   {
     "hanzi": "促使",
@@ -28158,7 +29784,8 @@
     ],
     "hskLevel": 2,
     "categories": [
-      "noun"
+      "noun",
+      "meat"
     ],
     "frequencyRank": 7656
   },
@@ -28210,6 +29837,18 @@
       "noun"
     ],
     "frequencyRank": 7684
+  },
+  {
+    "hanzi": "肺",
+    "pinyin": "fèi",
+    "english": [
+      "lung"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 7765
   },
   {
     "hanzi": "辩论",
@@ -28276,6 +29915,19 @@
     "frequencyRank": 7821
   },
   {
+    "hanzi": "伴侣",
+    "pinyin": "bànlǚ",
+    "english": [
+      "companion",
+      "mate"
+    ],
+    "hskLevel": 5,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 7823
+  },
+  {
     "hanzi": "灰尘",
     "pinyin": "huīchén",
     "english": [
@@ -28286,6 +29938,29 @@
       "noun"
     ],
     "frequencyRank": 7826
+  },
+  {
+    "hanzi": "洪水",
+    "pinyin": "hóngshuǐ",
+    "english": [
+      "flood"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "weather"
+    ],
+    "frequencyRank": 7837
+  },
+  {
+    "hanzi": "酒杯",
+    "pinyin": "jiǔbēi",
+    "english": [
+      "wine cup"
+    ],
+    "categories": [
+      "alcohol"
+    ],
+    "frequencyRank": 7852
   },
   {
     "hanzi": "巧妙",
@@ -28300,6 +29975,18 @@
     "frequencyRank": 7905
   },
   {
+    "hanzi": "间谍",
+    "pinyin": "jiàndié",
+    "english": [
+      "spy"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 7910
+  },
+  {
     "hanzi": "洗手间",
     "pinyin": "xǐshǒujiān",
     "english": [
@@ -28310,6 +29997,17 @@
       "noun"
     ],
     "frequencyRank": 7933
+  },
+  {
+    "hanzi": "雪花",
+    "pinyin": "xuěhuā",
+    "english": [
+      "snowflake"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 7960
   },
   {
     "hanzi": "兼职",
@@ -28339,6 +30037,53 @@
     "frequencyRank": 8032
   },
   {
+    "hanzi": "大臣",
+    "pinyin": "dàchén",
+    "english": [
+      "chancellor (of a monarchy)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 8049
+  },
+  {
+    "hanzi": "下属",
+    "pinyin": "xiàshǔ",
+    "english": [
+      "subordinate(s)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 8063
+  },
+  {
+    "hanzi": "轮胎",
+    "pinyin": "lúntāi",
+    "english": [
+      "tire (of a car or bicycle)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 8102
+  },
+  {
+    "hanzi": "猪肉",
+    "pinyin": "zhūròu",
+    "english": [
+      "pork"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 8113
+  },
+  {
     "hanzi": "潮湿",
     "pinyin": "cháoshī",
     "english": [
@@ -28346,7 +30091,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "adjective"
+      "adjective",
+      "weather"
     ],
     "frequencyRank": 8125
   },
@@ -28361,6 +30107,17 @@
       "noun"
     ],
     "frequencyRank": 8139
+  },
+  {
+    "hanzi": "内存",
+    "pinyin": "nèicún",
+    "english": [
+      "random access memory (RAM)"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 8150
   },
   {
     "hanzi": "米饭",
@@ -28387,6 +30144,19 @@
     "frequencyRank": 8161
   },
   {
+    "hanzi": "头疼",
+    "pinyin": "tóuténg",
+    "english": [
+      "headache",
+      "to have a headache"
+    ],
+    "categories": [
+      "covid-19",
+      "sick"
+    ],
+    "frequencyRank": 8165
+  },
+  {
     "hanzi": "匆忙",
     "pinyin": "cōngmáng",
     "english": [
@@ -28407,7 +30177,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "car-related"
     ],
     "frequencyRank": 8170
   },
@@ -28461,6 +30232,18 @@
     "frequencyRank": 8199
   },
   {
+    "hanzi": "预约",
+    "pinyin": "yùyuē",
+    "english": [
+      "to reserve",
+      "reservation"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 8228
+  },
+  {
     "hanzi": "起飞",
     "pinyin": "qǐfēi",
     "english": [
@@ -28481,7 +30264,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "verb"
+      "verb",
+      "education"
     ],
     "frequencyRank": 8256
   },
@@ -28498,6 +30282,19 @@
     "frequencyRank": 8258
   },
   {
+    "hanzi": "测量",
+    "pinyin": "cèliáng",
+    "english": [
+      "to measure",
+      "to determine"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 8264
+  },
+  {
     "hanzi": "羽毛球",
     "pinyin": "yǔmáoqiú",
     "english": [
@@ -28506,7 +30303,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "sports"
     ],
     "frequencyRank": 8278
   },
@@ -28521,6 +30319,17 @@
       "noun"
     ],
     "frequencyRank": 8280
+  },
+  {
+    "hanzi": "烧烤",
+    "pinyin": "shāokǎo",
+    "english": [
+      "barbecue"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 8282
   },
   {
     "hanzi": "惭愧",
@@ -28546,6 +30355,18 @@
       "adjective"
     ],
     "frequencyRank": 8332
+  },
+  {
+    "hanzi": "奴隶",
+    "pinyin": "núlì",
+    "english": [
+      "slave"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 8353
   },
   {
     "hanzi": "发票",
@@ -28586,6 +30407,19 @@
     "frequencyRank": 8401
   },
   {
+    "hanzi": "脂肪",
+    "pinyin": "zhīfáng",
+    "english": [
+      "dietary fat",
+      "fatty tissue"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 8412
+  },
+  {
     "hanzi": "寒假",
     "pinyin": "hánjià",
     "english": [
@@ -28605,7 +30439,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "sports"
     ],
     "frequencyRank": 8438
   },
@@ -28644,6 +30479,17 @@
       "phrase"
     ],
     "frequencyRank": 8459
+  },
+  {
+    "hanzi": "后天",
+    "pinyin": "hòutiān",
+    "english": [
+      "the day after tomorrow"
+    ],
+    "categories": [
+      "time"
+    ],
+    "frequencyRank": 8479
   },
   {
     "hanzi": "眉毛",
@@ -28722,13 +30568,28 @@
     "pinyin": "yǎng",
     "english": [
       "to itch",
-      "to feel a tickle"
+      "to feel a tickle",
+      "to feel ticklish"
     ],
     "hskLevel": 5,
     "categories": [
-      "verb"
+      "verb",
+      "allergy"
     ],
     "frequencyRank": 8551
+  },
+  {
+    "hanzi": "消毒",
+    "pinyin": "xiāodú",
+    "english": [
+      "to disinfect",
+      "to sterilize"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 8583
   },
   {
     "hanzi": "请假",
@@ -28741,6 +30602,17 @@
       "verb"
     ],
     "frequencyRank": 8603
+  },
+  {
+    "hanzi": "小提琴",
+    "pinyin": "xiǎotíqín",
+    "english": [
+      "fiddle;violin"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 8652
   },
   {
     "hanzi": "浇",
@@ -28775,9 +30647,21 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "weather"
     ],
     "frequencyRank": 8733
+  },
+  {
+    "hanzi": "白菜",
+    "pinyin": "báicài",
+    "english": [
+      "Chinese cabbage"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 8734
   },
   {
     "hanzi": "本领",
@@ -28805,6 +30689,17 @@
     "frequencyRank": 8742
   },
   {
+    "hanzi": "疫情",
+    "pinyin": "yìqíng",
+    "english": [
+      "epidemic situation"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 8745
+  },
+  {
     "hanzi": "悠久",
     "pinyin": "yōujiǔ",
     "english": [
@@ -28817,6 +30712,18 @@
     "frequencyRank": 8759
   },
   {
+    "hanzi": "侦探",
+    "pinyin": "zhēntàn",
+    "english": [
+      "detective"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 8766
+  },
+  {
     "hanzi": "花生",
     "pinyin": "huāshēng",
     "english": [
@@ -28824,7 +30731,9 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "allergy",
+      "vegetables"
     ],
     "frequencyRank": 8770
   },
@@ -28839,6 +30748,53 @@
       "noun"
     ],
     "frequencyRank": 8773
+  },
+  {
+    "hanzi": "台风",
+    "pinyin": "táifēng",
+    "english": [
+      "stage presence",
+      "poise"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "weather"
+    ],
+    "frequencyRank": 8790
+  },
+  {
+    "hanzi": "洗脸",
+    "pinyin": "xǐliǎn",
+    "english": [
+      "to wash one's face"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 8813
+  },
+  {
+    "hanzi": "女王",
+    "pinyin": "nǚwáng",
+    "english": [
+      "queen (female leader",
+      "heir to the throne)"
+    ],
+    "categories": [
+      "national leader"
+    ],
+    "frequencyRank": 8830
+  },
+  {
+    "hanzi": "首相",
+    "pinyin": "shǒuxiàng",
+    "english": [
+      "prime minister"
+    ],
+    "categories": [
+      "national leader"
+    ],
+    "frequencyRank": 8838
   },
   {
     "hanzi": "感想",
@@ -28863,6 +30819,17 @@
       "verb"
     ],
     "frequencyRank": 8871
+  },
+  {
+    "hanzi": "喝醉",
+    "pinyin": "hēzuì",
+    "english": [
+      "to get drunk"
+    ],
+    "categories": [
+      "alcohol"
+    ],
+    "frequencyRank": 8876
   },
   {
     "hanzi": "闪电",
@@ -28899,6 +30866,31 @@
       "verb"
     ],
     "frequencyRank": 8909
+  },
+  {
+    "hanzi": "迫不及待",
+    "pinyin": "pòbùjídài",
+    "english": [
+      "impatient (idiom)",
+      "in a hurry/itching to get on with it"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 8917
+  },
+  {
+    "hanzi": "指甲",
+    "pinyin": "zhǐjia",
+    "english": [
+      "fingernails"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 8944
   },
   {
     "hanzi": "冷淡",
@@ -28974,6 +30966,29 @@
     "frequencyRank": 9012
   },
   {
+    "hanzi": "肾",
+    "pinyin": "shèn",
+    "english": [
+      "kidney"
+    ],
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 9013
+  },
+  {
+    "hanzi": "器官",
+    "pinyin": "qìguān",
+    "english": [
+      "internal organ"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 9022
+  },
+  {
     "hanzi": "射击",
     "pinyin": "shèjī",
     "english": [
@@ -29013,6 +31028,18 @@
     "frequencyRank": 9106
   },
   {
+    "hanzi": "皱纹",
+    "pinyin": "zhòuwén",
+    "english": [
+      "wrinkles (of the skin)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 9129
+  },
+  {
     "hanzi": "征求",
     "pinyin": "zhēngqiú",
     "english": [
@@ -29050,6 +31077,17 @@
     "frequencyRank": 9185
   },
   {
+    "hanzi": "图形",
+    "pinyin": "túxíng",
+    "english": [
+      "graphics"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 9212
+  },
+  {
     "hanzi": "网球",
     "pinyin": "wǎngqiú",
     "english": [
@@ -29057,7 +31095,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "sports"
     ],
     "frequencyRank": 9215
   },
@@ -29099,6 +31138,17 @@
     "frequencyRank": 9253
   },
   {
+    "hanzi": "配件",
+    "pinyin": "pèijiàn",
+    "english": [
+      "replacement part"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 9262
+  },
+  {
     "hanzi": "归纳",
     "pinyin": "guīnà",
     "english": [
@@ -29109,6 +31159,17 @@
       "verb"
     ],
     "frequencyRank": 9276
+  },
+  {
+    "hanzi": "笛",
+    "pinyin": "dí",
+    "english": [
+      "flute"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 9277
   },
   {
     "hanzi": "消极",
@@ -29135,6 +31196,18 @@
     "frequencyRank": 9300
   },
   {
+    "hanzi": "刹车",
+    "pinyin": "shāchē",
+    "english": [
+      "to brake (when driving)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 9339
+  },
+  {
     "hanzi": "元旦",
     "pinyin": "Yuándàn",
     "english": [
@@ -29158,6 +31231,18 @@
       "verb"
     ],
     "frequencyRank": 9375
+  },
+  {
+    "hanzi": "徒弟",
+    "pinyin": "túdì",
+    "english": [
+      "apprentice"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 9386
   },
   {
     "hanzi": "操心",
@@ -29210,6 +31295,29 @@
     "frequencyRank": 9457
   },
   {
+    "hanzi": "冰淇淋",
+    "pinyin": "bīngqílín",
+    "english": [
+      "ice cream"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 9471
+  },
+  {
+    "hanzi": "理所当然",
+    "pinyin": "lǐsuǒdāngrán",
+    "english": [
+      "as a matter of course"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 9477
+  },
+  {
     "hanzi": "暖和",
     "pinyin": "nuǎnhuo",
     "english": [
@@ -29217,7 +31325,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "adjective"
+      "adjective",
+      "weather"
     ],
     "frequencyRank": 9479
   },
@@ -29297,6 +31406,17 @@
     "frequencyRank": 9593
   },
   {
+    "hanzi": "爵士",
+    "pinyin": "juéshì",
+    "english": [
+      "(loanword) jazz"
+    ],
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 9617
+  },
+  {
     "hanzi": "周到",
     "pinyin": "zhōudào",
     "english": [
@@ -29351,11 +31471,13 @@
     "hanzi": "后背",
     "pinyin": "hòubèi",
     "english": [
-      "the back"
+      "the back",
+      "the back (human anatomy)"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "body parts"
     ],
     "frequencyRank": 9790
   },
@@ -29409,6 +31531,18 @@
     "frequencyRank": 9824
   },
   {
+    "hanzi": "四肢",
+    "pinyin": "sìzhī",
+    "english": [
+      "the four limbs of the body"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 9830
+  },
+  {
     "hanzi": "武术",
     "pinyin": "wǔshù",
     "english": [
@@ -29433,6 +31567,17 @@
     "frequencyRank": 9853
   },
   {
+    "hanzi": "伊斯兰教",
+    "pinyin": "Yīsīlánjiào",
+    "english": [
+      "Islam"
+    ],
+    "categories": [
+      "religion"
+    ],
+    "frequencyRank": 9855
+  },
+  {
     "hanzi": "光滑",
     "pinyin": "guānghuá",
     "english": [
@@ -29444,6 +31589,17 @@
       "adjective"
     ],
     "frequencyRank": 9880
+  },
+  {
+    "hanzi": "二十二",
+    "pinyin": "èrshí-èr",
+    "english": [
+      "twenty two"
+    ],
+    "categories": [
+      "numeral"
+    ],
+    "frequencyRank": 9965
   },
   {
     "hanzi": "迟早",
@@ -29509,13 +31665,49 @@
     "hanzi": "长辈",
     "pinyin": "zhǎngbèi",
     "english": [
-      "older generation"
+      "older generation",
+      "one\\'s elders"
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "shenfenguanxi"
     ],
     "frequencyRank": 10084
+  },
+  {
+    "hanzi": "菊花",
+    "pinyin": "júhuā",
+    "english": [
+      "chrysanthemum"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 10092
+  },
+  {
+    "hanzi": "黄瓜",
+    "pinyin": "huángguā",
+    "english": [
+      "cucumber"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 10114
+  },
+  {
+    "hanzi": "司令",
+    "pinyin": "sīlìng",
+    "english": [
+      "commanding officer"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 10190
   },
   {
     "hanzi": "改正",
@@ -29555,6 +31747,17 @@
       "verb"
     ],
     "frequencyRank": 10258
+  },
+  {
+    "hanzi": "体温",
+    "pinyin": "tǐwēn",
+    "english": [
+      "(body) temperature"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 10290
   },
   {
     "hanzi": "缩短",
@@ -29600,7 +31803,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "verb"
+      "verb",
+      "covid-19"
     ],
     "frequencyRank": 10323
   },
@@ -29624,9 +31828,22 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "car-related"
     ],
     "frequencyRank": 10348
+  },
+  {
+    "hanzi": "学说",
+    "pinyin": "xuéshuō",
+    "english": [
+      "theory"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 10350
   },
   {
     "hanzi": "堵车",
@@ -29636,9 +31853,56 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "verb"
+      "verb",
+      "car-related"
     ],
     "frequencyRank": 10382
+  },
+  {
+    "hanzi": "车轮",
+    "pinyin": "chēlún",
+    "english": [
+      "wheel"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 10408
+  },
+  {
+    "hanzi": "鼻涕",
+    "pinyin": "bítì",
+    "english": [
+      "nasal mucus/snivel"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "covid-19",
+      "sick"
+    ],
+    "frequencyRank": 10523
+  },
+  {
+    "hanzi": "梅花",
+    "pinyin": "méihuā",
+    "english": [
+      "plum blossom"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 10541
+  },
+  {
+    "hanzi": "下雪",
+    "pinyin": "xiàxuě",
+    "english": [
+      "to snow"
+    ],
+    "categories": [
+      "weather"
+    ],
+    "frequencyRank": 10561
   },
   {
     "hanzi": "吸取",
@@ -29652,6 +31916,18 @@
       "verb"
     ],
     "frequencyRank": 10581
+  },
+  {
+    "hanzi": "恍然大悟",
+    "pinyin": "huǎngrándàwù",
+    "english": [
+      "to suddenly realize/to suddenly see the light"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 10593
   },
   {
     "hanzi": "责备",
@@ -29678,6 +31954,28 @@
     "frequencyRank": 10658
   },
   {
+    "hanzi": "主机",
+    "pinyin": "zhǔjī",
+    "english": [
+      "console"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 10697
+  },
+  {
+    "hanzi": "飞行员",
+    "pinyin": "fēixíngyuán",
+    "english": [
+      "pilot"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 10754
+  },
+  {
     "hanzi": "填空",
     "pinyin": "tiánkòng",
     "english": [
@@ -29688,6 +31986,17 @@
       "verb"
     ],
     "frequencyRank": 10759
+  },
+  {
+    "hanzi": "炎热",
+    "pinyin": "yánrè",
+    "english": [
+      "sizzling hot (weather)"
+    ],
+    "categories": [
+      "weather"
+    ],
+    "frequencyRank": 10773
   },
   {
     "hanzi": "刷牙",
@@ -29709,7 +32018,8 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "beverage"
     ],
     "frequencyRank": 10827
   },
@@ -29727,6 +32037,41 @@
     "frequencyRank": 10868
   },
   {
+    "hanzi": "治愈",
+    "pinyin": "zhìyù",
+    "english": [
+      "to cure",
+      "to restore health"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 10902
+  },
+  {
+    "hanzi": "俘虏",
+    "pinyin": "fúlǔ",
+    "english": [
+      "captive"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 10923
+  },
+  {
+    "hanzi": "纪念品",
+    "pinyin": "jìniànpǐn",
+    "english": [
+      "souvenir"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 10927
+  },
+  {
     "hanzi": "复印",
     "pinyin": "fùyìn",
     "english": [
@@ -29737,6 +32082,17 @@
       "verb"
     ],
     "frequencyRank": 10937
+  },
+  {
+    "hanzi": "蘑菇",
+    "pinyin": "mógu",
+    "english": [
+      "mushroom"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 10960
   },
   {
     "hanzi": "肥皂",
@@ -29764,6 +32120,28 @@
     "frequencyRank": 10975
   },
   {
+    "hanzi": "空姐",
+    "pinyin": "kōngjiě",
+    "english": [
+      "(female) flight attendant"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 10995
+  },
+  {
+    "hanzi": "方向盘",
+    "pinyin": "fāngxiàngpán",
+    "english": [
+      "steering wheel"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 11000
+  },
+  {
     "hanzi": "用功",
     "pinyin": "yònggōng",
     "english": [
@@ -29772,7 +32150,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "adjective"
+      "adjective",
+      "education"
     ],
     "frequencyRank": 11021
   },
@@ -29788,6 +32167,28 @@
       "noun"
     ],
     "frequencyRank": 11028
+  },
+  {
+    "hanzi": "洗手",
+    "pinyin": "xǐshǒu",
+    "english": [
+      "to wash one's hands"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 11054
+  },
+  {
+    "hanzi": "烤肉",
+    "pinyin": "kǎoròu",
+    "english": [
+      "barbecue"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 11082
   },
   {
     "hanzi": "当心",
@@ -29816,6 +32217,30 @@
     "frequencyRank": 11117
   },
   {
+    "hanzi": "向导",
+    "pinyin": "xiàngdǎo",
+    "english": [
+      "guide"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 11147
+  },
+  {
+    "hanzi": "樱花",
+    "pinyin": "yīnghuā",
+    "english": [
+      "oriental cherry (Prunus serrulata or Prunus yedoensis)",
+      "prized for its blossom"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 11186
+  },
+  {
     "hanzi": "果实",
     "pinyin": "guǒshí",
     "english": [
@@ -29826,6 +32251,28 @@
       "noun"
     ],
     "frequencyRank": 11226
+  },
+  {
+    "hanzi": "百合",
+    "pinyin": "bǎihé",
+    "english": [
+      "lily"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 11246
+  },
+  {
+    "hanzi": "拉拉",
+    "pinyin": "lālā",
+    "english": [
+      "Lala"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 11288
   },
   {
     "hanzi": "蜜蜂",
@@ -29877,6 +32324,29 @@
     "frequencyRank": 11375
   },
   {
+    "hanzi": "昼夜",
+    "pinyin": "zhòuyè",
+    "english": [
+      "day and night"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "time"
+    ],
+    "frequencyRank": 11378
+  },
+  {
+    "hanzi": "建筑师",
+    "pinyin": "jiànzhùshī",
+    "english": [
+      "architect"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 11388
+  },
+  {
     "hanzi": "酱油",
     "pinyin": "jiàngyóu",
     "english": [
@@ -29896,9 +32366,33 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "vegetables"
     ],
     "frequencyRank": 11441
+  },
+  {
+    "hanzi": "兴高采烈",
+    "pinyin": "xìnggāocǎiliè",
+    "english": [
+      "with great enthusiasm"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 11532
+  },
+  {
+    "hanzi": "头晕",
+    "pinyin": "tóuyūn",
+    "english": [
+      "dizzy"
+    ],
+    "categories": [
+      "sick"
+    ],
+    "frequencyRank": 11560
   },
   {
     "hanzi": "测验",
@@ -29915,6 +32409,40 @@
     "frequencyRank": 11613
   },
   {
+    "hanzi": "滑雪",
+    "pinyin": "huáxuě",
+    "english": [
+      "to ski",
+      "skiing"
+    ],
+    "categories": [
+      "sports"
+    ],
+    "frequencyRank": 11664
+  },
+  {
+    "hanzi": "学分",
+    "pinyin": "xuéfēn",
+    "english": [
+      "course credit"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 11670
+  },
+  {
+    "hanzi": "晒太阳",
+    "pinyin": "shài tàiyáng",
+    "english": [
+      "sunbathing"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 11737
+  },
+  {
     "hanzi": "悲观",
     "pinyin": "bēiguān",
     "english": [
@@ -29925,6 +32453,19 @@
       "adjective"
     ],
     "frequencyRank": 11743
+  },
+  {
+    "hanzi": "谣言",
+    "pinyin": "yáoyán",
+    "english": [
+      "rumor",
+      "gossip"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 11763
   },
   {
     "hanzi": "国籍",
@@ -29949,6 +32490,17 @@
       "noun"
     ],
     "frequencyRank": 11808
+  },
+  {
+    "hanzi": "蒜",
+    "pinyin": "suàn",
+    "english": [
+      "garlic"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 11895
   },
   {
     "hanzi": "打针",
@@ -29988,6 +32540,17 @@
     "frequencyRank": 11928
   },
   {
+    "hanzi": "桂花",
+    "pinyin": "guìhuā",
+    "english": [
+      "osmanthus flowers"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 12001
+  },
+  {
     "hanzi": "桔子",
     "pinyin": "júzi",
     "english": [
@@ -30013,6 +32576,17 @@
     "frequencyRank": 12022
   },
   {
+    "hanzi": "口罩",
+    "pinyin": "kǒuzhào",
+    "english": [
+      "face mask"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 12029
+  },
+  {
     "hanzi": "发愁",
     "pinyin": "fāchóu",
     "english": [
@@ -30024,6 +32598,29 @@
       "verb"
     ],
     "frequencyRank": 12087
+  },
+  {
+    "hanzi": "实事求是",
+    "pinyin": "shíshìqiúshì",
+    "english": [
+      "to seek truth from facts (idiom)/to be practical and realistic"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 12093
+  },
+  {
+    "hanzi": "汉堡",
+    "pinyin": "hànbǎo",
+    "english": [
+      "hamburger"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 12097
   },
   {
     "hanzi": "迷路",
@@ -30045,9 +32642,21 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "careers"
     ],
     "frequencyRank": 12132
+  },
+  {
+    "hanzi": "小腿",
+    "pinyin": "xiǎotuǐ",
+    "english": [
+      "calf (of the leg)"
+    ],
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 12180
   },
   {
     "hanzi": "讨价还价",
@@ -30057,9 +32666,33 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "verb"
+      "verb",
+      "chinese idioms"
     ],
     "frequencyRank": 12197
+  },
+  {
+    "hanzi": "天主教",
+    "pinyin": "Tiānzhǔjiào",
+    "english": [
+      "Catholicism"
+    ],
+    "categories": [
+      "religion"
+    ],
+    "frequencyRank": 12285
+  },
+  {
+    "hanzi": "兴致勃勃",
+    "pinyin": "xìngzhìbóbó",
+    "english": [
+      "with great enthusiasm"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 12359
   },
   {
     "hanzi": "日程",
@@ -30069,7 +32702,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "education"
     ],
     "frequencyRank": 12363
   },
@@ -30098,6 +32732,17 @@
     "frequencyRank": 12381
   },
   {
+    "hanzi": "座椅",
+    "pinyin": "zuòyǐ",
+    "english": [
+      "seat"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 12422
+  },
+  {
     "hanzi": "岛屿",
     "pinyin": "dǎoyǔ",
     "english": [
@@ -30120,6 +32765,18 @@
       "noun"
     ],
     "frequencyRank": 12645
+  },
+  {
+    "hanzi": "天文",
+    "pinyin": "tiānwén",
+    "english": [
+      "astronomy"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 12661
   },
   {
     "hanzi": "过期",
@@ -30146,6 +32803,17 @@
     "frequencyRank": 12727
   },
   {
+    "hanzi": "病例",
+    "pinyin": "bìnglì",
+    "english": [
+      "cases of an illness (medical)"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 12779
+  },
+  {
     "hanzi": "剪刀",
     "pinyin": "jiǎndāo",
     "english": [
@@ -30158,6 +32826,19 @@
     "frequencyRank": 12797
   },
   {
+    "hanzi": "口腔",
+    "pinyin": "kǒuqiāng",
+    "english": [
+      "oral cavity",
+      "dental"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 12799
+  },
+  {
     "hanzi": "果汁",
     "pinyin": "guǒzhī",
     "english": [
@@ -30165,7 +32846,9 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "noun"
+      "noun",
+      "beverage",
+      "summer"
     ],
     "frequencyRank": 12809
   },
@@ -30183,16 +32866,51 @@
     "frequencyRank": 12834
   },
   {
+    "hanzi": "冷饮",
+    "pinyin": "lěngyǐn",
+    "english": [
+      "cold drink"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 12928
+  },
+  {
+    "hanzi": "绿茶",
+    "pinyin": "lǜchá",
+    "english": [
+      "green tea"
+    ],
+    "categories": [
+      "beverage"
+    ],
+    "frequencyRank": 12946
+  },
+  {
     "hanzi": "过敏",
     "pinyin": "guòmǐn",
     "english": [
-      "to be allergic"
+      "to be allergic",
+      "allergy"
     ],
     "hskLevel": 5,
     "categories": [
-      "verb"
+      "verb",
+      "allergy"
     ],
     "frequencyRank": 12991
+  },
+  {
+    "hanzi": "牡丹",
+    "pinyin": "Mǔdan",
+    "english": [
+      "Peony"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 13035
   },
   {
     "hanzi": "陆地",
@@ -30207,6 +32925,17 @@
     "frequencyRank": 13120
   },
   {
+    "hanzi": "油门",
+    "pinyin": "yóumén",
+    "english": [
+      "accelerator (pedal)"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 13212
+  },
+  {
     "hanzi": "大使馆",
     "pinyin": "dàshǐguǎn",
     "english": [
@@ -30219,6 +32948,17 @@
     "frequencyRank": 13333
   },
   {
+    "hanzi": "天皇",
+    "pinyin": "tiānhuáng",
+    "english": [
+      "emperor of Japan"
+    ],
+    "categories": [
+      "national leader"
+    ],
+    "frequencyRank": 13340
+  },
+  {
     "hanzi": "零钱",
     "pinyin": "língqián",
     "english": [
@@ -30229,6 +32969,32 @@
       "noun"
     ],
     "frequencyRank": 13359
+  },
+  {
+    "hanzi": "津津有味",
+    "pinyin": "jīnjīnyǒuwèi",
+    "english": [
+      "with keen interest pleasure (idiom)",
+      "with gusto/to relish/eagerly/with great interest"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 13384
+  },
+  {
+    "hanzi": "理直气壮",
+    "pinyin": "lǐzhíqìzhuàng",
+    "english": [
+      "in the right and self-confident (idiom)",
+      "bold and confident with justice on one's side/to have the courage of one's convictions/just and forceful"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 13435
   },
   {
     "hanzi": "牙膏",
@@ -30255,6 +33021,18 @@
     "frequencyRank": 13494
   },
   {
+    "hanzi": "搭档",
+    "pinyin": "dādàng",
+    "english": [
+      "to cooperate"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 13503
+  },
+  {
     "hanzi": "孝顺",
     "pinyin": "xiàoshùn",
     "english": [
@@ -30265,6 +33043,20 @@
       "verb"
     ],
     "frequencyRank": 13638
+  },
+  {
+    "hanzi": "琵琶",
+    "pinyin": "pípa",
+    "english": [
+      "pipa",
+      "Chinese lute",
+      "with 4 strings",
+      "a large pear-shaped body and a fretted fingerboard"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 13722
   },
   {
     "hanzi": "理发",
@@ -30302,6 +33094,18 @@
       "adjective"
     ],
     "frequencyRank": 13813
+  },
+  {
+    "hanzi": "肆无忌惮",
+    "pinyin": "sìwújìdàn",
+    "english": [
+      "absolutely unrestrained/unbridled/without the slightest scruple"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 13850
   },
   {
     "hanzi": "清淡",
@@ -30366,6 +33170,18 @@
     "frequencyRank": 14077
   },
   {
+    "hanzi": "想方设法",
+    "pinyin": "xiǎngfāngshèfǎ",
+    "english": [
+      "try to find a way"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 14090
+  },
+  {
     "hanzi": "押金",
     "pinyin": "yājīn",
     "english": [
@@ -30391,6 +33207,18 @@
     "frequencyRank": 14128
   },
   {
+    "hanzi": "心甘情愿",
+    "pinyin": "xīngānqíngyuàn",
+    "english": [
+      "willingly"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 14136
+  },
+  {
     "hanzi": "竹子",
     "pinyin": "zhúzi",
     "english": [
@@ -30401,6 +33229,17 @@
       "noun"
     ],
     "frequencyRank": 14156
+  },
+  {
+    "hanzi": "墨镜",
+    "pinyin": "mòjìng",
+    "english": [
+      "sunglasses"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 14203
   },
   {
     "hanzi": "次要",
@@ -30427,6 +33266,20 @@
     "frequencyRank": 14225
   },
   {
+    "hanzi": "千方百计",
+    "pinyin": "qiānfāngbǎijì",
+    "english": [
+      "lit. thousand ways",
+      "a hundred plans (idiom)",
+      "by every possible means"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 14260
+  },
+  {
     "hanzi": "中旬",
     "pinyin": "zhōngxún",
     "english": [
@@ -30450,6 +33303,30 @@
       "adjective"
     ],
     "frequencyRank": 14312
+  },
+  {
+    "hanzi": "滔滔不绝",
+    "pinyin": "tāotāobùjué",
+    "english": [
+      "unceasing torrent (idiom)/talking non-stop/gabbling forty to the dozen"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 14320
+  },
+  {
+    "hanzi": "微不足道",
+    "pinyin": "wēibùzúdào",
+    "english": [
+      "something is of little importance or insignificance"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 14436
   },
   {
     "hanzi": "鞭炮",
@@ -30512,6 +33389,17 @@
     "frequencyRank": 14571
   },
   {
+    "hanzi": "王后",
+    "pinyin": "wánghòu",
+    "english": [
+      "queen (wife of the king)"
+    ],
+    "categories": [
+      "national leader"
+    ],
+    "frequencyRank": 14574
+  },
+  {
     "hanzi": "空闲",
     "pinyin": "kòngxián",
     "english": [
@@ -30560,6 +33448,19 @@
     "frequencyRank": 14741
   },
   {
+    "hanzi": "改装",
+    "pinyin": "gǎizhuāng",
+    "english": [
+      "to repackage",
+      "to convert",
+      "to modify"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 14778
+  },
+  {
     "hanzi": "平方",
     "pinyin": "píngfāng",
     "english": [
@@ -30570,6 +33471,17 @@
       "noun"
     ],
     "frequencyRank": 14817
+  },
+  {
+    "hanzi": "南瓜",
+    "pinyin": "nánguā",
+    "english": [
+      "pumpkin"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 14836
   },
   {
     "hanzi": "时差",
@@ -30585,6 +33497,17 @@
     "frequencyRank": 14873
   },
   {
+    "hanzi": "奶茶",
+    "pinyin": "nǎichá",
+    "english": [
+      "milk tea"
+    ],
+    "categories": [
+      "beverage"
+    ],
+    "frequencyRank": 14909
+  },
+  {
     "hanzi": "车库",
     "pinyin": "chēkù",
     "english": [
@@ -30592,7 +33515,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "car-related"
     ],
     "frequencyRank": 15014
   },
@@ -30609,6 +33533,39 @@
     "frequencyRank": 15016
   },
   {
+    "hanzi": "红茶",
+    "pinyin": "hóngchá",
+    "english": [
+      "black tea"
+    ],
+    "categories": [
+      "beverage"
+    ],
+    "frequencyRank": 15032
+  },
+  {
+    "hanzi": "鸡肉",
+    "pinyin": "jīròu",
+    "english": [
+      "chicken (meat)"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 15038
+  },
+  {
+    "hanzi": "程序员",
+    "pinyin": "chéngxùyuán",
+    "english": [
+      "programmer"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 15076
+  },
+  {
     "hanzi": "垃圾桶",
     "pinyin": "lājītǒng",
     "english": [
@@ -30619,6 +33576,17 @@
       "noun"
     ],
     "frequencyRank": 15081
+  },
+  {
+    "hanzi": "胡萝卜",
+    "pinyin": "húluóbo",
+    "english": [
+      "carrot"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 15119
   },
   {
     "hanzi": "熬夜",
@@ -30671,6 +33639,30 @@
     "frequencyRank": 15276
   },
   {
+    "hanzi": "裁缝",
+    "pinyin": "cáiféng",
+    "english": [
+      "tailor"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 15314
+  },
+  {
+    "hanzi": "无忧无虑",
+    "pinyin": "wúyōuwúlǜ",
+    "english": [
+      "something that is carefree and without worries"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 15379
+  },
+  {
     "hanzi": "照常",
     "pinyin": "zhàocháng",
     "english": [
@@ -30681,6 +33673,17 @@
       "adverb"
     ],
     "frequencyRank": 15409
+  },
+  {
+    "hanzi": "番茄",
+    "pinyin": "fānqié",
+    "english": [
+      "tomato"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 15429
   },
   {
     "hanzi": "麦克风",
@@ -30695,6 +33698,29 @@
     "frequencyRank": 15543
   },
   {
+    "hanzi": "民谣",
+    "pinyin": "mínyáo",
+    "english": [
+      "folk song"
+    ],
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 15605
+  },
+  {
+    "hanzi": "恰到好处",
+    "pinyin": "qiàdàohǎochù",
+    "english": [
+      "it's just perfect/it's just right"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 15654
+  },
+  {
     "hanzi": "夏令营",
     "pinyin": "xiàlìngyíng",
     "english": [
@@ -30702,9 +33728,22 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "summer"
     ],
     "frequencyRank": 15716
+  },
+  {
+    "hanzi": "胡须",
+    "pinyin": "húxū",
+    "english": [
+      "beard"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 15797
   },
   {
     "hanzi": "推辞",
@@ -30733,6 +33772,63 @@
     "frequencyRank": 15909
   },
   {
+    "hanzi": "名副其实",
+    "pinyin": "míngfùqíshí",
+    "english": [
+      "o be worthy of the name"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 15970
+  },
+  {
+    "hanzi": "脉搏",
+    "pinyin": "màibó",
+    "english": [
+      "pulse (both medical and figurative)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 16030
+  },
+  {
+    "hanzi": "香槟",
+    "pinyin": "xiāngbīn",
+    "english": [
+      "champagne"
+    ],
+    "categories": [
+      "alcohol"
+    ],
+    "frequencyRank": 16053
+  },
+  {
+    "hanzi": "二胡",
+    "pinyin": "èrhú",
+    "english": [
+      "Chinese erhu [two-stringed musical instrument]"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 16097
+  },
+  {
+    "hanzi": "向日葵",
+    "pinyin": "xiàngrìkuí",
+    "english": [
+      "sunflower"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 16129
+  },
+  {
     "hanzi": "凉快",
     "pinyin": "liángkuai",
     "english": [
@@ -30740,9 +33836,44 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "adjective"
+      "adjective",
+      "weather"
     ],
     "frequencyRank": 16162
+  },
+  {
+    "hanzi": "博士后",
+    "pinyin": "bóshìhòu",
+    "english": [
+      "a postdoctoral position"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 16199
+  },
+  {
+    "hanzi": "浓缩",
+    "pinyin": "nóngsuō",
+    "english": [
+      "espresso"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 16213
+  },
+  {
+    "hanzi": "柴油",
+    "pinyin": "cháiyóu",
+    "english": [
+      "diesel fuel"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 16264
   },
   {
     "hanzi": "预报",
@@ -30807,6 +33938,97 @@
     "frequencyRank": 16651
   },
   {
+    "hanzi": "威士忌",
+    "pinyin": "wēishìjì",
+    "english": [
+      "whiskey"
+    ],
+    "categories": [
+      "alcohol"
+    ],
+    "frequencyRank": 16655
+  },
+  {
+    "hanzi": "夜市",
+    "pinyin": "yèshì",
+    "english": [
+      "night market"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 16745
+  },
+  {
+    "hanzi": "渔民",
+    "pinyin": "yúmín",
+    "english": [
+      "fisherman"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 16785
+  },
+  {
+    "hanzi": "哮喘",
+    "pinyin": "xiàochuǎn",
+    "english": [
+      "asthma"
+    ],
+    "categories": [
+      "allergy"
+    ],
+    "frequencyRank": 16846
+  },
+  {
+    "hanzi": "教案",
+    "pinyin": "jiào'àn",
+    "english": [
+      "lesson plan"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 16912
+  },
+  {
+    "hanzi": "脚趾",
+    "pinyin": "jiǎozhǐ",
+    "english": [
+      "toe"
+    ],
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 16956
+  },
+  {
+    "hanzi": "一丝不苟",
+    "pinyin": "yīsībùgǒu",
+    "english": [
+      "meticulously"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 17034
+  },
+  {
+    "hanzi": "东张西望",
+    "pinyin": "dōngzhāngxīwàng",
+    "english": [
+      "to look in all directions (idiom)/to glance around"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 17272
+  },
+  {
     "hanzi": "提纲",
     "pinyin": "tígāng",
     "english": [
@@ -30819,6 +34041,63 @@
     "frequencyRank": 17317
   },
   {
+    "hanzi": "道教",
+    "pinyin": "Dàojiào",
+    "english": [
+      "Taoism/Daoism"
+    ],
+    "categories": [
+      "religion"
+    ],
+    "frequencyRank": 17350
+  },
+  {
+    "hanzi": "美式",
+    "pinyin": "Měi-shì",
+    "english": [
+      "American style"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 17397
+  },
+  {
+    "hanzi": "圣诞老人",
+    "pinyin": "Shèngdàn Lǎorén",
+    "english": [
+      "Santa Claus"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 17402
+  },
+  {
+    "hanzi": "不屑一顾",
+    "pinyin": "bùxièyīgù",
+    "english": [
+      "to disdain as unworthy of consideration"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 17408
+  },
+  {
+    "hanzi": "算数",
+    "pinyin": "suànshù",
+    "english": [
+      "to count numbers/to keep to one's word/to hold (i.e. to remain valid)/to count (i.e. to be important)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 17431
+  },
+  {
     "hanzi": "勺子",
     "pinyin": "sháozi",
     "english": [
@@ -30827,9 +34106,33 @@
     ],
     "hskLevel": 4,
     "categories": [
-      "noun"
+      "noun",
+      "tableware"
     ],
     "frequencyRank": 17434
+  },
+  {
+    "hanzi": "联网",
+    "pinyin": "liánwǎng",
+    "english": [
+      "to connect to the internet"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 17438
+  },
+  {
+    "hanzi": "一目了然",
+    "pinyin": "yīmùliǎorán",
+    "english": [
+      "it is clear at a glance"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 17602
   },
   {
     "hanzi": "挂号",
@@ -30857,6 +34160,97 @@
     "frequencyRank": 17623
   },
   {
+    "hanzi": "确诊",
+    "pinyin": "quèzhěn",
+    "english": [
+      "to make a definite diagnosis"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 17773
+  },
+  {
+    "hanzi": "高烧",
+    "pinyin": "gāoshāo",
+    "english": [
+      "high fever"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 17783
+  },
+  {
+    "hanzi": "鱼肉",
+    "pinyin": "yú ròu",
+    "english": [
+      "fish \"meat\""
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 17814
+  },
+  {
+    "hanzi": "订票",
+    "pinyin": "dìngpiào",
+    "english": [
+      "to book tickets",
+      "to issue tickets"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 17932
+  },
+  {
+    "hanzi": "层出不穷",
+    "pinyin": "céngchūbùqióng",
+    "english": [
+      "more and more emerg"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 18000
+  },
+  {
+    "hanzi": "肥肉",
+    "pinyin": "féiròu",
+    "english": [
+      "fatty meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 18004
+  },
+  {
+    "hanzi": "洋葱",
+    "pinyin": "yángcōng",
+    "english": [
+      "onion"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 18206
+  },
+  {
+    "hanzi": "流感",
+    "pinyin": "liúgǎn",
+    "english": [
+      "flu (influenza)"
+    ],
+    "categories": [
+      "covid-19",
+      "sick"
+    ],
+    "frequencyRank": 18455
+  },
+  {
     "hanzi": "除夕",
     "pinyin": "Chúxī",
     "english": [
@@ -30879,6 +34273,41 @@
       "noun"
     ],
     "frequencyRank": 18572
+  },
+  {
+    "hanzi": "热泪盈眶",
+    "pinyin": "rèlèiyíngkuàng",
+    "english": [
+      "eyes brimming with tears of excitement (idiom)/extremely moved"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 18642
+  },
+  {
+    "hanzi": "狗肉",
+    "pinyin": "gǒu ròu",
+    "english": [
+      "dog meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 18700
+  },
+  {
+    "hanzi": "安全带",
+    "pinyin": "ānquándài",
+    "english": [
+      "seat belt",
+      "safety belt"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 18716
   },
   {
     "hanzi": "虚心",
@@ -30929,6 +34358,41 @@
     "frequencyRank": 18888
   },
   {
+    "hanzi": "全力以赴",
+    "pinyin": "quánlìyǐfù",
+    "english": [
+      "to do at all costs/to make an all-out effort"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 19066
+  },
+  {
+    "hanzi": "三明治",
+    "pinyin": "sānmíngzhì",
+    "english": [
+      "sandwich"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 19137
+  },
+  {
+    "hanzi": "不言而喻",
+    "pinyin": "bùyánéryù",
+    "english": [
+      "it goes without saying"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 19151
+  },
+  {
     "hanzi": "好客",
     "pinyin": "hàokè",
     "english": [
@@ -30953,6 +34417,18 @@
     "frequencyRank": 19514
   },
   {
+    "hanzi": "潜移默化",
+    "pinyin": "qiányímòhuà",
+    "english": [
+      "imperceptible influence/to influence secretly"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 19657
+  },
+  {
     "hanzi": "灰心",
     "pinyin": "huīxīn",
     "english": [
@@ -30964,6 +34440,28 @@
       "verb"
     ],
     "frequencyRank": 19751
+  },
+  {
+    "hanzi": "玉兰",
+    "pinyin": "yùlán",
+    "english": [
+      "Yulan magnolia"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 19811
+  },
+  {
+    "hanzi": "茉莉",
+    "pinyin": "mòlì",
+    "english": [
+      "jasmine"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 19820
   },
   {
     "hanzi": "梳子",
@@ -31002,6 +34500,40 @@
     "frequencyRank": 20032
   },
   {
+    "hanzi": "聚精会神",
+    "pinyin": "jùjīnghuìshén",
+    "english": [
+      "to concentrate one's attention (idiom)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 20317
+  },
+  {
+    "hanzi": "郁金香",
+    "pinyin": "yùjīnxiāng",
+    "english": [
+      "tulip"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 20445
+  },
+  {
+    "hanzi": "酸痛",
+    "pinyin": "suāntòng",
+    "english": [
+      "to ache"
+    ],
+    "categories": [
+      "sick"
+    ],
+    "frequencyRank": 20580
+  },
+  {
     "hanzi": "劳驾",
     "pinyin": "láojià",
     "english": [
@@ -31012,6 +34544,30 @@
       "verb"
     ],
     "frequencyRank": 20587
+  },
+  {
+    "hanzi": "冲浪",
+    "pinyin": "chōnglàng",
+    "english": [
+      "to surf",
+      "surfing"
+    ],
+    "categories": [
+      "sports",
+      "summer"
+    ],
+    "frequencyRank": 20668
+  },
+  {
+    "hanzi": "拳击",
+    "pinyin": "quánjī",
+    "english": [
+      "boxing"
+    ],
+    "categories": [
+      "sports"
+    ],
+    "frequencyRank": 20699
   },
   {
     "hanzi": "躲藏",
@@ -31026,6 +34582,67 @@
     "frequencyRank": 21051
   },
   {
+    "hanzi": "吞吞吐吐",
+    "pinyin": "tūntūntǔtǔ",
+    "english": [
+      "swallowing and stammering"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 21231
+  },
+  {
+    "hanzi": "炒饭",
+    "pinyin": "chǎofàn",
+    "english": [
+      "fried rice"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 21291
+  },
+  {
+    "hanzi": "爱不释手",
+    "pinyin": "àibùshìshǒu",
+    "english": [
+      "to love too much to part with it"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 21314
+  },
+  {
+    "hanzi": "家喻户晓",
+    "pinyin": "jiāyùhùxiǎo",
+    "english": [
+      "understood by everyone (idiom)",
+      "well known/a household name"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 21348
+  },
+  {
+    "hanzi": "狼吞虎咽",
+    "pinyin": "lángtūnhǔyàn",
+    "english": [
+      "to wolf down one's food (idiom)",
+      "to devour ravenously/to gorge oneself"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 21427
+  },
+  {
     "hanzi": "刮风",
     "pinyin": "guāfēng",
     "english": [
@@ -31033,9 +34650,45 @@
     ],
     "hskLevel": 3,
     "categories": [
-      "verb"
+      "verb",
+      "weather"
     ],
     "frequencyRank": 21580
+  },
+  {
+    "hanzi": "咖喱",
+    "pinyin": "gālí",
+    "english": [
+      "curry"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 21592
+  },
+  {
+    "hanzi": "竭尽全力",
+    "pinyin": "jiéjìnquánlì",
+    "english": [
+      "to spare no effort (idiom)",
+      "to do one's utmost"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 21626
+  },
+  {
+    "hanzi": "牙医",
+    "pinyin": "yáyī",
+    "english": [
+      "dentist"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 21780
   },
   {
     "hanzi": "着凉",
@@ -31063,6 +34716,29 @@
     "frequencyRank": 21968
   },
   {
+    "hanzi": "天窗",
+    "pinyin": "tiānchuāng",
+    "english": [
+      "skylight"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 22010
+  },
+  {
+    "hanzi": "当务之急",
+    "pinyin": "dāngwùzhījí",
+    "english": [
+      "top priority job/matter of vital importance"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 22013
+  },
+  {
     "hanzi": "振动",
     "pinyin": "zhèndòng",
     "english": [
@@ -31073,6 +34749,45 @@
       "verb"
     ],
     "frequencyRank": 22039
+  },
+  {
+    "hanzi": "根深蒂固",
+    "pinyin": "gēnshēndìgù",
+    "english": [
+      "deep-rooted (problem etc)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 22186
+  },
+  {
+    "hanzi": "力所能及",
+    "pinyin": "lìsuǒnéngjí",
+    "english": [
+      "as far as one's capabilities extend (idiom)",
+      "to the best of one's ability/within one's powers"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 22276
+  },
+  {
+    "hanzi": "见义勇为",
+    "pinyin": "jiànyìyǒngwéi",
+    "english": [
+      "to see what is right and act courageously (idiom",
+      "from Analects)",
+      "to stand up bravely for the truth/acting heroically in a just cause"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 22281
   },
   {
     "hanzi": "弹钢琴",
@@ -31112,6 +34827,40 @@
     "frequencyRank": 22533
   },
   {
+    "hanzi": "无微不至",
+    "pinyin": "wúwēibùzhì",
+    "english": [
+      "in every way"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 22554
+  },
+  {
+    "hanzi": "鸡尾酒",
+    "pinyin": "jīwěijiǔ",
+    "english": [
+      "cocktail"
+    ],
+    "categories": [
+      "alcohol"
+    ],
+    "frequencyRank": 22647
+  },
+  {
+    "hanzi": "多云",
+    "pinyin": "duōyún",
+    "english": [
+      "cloudy (of weather)"
+    ],
+    "categories": [
+      "weather"
+    ],
+    "frequencyRank": 22650
+  },
+  {
     "hanzi": "粗心",
     "pinyin": "cūxīn",
     "english": [
@@ -31123,6 +34872,216 @@
       "adjective"
     ],
     "frequencyRank": 22659
+  },
+  {
+    "hanzi": "白兰地",
+    "pinyin": "báilándì",
+    "english": [
+      "brandy (loanword)"
+    ],
+    "categories": [
+      "alcohol"
+    ],
+    "frequencyRank": 22743
+  },
+  {
+    "hanzi": "斩钉截铁",
+    "pinyin": "zhǎndīngjiétiě",
+    "english": [
+      "decisive and firm"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 22766
+  },
+  {
+    "hanzi": "脾",
+    "pinyin": "pí",
+    "english": [
+      "spleen"
+    ],
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 22900
+  },
+  {
+    "hanzi": "有条不紊",
+    "pinyin": "yǒutiáobùwěn",
+    "english": [
+      "regular and thorough (idiom)",
+      "methodically arranged"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 22904
+  },
+  {
+    "hanzi": "热浪",
+    "pinyin": "rèlàng",
+    "english": [
+      "heatwave"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 22912
+  },
+  {
+    "hanzi": "侃侃而谈",
+    "pinyin": "kǎnkǎnértán",
+    "english": [
+      "to speak frankly with assurance"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 23137
+  },
+  {
+    "hanzi": "瘦肉",
+    "pinyin": "shòuròu",
+    "english": [
+      "lean meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 23250
+  },
+  {
+    "hanzi": "冰雹",
+    "pinyin": "bīngbáo",
+    "english": [
+      "hail"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "weather"
+    ],
+    "frequencyRank": 23366
+  },
+  {
+    "hanzi": "铃铛",
+    "pinyin": "língdang",
+    "english": [
+      "little bell"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 23477
+  },
+  {
+    "hanzi": "风土人情",
+    "pinyin": "fēngtǔrénqíng",
+    "english": [
+      "local conditions and customs (idiom)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 23513
+  },
+  {
+    "hanzi": "喷嚏",
+    "pinyin": "pēntì",
+    "english": [
+      "sneeze"
+    ],
+    "hskLevel": 5,
+    "categories": [
+      "covid-19",
+      "sick"
+    ],
+    "frequencyRank": 23589
+  },
+  {
+    "hanzi": "脚踝",
+    "pinyin": "jiǎohuái",
+    "english": [
+      "ankle"
+    ],
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 23695
+  },
+  {
+    "hanzi": "圣诞树",
+    "pinyin": "Shèngdàn shù",
+    "english": [
+      "Christmas tree"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 23873
+  },
+  {
+    "hanzi": "关卡",
+    "pinyin": "guānqiǎ",
+    "english": [
+      "level",
+      "checkpoint"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 24007
+  },
+  {
+    "hanzi": "供不应求",
+    "pinyin": "gōngbùyìngqiú",
+    "english": [
+      "supply fails to meet demand"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 24067
+  },
+  {
+    "hanzi": "野餐",
+    "pinyin": "yěcān",
+    "english": [
+      "picnic"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 24224
+  },
+  {
+    "hanzi": "死亡率",
+    "pinyin": "sǐwáng lǜ",
+    "english": [
+      "death rate",
+      "mortality rate"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 24259
+  },
+  {
+    "hanzi": "得天独厚",
+    "pinyin": "détiāndúhòu",
+    "english": [
+      "blessed by heaven (idiom)/enjoying exceptional advantages/favored by nature"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 24468
   },
   {
     "hanzi": "急诊",
@@ -31137,6 +35096,28 @@
     "frequencyRank": 24511
   },
   {
+    "hanzi": "腊肉",
+    "pinyin": "làròu",
+    "english": [
+      "Chinese preserved pork belly"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 24857
+  },
+  {
+    "hanzi": "薯条",
+    "pinyin": "shǔtiáo",
+    "english": [
+      "french fries"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 24957
+  },
+  {
     "hanzi": "纸袋",
     "pinyin": "zhǐdài",
     "english": [
@@ -31149,6 +35130,30 @@
     "frequencyRank": 24996
   },
   {
+    "hanzi": "无穷无尽",
+    "pinyin": "wúqióngwújìn",
+    "english": [
+      "something that is endless or infinite"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 25470
+  },
+  {
+    "hanzi": "博大精深",
+    "pinyin": "bódàjīngshēn",
+    "english": [
+      "wide-ranging and profound"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 25531
+  },
+  {
     "hanzi": "名胜古迹",
     "pinyin": "míngshèng gǔjì",
     "english": [
@@ -31156,9 +35161,22 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "chinese idioms"
     ],
     "frequencyRank": 25568
+  },
+  {
+    "hanzi": "鸦雀无声",
+    "pinyin": "yāquèwúshēng",
+    "english": [
+      "crow and peacock make no sound"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 25707
   },
   {
     "hanzi": "叉子",
@@ -31168,9 +35186,69 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "tableware"
     ],
     "frequencyRank": 26017
+  },
+  {
+    "hanzi": "日新月异",
+    "pinyin": "rìxīnyuèyì",
+    "english": [
+      "daily renewal",
+      "monthly change (idiom)/every day sees new developments/rapid progress"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 26252
+  },
+  {
+    "hanzi": "旷课",
+    "pinyin": "kuàngkè",
+    "english": [
+      "to play truant/to cut classes"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 26469
+  },
+  {
+    "hanzi": "后视镜",
+    "pinyin": "hòushìjìng",
+    "english": [
+      "rearview mirror"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 27002
+  },
+  {
+    "hanzi": "雪上加霜",
+    "pinyin": "xuěshàngjiāshuāng",
+    "english": [
+      "to add hail to snow (idiom)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 27035
+  },
+  {
+    "hanzi": "雪碧",
+    "pinyin": "Xuěbì",
+    "english": [
+      "Sprite (soft drink)"
+    ],
+    "categories": [
+      "beverage"
+    ],
+    "frequencyRank": 27386
   },
   {
     "hanzi": "礼拜天",
@@ -31185,6 +35263,30 @@
     "frequencyRank": 27621
   },
   {
+    "hanzi": "控制器",
+    "pinyin": "kòngzhìqì",
+    "english": [
+      "controller"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 27829
+  },
+  {
+    "hanzi": "川流不息",
+    "pinyin": "chuānliúbùxī",
+    "english": [
+      "the stream flows without stopping (idiom)",
+      "unending flow"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 27966
+  },
+  {
     "hanzi": "退步",
     "pinyin": "tuìbù",
     "english": [
@@ -31197,6 +35299,43 @@
     "frequencyRank": 27967
   },
   {
+    "hanzi": "后顾之忧",
+    "pinyin": "hòugùzhīyōu",
+    "english": [
+      "fears of trouble in the rear (idiom)",
+      "family worries (obstructing freedom of action)/worries about the future consequences/often in negative expressions",
+      "meaning \"no worries about anything\""
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 28188
+  },
+  {
+    "hanzi": "萨克斯",
+    "pinyin": "sàkèsī",
+    "english": [
+      "sax/saxophone"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 28292
+  },
+  {
+    "hanzi": "东道主",
+    "pinyin": "dōngdàozhǔ",
+    "english": [
+      "host;official host (e.g. venue for games or a conference)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "shenfenguanxi"
+    ],
+    "frequencyRank": 28374
+  },
+  {
     "hanzi": "充电器",
     "pinyin": "chōngdiànqì",
     "english": [
@@ -31204,7 +35343,8 @@
     ],
     "hskLevel": 5,
     "categories": [
-      "noun"
+      "noun",
+      "go travelling"
     ],
     "frequencyRank": 28399
   },
@@ -31219,6 +35359,17 @@
       "noun"
     ],
     "frequencyRank": 28453
+  },
+  {
+    "hanzi": "打雷",
+    "pinyin": "dǎléi",
+    "english": [
+      "to rumble with thunder"
+    ],
+    "categories": [
+      "weather"
+    ],
+    "frequencyRank": 28552
   },
   {
     "hanzi": "标点",
@@ -31245,6 +35396,109 @@
     "frequencyRank": 28648
   },
   {
+    "hanzi": "得不偿失",
+    "pinyin": "débùchángshī",
+    "english": [
+      "gains do not make up for the losses"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 28660
+  },
+  {
+    "hanzi": "对战",
+    "pinyin": "duìzhàn",
+    "english": [
+      "battle"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 28690
+  },
+  {
+    "hanzi": "犹太教",
+    "pinyin": "Yóutàijiào",
+    "english": [
+      "Judaism"
+    ],
+    "categories": [
+      "religion"
+    ],
+    "frequencyRank": 28742
+  },
+  {
+    "hanzi": "口琴",
+    "pinyin": "kǒuqín",
+    "english": [
+      "harmonica"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 28899
+  },
+  {
+    "hanzi": "游乐园",
+    "pinyin": "yóulèyuán",
+    "english": [
+      "amusement park"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 29287
+  },
+  {
+    "hanzi": "半途而废",
+    "pinyin": "bàntúérfèi",
+    "english": [
+      "to give up halfway",
+      "leave unfinished"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 29309
+  },
+  {
+    "hanzi": "手风琴",
+    "pinyin": "shǒufēngqín",
+    "english": [
+      "accordion"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 29448
+  },
+  {
+    "hanzi": "物美价廉",
+    "pinyin": "wùměijiàlián",
+    "english": [
+      "something that is of good quality and cheap price."
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 29511
+  },
+  {
+    "hanzi": "炒面",
+    "pinyin": "chǎomiàn",
+    "english": [
+      "stir-fried noodles"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 29787
+  },
+  {
     "hanzi": "尺子",
     "pinyin": "chǐzi",
     "english": [
@@ -31255,6 +35509,89 @@
       "noun"
     ],
     "frequencyRank": 29885
+  },
+  {
+    "hanzi": "吸管",
+    "pinyin": "xīguǎn",
+    "english": [
+      "(drinking) straw"
+    ],
+    "categories": [
+      "tableware"
+    ],
+    "frequencyRank": 30284
+  },
+  {
+    "hanzi": "烤鸡",
+    "pinyin": "kǎojī",
+    "english": [
+      "roast chicken"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 30445
+  },
+  {
+    "hanzi": "与日俱增",
+    "pinyin": "yǔrìjùzēng",
+    "english": [
+      "to increase steadily"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 30534
+  },
+  {
+    "hanzi": "见多识广",
+    "pinyin": "jiànduōshíguǎng",
+    "english": [
+      "experienced and knowledgeable (idiom)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 30902
+  },
+  {
+    "hanzi": "东正教",
+    "pinyin": "Dōngzhèngjiào",
+    "english": [
+      "Eastern Orthodox Church"
+    ],
+    "categories": [
+      "religion"
+    ],
+    "frequencyRank": 30950
+  },
+  {
+    "hanzi": "锦上添花",
+    "pinyin": "jǐnshàngtiānhuā",
+    "english": [
+      "lit. on brocade",
+      "add flowers (idiom)",
+      "to decorate sth already perfect/gilding the lily"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 30958
+  },
+  {
+    "hanzi": "古筝",
+    "pinyin": "gǔzhēng",
+    "english": [
+      "zither or guzheng/large zither with 13 to 25 strings",
+      "developed from guqin 古琴 during Tang and Song times"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 31020
   },
   {
     "hanzi": "胆小鬼",
@@ -31269,6 +35606,272 @@
     "frequencyRank": 31091
   },
   {
+    "hanzi": "印度教",
+    "pinyin": "Yìndùjiào",
+    "english": [
+      "Hinduism/Indian religion"
+    ],
+    "categories": [
+      "religion"
+    ],
+    "frequencyRank": 31175
+  },
+  {
+    "hanzi": "燕麦",
+    "pinyin": "yànmài",
+    "english": [
+      "oatmeal"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 31241
+  },
+  {
+    "hanzi": "精益求精",
+    "pinyin": "jīngyìqiújīng",
+    "english": [
+      "to perfect sth that is already outstanding (idiom)",
+      "constantly improving"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 31676
+  },
+  {
+    "hanzi": "花粉",
+    "pinyin": "huāfěn",
+    "english": [
+      "pollen"
+    ],
+    "categories": [
+      "allergy"
+    ],
+    "frequencyRank": 31847
+  },
+  {
+    "hanzi": "雪橇",
+    "pinyin": "xuěqiāo",
+    "english": [
+      "sled",
+      "sleigh"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 31863
+  },
+  {
+    "hanzi": "相辅相成",
+    "pinyin": "xiāngfǔxiāngchéng",
+    "english": [
+      "complement each other"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 32425
+  },
+  {
+    "hanzi": "颈椎",
+    "pinyin": "jǐngzhuī",
+    "english": [
+      "cervical vertebra"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "body parts"
+    ],
+    "frequencyRank": 32850
+  },
+  {
+    "hanzi": "齐心协力",
+    "pinyin": "qíxīnxiélì",
+    "english": [
+      "to work together as one"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 33029
+  },
+  {
+    "hanzi": "精打细算",
+    "pinyin": "jīngdǎxìsuàn",
+    "english": [
+      "meticulous planning and careful accounting (idiom)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 33604
+  },
+  {
+    "hanzi": "竞技场",
+    "pinyin": "jìngjìchǎng",
+    "english": [
+      "arena"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 34002
+  },
+  {
+    "hanzi": "唢呐",
+    "pinyin": "suǒnà",
+    "english": [
+      "suona",
+      "Chinese shawm (oboe)",
+      "used in festivals and processions or for military purposes/also written 鎖吶|锁呐/also called 喇叭"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 34137
+  },
+  {
+    "hanzi": "伏特加",
+    "pinyin": "fútèjiā",
+    "english": [
+      "vodka"
+    ],
+    "categories": [
+      "alcohol"
+    ],
+    "frequencyRank": 34286
+  },
+  {
+    "hanzi": "无理取闹",
+    "pinyin": "wúlǐqǔnào",
+    "english": [
+      "unjustifiable"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 34607
+  },
+  {
+    "hanzi": "离合器",
+    "pinyin": "líhéqì",
+    "english": [
+      "clutch (mechanics)"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 34680
+  },
+  {
+    "hanzi": "防晒霜",
+    "pinyin": "fángshàishuāng",
+    "english": [
+      "sunscreen"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 35700
+  },
+  {
+    "hanzi": "清唱",
+    "pinyin": "qīngchàng",
+    "english": [
+      "to sing opera music (without staging or make up)"
+    ],
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 35764
+  },
+  {
+    "hanzi": "王储",
+    "pinyin": "wángchǔ",
+    "english": [
+      "heir to throne"
+    ],
+    "categories": [
+      "national leader"
+    ],
+    "frequencyRank": 35782
+  },
+  {
+    "hanzi": "再接再厉",
+    "pinyin": "zàijiēzàilì",
+    "english": [
+      "to continue the struggle (idiom)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 35967
+  },
+  {
+    "hanzi": "留级",
+    "pinyin": "liújí",
+    "english": [
+      "to repeat a year in school"
+    ],
+    "categories": [
+      "education"
+    ],
+    "frequencyRank": 36153
+  },
+  {
+    "hanzi": "驴肉",
+    "pinyin": "lǘ ròu",
+    "english": [
+      "donkey meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 36362
+  },
+  {
+    "hanzi": "天伦之乐",
+    "pinyin": "tiānlúnzhīlè",
+    "english": [
+      "family love and joy/domestic bliss"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 36962
+  },
+  {
+    "hanzi": "废寝忘食",
+    "pinyin": "fèiqǐnwàngshí",
+    "english": [
+      "to neglect sleep and forget about food (idiom)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 36979
+  },
+  {
+    "hanzi": "寿司",
+    "pinyin": "shòusī",
+    "english": [
+      "sushi"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 38040
+  },
+  {
     "hanzi": "空儿",
     "pinyin": "kòngr",
     "english": [
@@ -31279,6 +35882,28 @@
       "noun"
     ],
     "frequencyRank": 38272
+  },
+  {
+    "hanzi": "反光镜",
+    "pinyin": "fǎnguāngjìng",
+    "english": [
+      "reflecting mirror"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 39903
+  },
+  {
+    "hanzi": "干咳",
+    "pinyin": "gānké",
+    "english": [
+      "dry cough"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 40044
   },
   {
     "hanzi": "亲爱",
@@ -31293,6 +35918,18 @@
     "frequencyRank": 40551
   },
   {
+    "hanzi": "刻不容缓",
+    "pinyin": "kèbùrónghuǎn",
+    "english": [
+      "to brook no delay/to demand immediate action"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 40580
+  },
+  {
     "hanzi": "占线",
     "pinyin": "zhànxiàn",
     "english": [
@@ -31305,6 +35942,52 @@
     "frequencyRank": 40771
   },
   {
+    "hanzi": "各抒己见",
+    "pinyin": "gèshūjǐjiàn",
+    "english": [
+      "everyone gives their own view"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 41036
+  },
+  {
+    "hanzi": "康乃馨",
+    "pinyin": "kāngnǎixīn",
+    "english": [
+      "carnation or clove pink/Dianthus caryophyllus (botany)"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 41277
+  },
+  {
+    "hanzi": "喜闻乐见",
+    "pinyin": "xǐwénlèjiàn",
+    "english": [
+      "something that is pleasing and enjoyable to people"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 41871
+  },
+  {
+    "hanzi": "热狗",
+    "pinyin": "règǒu",
+    "english": [
+      "hot dog (loanword)"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 42358
+  },
+  {
     "hanzi": "登机牌",
     "pinyin": "dēngjīpái",
     "english": [
@@ -31315,6 +35998,76 @@
       "noun"
     ],
     "frequencyRank": 42515
+  },
+  {
+    "hanzi": "空前绝后",
+    "pinyin": "kōngqiánjuéhòu",
+    "english": [
+      "unprecedented and never to be duplicated/the first and the last/unmatched/unique"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 43163
+  },
+  {
+    "hanzi": "变速器",
+    "pinyin": "biànsùqì",
+    "english": [
+      "gearbox"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 44225
+  },
+  {
+    "hanzi": "称心如意",
+    "pinyin": "chènxīnrúyì",
+    "english": [
+      "after one's heart (idiom)",
+      "gratifying and satisfactory"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 44226
+  },
+  {
+    "hanzi": "自由职业者",
+    "pinyin": "zìyóuzhíyèzhě",
+    "english": [
+      "freelancer"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 46009
+  },
+  {
+    "hanzi": "优胜劣汰",
+    "pinyin": "yōushèngliètài",
+    "english": [
+      "survival of the fittest"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 46372
+  },
+  {
+    "hanzi": "白肉",
+    "pinyin": "báiròu",
+    "english": [
+      "plain boiled pork"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 49984
   },
   {
     "hanzi": "著名",
@@ -31459,6 +36212,1224 @@
     "hskLevel": 5,
     "categories": [
       "verb"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "消防员",
+    "pinyin": "xiāofángyuán",
+    "english": [
+      "firefighter"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "外卖员",
+    "pinyin": "wàimàiyuán",
+    "english": [
+      "delivery clerk"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "网红",
+    "pinyin": "wǎnghóng",
+    "english": [
+      "internet-famous"
+    ],
+    "categories": [
+      "careers"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "宿醉",
+    "pinyin": "sùzuì",
+    "english": [
+      "hangover [formal]"
+    ],
+    "categories": [
+      "alcohol"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "红酒",
+    "pinyin": "hóngjiǔ",
+    "english": [
+      "red wine"
+    ],
+    "categories": [
+      "alcohol",
+      "beverage"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "马提尼",
+    "pinyin": "mǎdīngní",
+    "english": [
+      "martini (loanword)"
+    ],
+    "categories": [
+      "alcohol"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "疹子",
+    "pinyin": "zhěnzi",
+    "english": [
+      "rash"
+    ],
+    "categories": [
+      "allergy"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "乳糖不耐受",
+    "pinyin": "rǔtáng bù nài shòu",
+    "english": [
+      "lactose Intolerance"
+    ],
+    "categories": [
+      "allergy"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "治愈率",
+    "pinyin": "zhìyù lǜ",
+    "english": [
+      "(disease) recovery rate"
+    ],
+    "categories": [
+      "covid-19"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "前灯",
+    "pinyin": "qiándēng",
+    "english": [
+      "headlight"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "尾灯",
+    "pinyin": "wěidēng",
+    "english": [
+      "tail light (on vehicle)"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "挡风玻璃",
+    "pinyin": "dǎngfēngbōli",
+    "english": [
+      "windshield"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "全球定位系统",
+    "pinyin": "quánqiú dìngwèi xìtǒng",
+    "english": [
+      "GPS"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "行车记录仪",
+    "pinyin": "xíngchē jìlùyí",
+    "english": [
+      "car recorder"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "雨刷",
+    "pinyin": "yǔshuā",
+    "english": [
+      "windshield wiper"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "安全气囊",
+    "pinyin": "zhuījiū",
+    "english": [
+      "to investigate/to look into"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "档杆",
+    "pinyin": "dǎng gǎn",
+    "english": [
+      "gear stick"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "定速巡航",
+    "pinyin": "dìng sù xúnháng",
+    "english": [
+      "cruise control"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "排气管",
+    "pinyin": "páiqìguǎn",
+    "english": [
+      "exhaust pipe"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "悬挂系统",
+    "pinyin": "xuánguà xìtǒng",
+    "english": [
+      "suspension"
+    ],
+    "categories": [
+      "car-related"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "丢三落四",
+    "pinyin": "diūsānlàsì",
+    "english": [
+      "forgetful/empty-headed"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "知足常乐",
+    "pinyin": "zhīzúchánglè",
+    "english": [
+      "to be satisfied with what one has"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "飞禽走兽",
+    "pinyin": "fēiqínzǒushòu",
+    "english": [
+      "birds and animals/the beasts of the field and the birds of the air"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "统筹兼顾",
+    "pinyin": "tǒngchóujiāngù",
+    "english": [
+      "an overall plan taking into account all factors"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "悬崖峭壁",
+    "pinyin": "xuányáqiàobì",
+    "english": [
+      "sheer cliffs and precipitous rock faces (idiom)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "拔苗助长",
+    "pinyin": "bámiáo zhùzhǎng",
+    "english": [
+      "to spoil things through excessive enthusiasm (idiom)"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "饱经沧桑",
+    "pinyin": "bǎojīngcāngsāng",
+    "english": [
+      "having lived through many changes"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "急于求成",
+    "pinyin": "jíyúqiúchéng",
+    "english": [
+      "anxious for quick results (idiom)",
+      "to demand instant success/impatient for result/impetuous"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "苦尽甘来",
+    "pinyin": "kǔjìngānlái",
+    "english": [
+      "bitterness finishes",
+      "sweetness begins (idiom)",
+      "the hard times are over",
+      "the good times just beginning"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "礼尚往来",
+    "pinyin": "lǐshàngwǎnglái",
+    "english": [
+      "lit. proper behavior is based on reciprocity (idiom)/fig. to return politeness for politeness"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "深情厚谊",
+    "pinyin": "shēnqínghòuyì",
+    "english": [
+      "deep friendship"
+    ],
+    "hskLevel": 6,
+    "categories": [
+      "chinese idioms"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "圣诞歌",
+    "pinyin": "Shèngdàn gē",
+    "english": [
+      "Christmas carol"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "圣诞卡",
+    "pinyin": "Shèngdàn kǎ",
+    "english": [
+      "Christmas card"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "圣诞晚餐",
+    "pinyin": "Shèngdàn wǎncān",
+    "english": [
+      "Christmas dinner"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "圣诞帽",
+    "pinyin": "Shèngdàn mào",
+    "english": [
+      "Santa hat"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "圣诞袜",
+    "pinyin": "Shèngdàn wà",
+    "english": [
+      "Christmas stocking"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "圣诞市场",
+    "pinyin": "Shèngdàn shìchǎng",
+    "english": [
+      "Christmas market"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "驯鹿",
+    "pinyin": "xùnlù",
+    "english": [
+      "reindeer"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "平安夜",
+    "pinyin": "Píng'ān Yè",
+    "english": [
+      "Christmas Eve"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "热红酒",
+    "pinyin": "rè hóngjiǔ",
+    "english": [
+      "mulled wine"
+    ],
+    "categories": [
+      "christmas"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "拿铁",
+    "pinyin": "nátiě",
+    "english": [
+      "latte"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "黑咖啡",
+    "pinyin": "hēi kāfēi",
+    "english": [
+      "black coffee"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "白咖啡",
+    "pinyin": "bái kāfēi",
+    "english": [
+      "white coffee"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "中杯",
+    "pinyin": "zhōng bēi",
+    "english": [
+      "medium cup"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "大杯",
+    "pinyin": "dà bēi",
+    "english": [
+      "large cup"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "少冰",
+    "pinyin": "shǎo bīng",
+    "english": [
+      "less ice"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "去冰",
+    "pinyin": "qù bīng",
+    "english": [
+      "no ice"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "低因",
+    "pinyin": "dī yīn",
+    "english": [
+      "low caffeine"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "馥芮白",
+    "pinyin": "fùruìbái",
+    "english": [
+      "frothe"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "卡布奇诺",
+    "pinyin": "kǎbùqínuò",
+    "english": [
+      "cappuccino"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "焦糖玛奇果",
+    "pinyin": "jiāotáng mǎ qí guǒ",
+    "english": [
+      "caramel macchiato"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "摩卡",
+    "pinyin": "mókǎ",
+    "english": [
+      "mocha"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "冷萃",
+    "pinyin": "lěng cuì",
+    "english": [
+      "cold brew"
+    ],
+    "categories": [
+      "coffee"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "炸鸡",
+    "pinyin": "zhájī",
+    "english": [
+      "fried chicken"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "披萨",
+    "pinyin": "pīsà",
+    "english": [
+      "pizza"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "沙拉",
+    "pinyin": "shālā",
+    "english": [
+      "salad"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "肉串",
+    "pinyin": "ròu chuàn",
+    "english": [
+      "meat skewers"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "意面",
+    "pinyin": "yìmiàn",
+    "english": [
+      "pasta"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "炸鱼薯条",
+    "pinyin": "zhà yú shǔ tiáo",
+    "english": [
+      "fish and chips"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "墨西哥卷",
+    "pinyin": "mòxīgē juǎn",
+    "english": [
+      "taco"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "煎饺",
+    "pinyin": "jiānjiǎo",
+    "english": [
+      "fried dumpling"
+    ],
+    "categories": [
+      "fast food"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "薰衣草",
+    "pinyin": "xūnyīcǎo",
+    "english": [
+      "lavender"
+    ],
+    "categories": [
+      "flower"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "民宿",
+    "pinyin": "mínsù",
+    "english": [
+      "countryside inn"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "攻略",
+    "pinyin": "gōnglüè",
+    "english": [
+      "how-to guide",
+      "walk-through (of a video game)"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "充电宝",
+    "pinyin": "chōngdiànbǎo",
+    "english": [
+      "portable charger/mobile power pack"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "高铁",
+    "pinyin": "gāotiě",
+    "english": [
+      "highspeed rail"
+    ],
+    "categories": [
+      "go travelling"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "熟肉",
+    "pinyin": "shú ròu",
+    "english": [
+      "cooked meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "生肉",
+    "pinyin": "shēngròu",
+    "english": [
+      "raw meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "鸭肉",
+    "pinyin": "yāròu",
+    "english": [
+      "duck (meat)"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "兔肉",
+    "pinyin": "tù ròu",
+    "english": [
+      "rabbit"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "火鸡肉",
+    "pinyin": "huǒjī ròu",
+    "english": [
+      "turkey meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "冻肉",
+    "pinyin": "dòngròu",
+    "english": [
+      "cold or frozen meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "红肉",
+    "pinyin": "hóng ròu",
+    "english": [
+      "red meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "卤肉",
+    "pinyin": "lǔròu",
+    "english": [
+      "stewed meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "咸肉",
+    "pinyin": "xiánròu",
+    "english": [
+      "salt-cured meat"
+    ],
+    "categories": [
+      "meat"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "朋克",
+    "pinyin": "péngkè",
+    "english": [
+      "punk (music style) (loanword)"
+    ],
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "节奏布鲁斯",
+    "pinyin": "jiézòubùlǔsī",
+    "english": [
+      "Rhythm and Blues R&B"
+    ],
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "新世纪",
+    "pinyin": "xīnshìjì",
+    "english": [
+      "New Century (commonly used name)"
+    ],
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "嘻哈",
+    "pinyin": "xīhā",
+    "english": [
+      "hip-hop (music genre) (loanword)"
+    ],
+    "categories": [
+      "music type"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "尤克里里",
+    "pinyin": "yóukèlǐlǐ",
+    "english": [
+      "ukulele [music]"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "长号",
+    "pinyin": "chánghào",
+    "english": [
+      "trombone"
+    ],
+    "categories": [
+      "musical instrument"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "女同性恋",
+    "pinyin": "Nǚ tóngxìngliàn",
+    "english": [
+      "lesbian"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "男同性恋",
+    "pinyin": "nán tóngxìngliàn",
+    "english": [
+      "gay"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "性取向",
+    "pinyin": "xìngqǔxiàng",
+    "english": [
+      "sexual orientation (e.g. gay)"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "跨性别",
+    "pinyin": "kuà xìngbié",
+    "english": [
+      "transgender"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "变性人",
+    "pinyin": "biànxìng rén",
+    "english": [
+      "Transgender"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "酷儿",
+    "pinyin": "kùér",
+    "english": [
+      "queer (sexuality)"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "性少数",
+    "pinyin": "xìng shǎoshù",
+    "english": [
+      "sexual minority"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "双性恋",
+    "pinyin": "shuāngxìngliàn",
+    "english": [
+      "bisexual"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "异性恋",
+    "pinyin": "yìxìngliàn",
+    "english": [
+      "heterosexuality"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "泛性恋",
+    "pinyin": "fàn xìng liàn",
+    "english": [
+      "pansexual"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "无性恋",
+    "pinyin": "wúxìng liàn",
+    "english": [
+      "asexual"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "彩虹族群",
+    "pinyin": "cǎihóng zúqún",
+    "english": [
+      "rainbow group"
+    ],
+    "categories": [
+      "sexual identity"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "不舒服",
+    "pinyin": "bù shūfu",
+    "english": [
+      "uncomfortable",
+      "unwell"
+    ],
+    "categories": [
+      "sick"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "想吐",
+    "pinyin": "xiǎng tǔ",
+    "english": [
+      "vomiting"
+    ],
+    "categories": [
+      "sick"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "飞盘",
+    "pinyin": "fēipán",
+    "english": [
+      "frisbee",
+      "disc"
+    ],
+    "categories": [
+      "sports"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "户外活动",
+    "pinyin": "hùwài huódòng",
+    "english": [
+      "outdoor activities"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "沙滩排球",
+    "pinyin": "shātān páiqiú",
+    "english": [
+      "beach volleyball"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "浮潜",
+    "pinyin": "fúqiǎn",
+    "english": [
+      "snorkeling"
+    ],
+    "categories": [
+      "summer"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "礼拜一",
+    "pinyin": "Lǐbàiyī",
+    "english": [
+      "Monday"
+    ],
+    "categories": [
+      "time"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "西兰花",
+    "pinyin": "xīlánhuā",
+    "english": [
+      "broccoli"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "牛油果",
+    "pinyin": "niúyóuguǒ",
+    "english": [
+      "avocado"
+    ],
+    "categories": [
+      "vegetables"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "多人游戏",
+    "pinyin": "duōrén yóuxì",
+    "english": [
+      "multiplayer game"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "单人游戏",
+    "pinyin": "dānrén yóuxì",
+    "english": [
+      "single-player game"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "虚拟现实",
+    "pinyin": "xūnǐ xiànshí",
+    "english": [
+      "virtual reality"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "音效",
+    "pinyin": "yīnxiào",
+    "english": [
+      "sound effect"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "打怪",
+    "pinyin": "dǎ guài",
+    "english": [
+      "to fight monsters"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "刷怪",
+    "pinyin": "shuā guài",
+    "english": [
+      "to spawn monsters"
+    ],
+    "categories": [
+      "video games"
+    ],
+    "frequencyRank": 999999
+  },
+  {
+    "hanzi": "解谜",
+    "pinyin": "jiěmí",
+    "english": [
+      "puzzle-solving"
+    ],
+    "categories": [
+      "video games"
     ],
     "frequencyRank": 999999
   }
