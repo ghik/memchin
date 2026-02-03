@@ -1,11 +1,9 @@
 import type { PracticeMode, PracticeQuestion } from './services.js';
 import {
-  addLabel,
   completePractice,
-  getLabels,
+  getCategories,
   getStats,
   getWordCount,
-  removeLabel,
   startPractice,
   submitAnswer,
 } from './services.js';
@@ -31,7 +29,13 @@ const resultStatsDiv = document.getElementById('result-stats')!;
 const mistakesSection = document.getElementById('mistakes-section')!;
 const mistakesList = document.getElementById('mistakes-list')!;
 const restartBtn = document.getElementById('restart-btn')!;
-const labelFilter = document.getElementById('label-filter') as HTMLSelectElement;
+const categoryToggle = document.getElementById('category-toggle')!;
+const categoryToggleText = document.getElementById('category-toggle-text')!;
+const categoryMenu = document.getElementById('category-menu')!;
+const categorySearch = document.getElementById('category-search') as HTMLInputElement;
+const categoryList = document.getElementById('category-list')!;
+const selectedCategoriesDiv = document.getElementById('selected-categories')!;
+const categoryDropdown = categoryToggle.parentElement!;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
 
 // Load autoplay preference from localStorage
@@ -47,8 +51,6 @@ let currentIndex = 0;
 let results: Map<string, boolean> = new Map(); // hanzi -> correctFirstTry
 let incorrectThisRound: PracticeQuestion[] = [];
 let submitBlocked = false;
-let wordLabels: Map<string, string[]> = new Map();
-let allKnownLabels: string[] = [];
 
 // Utility functions
 function showScreen(screen: HTMLElement) {
@@ -74,22 +76,62 @@ const MODE_LABELS: Record<PracticeMode, string> = {
   english2pinyin: 'English → Pinyin',
 };
 
+// Category selection state
+let selectedCategories: Set<string> = new Set();
+
+function updateCategoryToggleText() {
+  if (selectedCategories.size === 0) {
+    categoryToggleText.textContent = 'All categories';
+  } else {
+    categoryToggleText.textContent = `${selectedCategories.size} selected`;
+  }
+}
+
+function updateSelectedTags() {
+  selectedCategoriesDiv.innerHTML = '';
+  for (const cat of selectedCategories) {
+    const tag = document.createElement('span');
+    tag.className = 'selected-tag';
+    tag.innerHTML = `${cat}<button type="button" class="selected-tag-remove" data-category="${cat}">×</button>`;
+    selectedCategoriesDiv.appendChild(tag);
+  }
+}
+
+function toggleCategory(cat: string, checked: boolean) {
+  if (checked) {
+    selectedCategories.add(cat);
+  } else {
+    selectedCategories.delete(cat);
+  }
+  updateCategoryToggleText();
+  updateSelectedTags();
+  // Sync checkbox state
+  const checkbox = categoryList.querySelector(`input[value="${CSS.escape(cat)}"]`) as HTMLInputElement | null;
+  if (checkbox) checkbox.checked = checked;
+}
+
 // Load stats on start
 async function loadStats() {
   try {
-    const [stats, wordCount, labels] = await Promise.all([getStats(), getWordCount(), getLabels()]);
+    const [stats, wordCount, categories] = await Promise.all([getStats(), getWordCount(), getCategories()]);
 
-    // Populate label filter dropdown
-    allKnownLabels = labels;
-    const currentValue = labelFilter.value;
-    labelFilter.innerHTML = '<option value="">All words</option>';
-    for (const label of labels) {
-      const opt = document.createElement('option');
-      opt.value = label;
-      opt.textContent = label;
-      labelFilter.appendChild(opt);
+    // Populate category dropdown list
+    categoryList.innerHTML = '';
+    for (const cat of categories) {
+      const label = document.createElement('label');
+      label.className = 'category-item';
+      label.dataset.category = cat;
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = cat;
+      checkbox.checked = selectedCategories.has(cat);
+      checkbox.addEventListener('change', () => toggleCategory(cat, checkbox.checked));
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(cat));
+      categoryList.appendChild(label);
     }
-    labelFilter.value = currentValue;
+    updateCategoryToggleText();
+    updateSelectedTags();
 
     if (wordCount === 0) {
       statsDiv.innerHTML =
@@ -119,6 +161,10 @@ async function loadStats() {
   }
 }
 
+function getSelectedCategories(): string[] {
+  return Array.from(selectedCategories);
+}
+
 // Start practice
 async function handleStart() {
   const count = parseInt(wordCountInput.value) || 10;
@@ -129,17 +175,13 @@ async function handleStart() {
     startBtn.disabled = true;
     startBtn.textContent = 'Loading...';
 
-    const selectedLabel = labelFilter.value || undefined;
+    const selectedCategories = getSelectedCategories();
     const wordSelection = (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
-    const response = await startPractice(count, currentMode, wordSelection, selectedLabel);
+    const response = await startPractice(count, currentMode, wordSelection, selectedCategories.length > 0 ? selectedCategories : undefined);
     questions = shuffle(response.questions);
     currentIndex = 0;
     results.clear();
     incorrectThisRound = [];
-    wordLabels.clear();
-    for (const q of response.questions) {
-      wordLabels.set(q.word.hanzi, q.word.labels || []);
-    }
 
     showScreen(practiceScreen);
     showQuestion();
@@ -194,7 +236,7 @@ function showQuestion() {
   const word = question.word;
   const bucketLabel = question.bucket === null ? 'new' : `bucket ${question.bucket}`;
 
-  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length} (${bucketLabel})`;
+  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length} (${bucketLabel}, rank #${word.frequencyRank})`;
 
   // Show example hints alongside the question
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
@@ -264,81 +306,6 @@ function formatFullAnswer(question: PracticeQuestion): string {
   return result;
 }
 
-// Label UI in feedback area
-function renderLabelsUI(hanzi: string): string {
-  const labels = wordLabels.get(hanzi) || [];
-  const tags = labels.map(
-    (l) => `<span class="label-tag" data-hanzi="${hanzi}" data-label="${l}">${l}<button class="label-remove" data-hanzi="${hanzi}" data-label="${l}">&times;</button></span>`
-  ).join('');
-
-  const datalistOptions = allKnownLabels
-    .filter((l) => !labels.includes(l))
-    .map((l) => `<option value="${l}">`)
-    .join('');
-
-  return `<div class="labels-section">
-    <div class="labels-tags">${tags}</div>
-    <div class="label-add-row">
-      <input type="text" class="label-input" placeholder="Add label..." list="label-suggestions-${hanzi}" data-hanzi="${hanzi}">
-      <datalist id="label-suggestions-${hanzi}">${datalistOptions}</datalist>
-      <button class="label-add-btn" data-hanzi="${hanzi}">Add</button>
-    </div>
-  </div>`;
-}
-
-function attachLabelHandlers() {
-  // Remove label handlers
-  feedbackDiv.querySelectorAll('.label-remove').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      const el = e.currentTarget as HTMLElement;
-      const hanzi = el.dataset.hanzi!;
-      const label = el.dataset.label!;
-      const result = await removeLabel(hanzi, label);
-      wordLabels.set(hanzi, result.labels);
-      updateLabelsDisplay(hanzi);
-    });
-  });
-
-  // Add label handlers
-  feedbackDiv.querySelectorAll('.label-add-btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const hanzi = (btn as HTMLElement).dataset.hanzi!;
-      const input = feedbackDiv.querySelector(`.label-input[data-hanzi="${hanzi}"]`) as HTMLInputElement;
-      const label = input.value.trim();
-      if (!label) return;
-      const result = await addLabel(hanzi, label);
-      wordLabels.set(hanzi, result.labels);
-      if (!allKnownLabels.includes(label)) {
-        allKnownLabels.push(label);
-        allKnownLabels.sort();
-      }
-      input.value = '';
-      updateLabelsDisplay(hanzi);
-    });
-  });
-
-  // Enter key on label input
-  feedbackDiv.querySelectorAll('.label-input').forEach((input) => {
-    input.addEventListener('keydown', (e) => {
-      if ((e as KeyboardEvent).key === 'Enter') {
-        e.preventDefault();
-        e.stopPropagation();
-        const hanzi = (input as HTMLElement).dataset.hanzi!;
-        const btn = feedbackDiv.querySelector(`.label-add-btn[data-hanzi="${hanzi}"]`) as HTMLButtonElement;
-        btn?.click();
-      }
-    });
-  });
-}
-
-function updateLabelsDisplay(hanzi: string) {
-  const section = feedbackDiv.querySelector('.labels-section');
-  if (section) {
-    section.outerHTML = renderLabelsUI(hanzi);
-    attachLabelHandlers();
-  }
-}
-
 // Handle answer submission
 async function handleSubmit() {
   const answer = answerInput.value.trim();
@@ -385,11 +352,10 @@ async function handleSubmit() {
     feedbackDiv.classList.add(response.correct ? 'correct' : 'incorrect');
 
     if (response.correct) {
-      feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.hanzi)}`;
+      feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>`;
     } else {
-      feedbackDiv.innerHTML = `✗ Incorrect<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.hanzi)}`;
+      feedbackDiv.innerHTML = `✗ Incorrect<div class="correct-answer">${formatFullAnswer(question)}</div>`;
     }
-    attachLabelHandlers();
 
     // Play word pronunciation (auto)
     playAudio(question.word.hanzi, true);
@@ -419,8 +385,7 @@ function handleSkip() {
   // Show the correct answer
   feedbackDiv.classList.remove('hidden', 'correct', 'incorrect');
   feedbackDiv.classList.add('incorrect');
-  feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>${renderLabelsUI(question.word.hanzi)}`;
-  attachLabelHandlers();
+  feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
 
   // Play word pronunciation (auto)
   playAudio(question.word.hanzi, true);
@@ -553,6 +518,56 @@ document.addEventListener('click', (e) => {
     const hanzi = target.dataset.hanzi;
     if (hanzi) {
       playAudio(hanzi);
+    }
+  }
+});
+
+// Category dropdown handlers
+categoryToggle.addEventListener('click', () => {
+  const isOpen = !categoryMenu.classList.contains('hidden');
+  if (isOpen) {
+    categoryMenu.classList.add('hidden');
+    categoryDropdown.classList.remove('open');
+  } else {
+    categoryMenu.classList.remove('hidden');
+    categoryDropdown.classList.add('open');
+    categorySearch.value = '';
+    categorySearch.focus();
+    // Reset filter
+    categoryList.querySelectorAll('.category-item').forEach((item) => {
+      (item as HTMLElement).classList.remove('hidden');
+    });
+  }
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!categoryDropdown.contains(e.target as Node)) {
+    categoryMenu.classList.add('hidden');
+    categoryDropdown.classList.remove('open');
+  }
+});
+
+// Category search filter
+categorySearch.addEventListener('input', () => {
+  const query = categorySearch.value.toLowerCase();
+  categoryList.querySelectorAll('.category-item').forEach((item) => {
+    const cat = (item as HTMLElement).dataset.category?.toLowerCase() || '';
+    if (cat.includes(query)) {
+      (item as HTMLElement).classList.remove('hidden');
+    } else {
+      (item as HTMLElement).classList.add('hidden');
+    }
+  });
+});
+
+// Remove tag handler
+selectedCategoriesDiv.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  if (target.classList.contains('selected-tag-remove')) {
+    const cat = target.dataset.category;
+    if (cat) {
+      toggleCategory(cat, false);
     }
   }
 });
