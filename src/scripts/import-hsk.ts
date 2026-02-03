@@ -42,7 +42,8 @@ async function importWords(start?: number, end?: number): Promise<void> {
       hsk_level INTEGER NOT NULL,
       examples TEXT NOT NULL DEFAULT '[]',
       translatable INTEGER NOT NULL DEFAULT 1,
-      rank INTEGER
+      rank INTEGER,
+      categories TEXT NOT NULL DEFAULT '[]'
     );
   `);
 
@@ -58,19 +59,17 @@ async function importWords(start?: number, end?: number): Promise<void> {
       UNIQUE(hanzi, mode)
     );
   `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS word_labels (
-      hanzi TEXT NOT NULL,
-      label TEXT NOT NULL,
-      FOREIGN KEY (hanzi) REFERENCES words(hanzi),
-      UNIQUE(hanzi, label)
-    );
-  `);
   // @formatter:on
 
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_rank ON words(rank);`);
+
+  // Add categories column to existing words table if missing
+  try {
+    db.run(`ALTER TABLE words ADD COLUMN categories TEXT NOT NULL DEFAULT '[]'`);
+  } catch {
+    // Column already exists
+  }
 
   saveDb();
 
@@ -151,6 +150,7 @@ async function importWords(start?: number, end?: number): Promise<void> {
         frequencyRank: raw.frequencyRank,
         examples: wordExamples,
         translatable: hasTranslatableMeaning(raw.english),
+        categories: raw.categories ?? [],
       };
     });
 

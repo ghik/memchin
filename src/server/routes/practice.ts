@@ -19,7 +19,6 @@ import {
   getProgress,
   getWordByHanzi,
   isAmbiguousTranslation,
-  getLabelsForWord,
 } from '../db.js';
 import { updateProgress } from '../services/srs.js';
 import { pinyinMatches, englishMatches, hanziMatches, toNumberedPinyin } from '../services/pinyin.js';
@@ -31,7 +30,6 @@ function enrichWord(word: Word): Word {
   return {
     ...word,
     breakdown: getCharacterBreakdown(word.hanzi, word.pinyin),
-    labels: getLabelsForWord(word.hanzi),
   };
 }
 
@@ -73,7 +71,7 @@ function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
 }
 
 router.post('/start', (req, res) => {
-  const { count, mode, wordSelection, label } = req.body as StartRequest;
+  const { count, mode, wordSelection, categories } = req.body as StartRequest;
 
   if (!count || !mode) {
     return res.status(400).json({ error: 'count and mode are required' });
@@ -86,13 +84,13 @@ router.post('/start', (req, res) => {
   let words: Word[];
   switch (wordSelection) {
     case 'new':
-      words = getNewWords(mode, count, label);
+      words = getNewWords(mode, count, categories);
       break;
     case 'review':
-      words = getWordsForReview(mode, count, label);
+      words = getWordsForReview(mode, count, categories);
       break;
     default:
-      words = getWordsForPractice(mode, count, label);
+      words = getWordsForPractice(mode, count, categories);
       break;
   }
 

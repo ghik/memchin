@@ -19,7 +19,7 @@ export interface Word {
   examples: Example[];
   translatable: boolean;
   breakdown?: CharacterBreakdown[];
-  labels?: string[];
+  categories: string[];
 }
 
 export type PracticeMode = 'hanzi2pinyin' | 'hanzi2english' | 'english2hanzi' | 'english2pinyin';
@@ -44,7 +44,7 @@ export interface StartRequest {
   count: number;
   mode: PracticeMode;
   wordSelection: 'mixed' | 'new' | 'review';
-  label?: string;
+  categories?: string[];
 }
 
 export interface StartResponse {
