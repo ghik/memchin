@@ -13,6 +13,7 @@ import type {
 import {
   getWordsForPractice,
   getWordsForReview,
+  getRandomReviewWords,
   getNewWords,
   getStats,
   saveDb,
@@ -88,6 +89,9 @@ router.post('/start', (req, res) => {
       break;
     case 'review':
       words = getWordsForReview(mode, count, categories);
+      break;
+    case 'random':
+      words = getRandomReviewWords(mode, count, categories);
       break;
     default:
       words = getWordsForPractice(mode, count, categories);

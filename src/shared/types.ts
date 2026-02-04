@@ -43,7 +43,7 @@ export interface PracticeQuestion {
 export interface StartRequest {
   count: number;
   mode: PracticeMode;
-  wordSelection: 'mixed' | 'new' | 'review';
+  wordSelection: 'mixed' | 'new' | 'review' | 'random';
   categories?: string[];
 }
 

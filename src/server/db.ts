@@ -174,7 +174,7 @@ export function upsertProgress(
   );
 }
 
-export function getWordsForReview(mode: PracticeMode, count: number, categories?: string[]): Word[] {
+function getWordFilters(mode: PracticeMode, categories?: string[]) {
   const translatableFilter =
     mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin'
       ? 'AND w.translatable = 1'
@@ -183,6 +183,11 @@ export function getWordsForReview(mode: PracticeMode, count: number, categories?
   const categoryFilter = catParams.length > 0
     ? `AND EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${catParams.map(() => '?').join(',')}))`
     : '';
+  return { translatableFilter, catParams, categoryFilter };
+}
+
+export function getWordsForReview(mode: PracticeMode, count: number, categories?: string[]): Word[] {
+  const { translatableFilter, catParams, categoryFilter } = getWordFilters(mode, categories);
   const params: any[] = [mode, ...catParams, count];
 
   const stmt = db.prepare(`
@@ -203,15 +208,30 @@ export function getWordsForReview(mode: PracticeMode, count: number, categories?
   return result;
 }
 
+export function getRandomReviewWords(mode: PracticeMode, count: number, categories?: string[]): Word[] {
+  const { translatableFilter, catParams, categoryFilter } = getWordFilters(mode, categories);
+  const params: any[] = [mode, ...catParams, count];
+
+  const stmt = db.prepare(`
+      SELECT w.*
+      FROM words w
+               JOIN progress p ON w.hanzi = p.hanzi
+      WHERE p.mode = ? ${translatableFilter} ${categoryFilter}
+      ORDER BY RANDOM()
+          LIMIT ?
+  `);
+  stmt.bind(params);
+
+  const result: Word[] = [];
+  while (stmt.step()) {
+    result.push(rowToWord(stmt.getAsObject()));
+  }
+  stmt.free();
+  return result;
+}
+
 export function getNewWords(mode: PracticeMode, count: number, categories?: string[]): Word[] {
-  const translatableFilter =
-    mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin'
-      ? 'AND w.translatable = 1'
-      : '';
-  const catParams = categories && categories.length > 0 ? categories : [];
-  const categoryFilter = catParams.length > 0
-    ? `AND EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${catParams.map(() => '?').join(',')}))`
-    : '';
+  const { translatableFilter, catParams, categoryFilter } = getWordFilters(mode, categories);
   const params: any[] = [mode, ...catParams, count];
 
   const stmt = db.prepare(`
@@ -234,14 +254,7 @@ export function getNewWords(mode: PracticeMode, count: number, categories?: stri
 
 export function getWordsForPractice(mode: PracticeMode, count: number, categories?: string[]): Word[] {
   const now = new Date().toISOString();
-  const translatableFilter =
-    mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin'
-      ? 'AND w.translatable = 1'
-      : '';
-  const catParams = categories && categories.length > 0 ? categories : [];
-  const categoryFilter = catParams.length > 0
-    ? `AND EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${catParams.map(() => '?').join(',')}))`
-    : '';
+  const { translatableFilter, catParams, categoryFilter } = getWordFilters(mode, categories);
 
   // First get words that are due for review
   const dueParams: any[] = [mode, now, ...catParams, count];
