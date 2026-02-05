@@ -1,9 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import * as cheerio from 'cheerio';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const mainHtmlPath = path.join(__dirname, '../../hsk_words.html');
+const commonWordsPath = path.join(__dirname, '../../1000_common_words.html');
 const labelledDir = path.join(__dirname, '../../hsk_labelled_words');
 const freqPath = path.join(__dirname, '../../internet-zh.num.txt');
 const outputPath = path.join(__dirname, '../../hsk_words.json');
@@ -22,25 +24,57 @@ function loadFrequencyData(): Map<string, number> {
   return hanziToRank;
 }
 
-function decodeHtmlEntities(text: string): string {
-  return text
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+function normalizeSpaces(text: string): string {
+  return text.replace(/\s+/g, ' ');
+}
+
+function splitEnglish(text: string, delimiters: RegExp): string[] {
+  const results: string[] = [];
+  let current = '';
+  let depth = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '(' || ch === '[') {
+      depth++;
+      current += ch;
+    } else if (ch === ')' || ch === ']') {
+      depth = Math.max(0, depth - 1);
+      current += ch;
+    } else if (depth === 0) {
+      const remaining = text.slice(i);
+      const m = remaining.match(delimiters);
+      if (m && m.index === 0) {
+        results.push(current.trim());
+        i += m[0].length - 1;
+        current = '';
+        continue;
+      }
+      current += ch;
+    } else {
+      current += ch;
+    }
+  }
+  results.push(current.trim());
+  return results.filter((s) => s.length > 0);
+}
+
+function depluralize(word: string): string {
+  if (word.endsWith('ies') && word.length > 3) {
+    return word.slice(0, -3) + 'y';
+  }
+  if (word.endsWith('shes') || word.endsWith('ches') || word.endsWith('xes') || word.endsWith('zes')) {
+    return word.slice(0, -2);
+  }
+  if (word.endsWith('s') && !word.endsWith('ss')) {
+    return word.slice(0, -1);
+  }
+  return word;
 }
 
 function extractCategoryFromHeadline(headline: string): string {
   const match = headline.match(/HSK\s+[\d-]+\s+(.+)/);
   if (!match) return '';
-  let category = match[1].trim();
-  if (category.endsWith('s')) {
-    category = category.slice(0, -1);
-  }
-  return category.toLowerCase();
+  return depluralize(match[1].trim().toLowerCase());
 }
 
 function extractCategoryFromFilename(filename: string): string {
@@ -86,8 +120,11 @@ function addWord(
     // Same hanzi exists - only merge if pinyin matches (same reading)
     if (existing.pinyin === pinyin) {
       for (const eng of english) {
-        if (!existing.english.includes(eng)) {
+        const idx = existing.english.findIndex((e) => e.toLowerCase() === eng.toLowerCase());
+        if (idx === -1) {
           existing.english.push(eng);
+        } else if (eng[0] >= 'a' && eng[0] <= 'z' && !(existing.english[idx][0] >= 'a' && existing.english[idx][0] <= 'z')) {
+          existing.english[idx] = eng;
         }
       }
       if (category && !existing.categories.includes(category)) {
@@ -116,55 +153,101 @@ function addWord(
 // Parse the main hsk_words.html file (has h2 category headings)
 function parseMainHskFile(htmlPath: string) {
   const html = fs.readFileSync(htmlPath, 'utf-8');
-  const sections = html.split(/<h2>/);
+  const $ = cheerio.load(html);
 
-  for (const section of sections) {
-    const headlineMatch = section.match(/class="mw-headline"[^>]*>(?:<a[^>]*>)?([^<]+)/);
-    if (!headlineMatch) continue;
-    const category = extractCategoryFromHeadline(headlineMatch[1]);
-    if (!category) continue;
+  $('h2').each((_, h2) => {
+    const headlineText = $(h2).find('.mw-headline').text();
+    const category = extractCategoryFromHeadline(headlineText);
+    if (!category) return;
 
-    const rowRegex =
-      /<tr>\s*<td>([^<]*)<\/td>\s*<td>([^<]*)<\/td>\s*<td>([^<]*)<\/td>\s*<td>([^<]*)<\/td>/g;
-    let match;
-    while ((match = rowRegex.exec(section)) !== null) {
-      const hanzi = decodeHtmlEntities(match[1].trim());
-      const pinyin = decodeHtmlEntities(match[2].trim());
-      const english = decodeHtmlEntities(match[3].trim())
-        .split(/[,;]\s+/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-      const hskLevel = parseHskLevel(decodeHtmlEntities(match[4].trim()));
+    $(h2)
+      .nextUntil('h2')
+      .filter('table')
+      .find('tr')
+      .each((_, tr) => {
+        const cells = $(tr).find('td');
+        if (cells.length < 4) return;
 
-      addWord(hanzi, pinyin, english, hskLevel, category);
-    }
-  }
+        const hanzi = normalizeSpaces($(cells[0]).text().trim());
+        const pinyin = normalizeSpaces($(cells[1]).text().trim());
+        const english = splitEnglish(normalizeSpaces($(cells[2]).text().trim()), /^[,;]\s+/);
+        const hskLevel = parseHskLevel(normalizeSpaces($(cells[3]).text().trim()));
+
+        addWord(hanzi, pinyin, english, hskLevel, category);
+      });
+  });
 }
 
 // Parse labelled word files (category from filename, no h2 sections)
 function parseLabelledFile(htmlPath: string, category: string) {
   const html = fs.readFileSync(htmlPath, 'utf-8');
+  const $ = cheerio.load(html);
 
-  const rowRegex =
-    /<tr>\s*<td>([^<]*)<\/td>\s*<td>([^<]*)<\/td>\s*<td>([^<]*)<\/td>\s*<td>([^<]*)<\/td>/g;
-  let match;
-  while ((match = rowRegex.exec(html)) !== null) {
-    const hanzi = decodeHtmlEntities(match[1].trim());
-    const pinyin = decodeHtmlEntities(match[2].trim());
-    const english = decodeHtmlEntities(match[3].trim())
-      .split(/[,;]\s+/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-    const hskLevel = parseHskLevel(decodeHtmlEntities(match[4].trim()));
+  $('tr').each((_, tr) => {
+    const cells = $(tr).find('td');
+    if (cells.length < 4) return;
+
+    const hanzi = normalizeSpaces($(cells[0]).text().trim());
+    if (!/[\u4e00-\u9fff]/.test(hanzi)) return;
+
+    const pinyin = normalizeSpaces($(cells[1]).text().trim());
+    const english = splitEnglish(normalizeSpaces($(cells[2]).text().trim()), /^[,;]\s+/);
+    const hskLevel = parseHskLevel(normalizeSpaces($(cells[3]).text().trim()));
 
     addWord(hanzi, pinyin, english, hskLevel, category);
-  }
+  });
+}
+
+function extractCategoryFromCommonWordsHeading(headline: string): string {
+  let cat = headline
+    .replace(/^(basic\s+)?(chinese\s+)?vocabulary\s+(for|of|about)\s+/i, '')
+    .replace(/\s+(vocabulary\s+)?(in\s+chinese)$/i, '')
+    .replace(/\s+words\s+in\s+chinese$/i, '')
+    .trim();
+  return depluralize(cat.toLowerCase());
+}
+
+// Parse 1000_common_words.html (h3 category headings, no HSK level column)
+function parseCommonWordsFile(htmlPath: string) {
+  const html = fs.readFileSync(htmlPath, 'utf-8');
+  const $ = cheerio.load(html);
+
+  $('h3.wp-block-heading').each((_, h3) => {
+    const headlineText = $(h3).text();
+    const category = extractCategoryFromCommonWordsHeading(headlineText);
+    if (!category) return;
+
+    $(h3)
+      .nextUntil('h3')
+      .find('table')
+      .first()
+      .find('tbody tr')
+      .each((_, tr) => {
+        const cells = $(tr).find('td');
+        if (cells.length < 4) return;
+
+        // Cell 0 is row number, cells 1-3 are hanzi, pinyin, english
+        const hanzi = normalizeSpaces($(cells[1]).text().trim());
+        const pinyin = normalizeSpaces($(cells[2]).text().trim());
+        const english = splitEnglish(normalizeSpaces($(cells[3]).text().trim()), /^\/\s*/);
+
+        addWord(hanzi, pinyin, english, undefined, category);
+      });
+  });
 }
 
 // Parse main HSK words file
 console.log('Parsing hsk_words.html...');
 parseMainHskFile(mainHtmlPath);
 console.log(`  ${wordMap.size} words so far`);
+
+// Parse 1000 common words file
+if (fs.existsSync(commonWordsPath)) {
+  const sizeBefore = wordMap.size;
+  console.log('Parsing 1000_common_words.html...');
+  parseCommonWordsFile(commonWordsPath);
+  console.log(`  +${wordMap.size - sizeBefore} new words (${wordMap.size} total)`);
+}
 
 // Parse all labelled word files
 if (fs.existsSync(labelledDir)) {
