@@ -141,6 +141,7 @@ async function loadStats() {
     }
 
     const html = stats
+      .filter((s) => s.mode !== 'hanzi2english')
       .map(
         (s) => {
           const bucketBar = s.buckets
