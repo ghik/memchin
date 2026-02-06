@@ -117,6 +117,8 @@ async function loadStats() {
 
     // Populate category dropdown list
     categoryList.innerHTML = '';
+    const numRows = Math.ceil(categories.length / 3);
+    categoryList.style.gridTemplateRows = `repeat(${numRows}, auto)`;
     for (const cat of categories) {
       const label = document.createElement('label');
       label.className = 'category-item';

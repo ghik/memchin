@@ -94,6 +94,14 @@ function parseHskLevel(levelStr: string): number | undefined {
   return undefined;
 }
 
+function parseLevelCategory(levelStr: string): string | undefined {
+  const match = levelStr.match(/^([AB][12])$/i);
+  if (match) {
+    return match[1].toLowerCase();
+  }
+  return undefined;
+}
+
 interface WordEntry {
   hanzi: string;
   pinyin: string;
@@ -111,7 +119,8 @@ function addWord(
   pinyin: string,
   english: string[],
   hskLevel: number | undefined,
-  category: string
+  category: string,
+  levelCategory?: string
 ) {
   if (!hanzi || !/[\u4e00-\u9fff]/.test(hanzi)) return;
 
@@ -130,21 +139,35 @@ function addWord(
       if (category && !existing.categories.includes(category)) {
         existing.categories.push(category);
       }
+      if (levelCategory && !existing.categories.includes(levelCategory)) {
+        existing.categories.push(levelCategory);
+      }
       // Keep lowest HSK level (if both defined)
       if (hskLevel !== undefined) {
         if (existing.hskLevel === undefined || hskLevel < existing.hskLevel) {
           existing.hskLevel = hskLevel;
         }
+        const hskCategory = `hsk${hskLevel}`;
+        if (!existing.categories.includes(hskCategory)) {
+          existing.categories.push(hskCategory);
+        }
       }
     }
     // Different pinyin - ignore (keep first reading)
   } else {
+    const categories = category ? [category] : [];
+    if (hskLevel !== undefined) {
+      categories.push(`hsk${hskLevel}`);
+    }
+    if (levelCategory) {
+      categories.push(levelCategory);
+    }
     wordMap.set(hanzi, {
       hanzi,
       pinyin,
       english,
       hskLevel,
-      categories: category ? [category] : [],
+      categories,
       frequencyRank: frequencyData.get(hanzi) ?? 999999,
     });
   }
@@ -192,9 +215,11 @@ function parseLabelledFile(htmlPath: string, category: string) {
 
     const pinyin = normalizeSpaces($(cells[1]).text().trim());
     const english = splitEnglish(normalizeSpaces($(cells[2]).text().trim()), /^[,;]\s+/);
-    const hskLevel = parseHskLevel(normalizeSpaces($(cells[3]).text().trim()));
+    const levelStr = normalizeSpaces($(cells[3]).text().trim());
+    const hskLevel = parseHskLevel(levelStr);
+    const levelCategory = parseLevelCategory(levelStr);
 
-    addWord(hanzi, pinyin, english, hskLevel, category);
+    addWord(hanzi, pinyin, english, hskLevel, category, levelCategory);
   });
 }
 
