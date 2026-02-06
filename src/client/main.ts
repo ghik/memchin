@@ -294,6 +294,12 @@ function formatFullAnswer(question: PracticeQuestion): string {
   // All modes show: hanzi (pinyin) - english
   let result = `${hanzi} (${pinyin}) — ${english}`;
 
+  // Show categories
+  if (word.categories.length > 0) {
+    const cats = word.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ');
+    result += `<div class="answer-categories">${cats}</div>`;
+  }
+
   // Show example answers
   if (word.examples.length > 0) {
     result += `<div class="example-sentence">${formatExampleAnswers(word.examples)}</div>`;

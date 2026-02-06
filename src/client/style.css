@@ -288,6 +288,20 @@ h2 {
   color: #333;
 }
 
+.answer-categories {
+  margin-top: 6px;
+}
+
+.answer-category {
+  display: inline-block;
+  background: #e9ecef;
+  color: #495057;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75em;
+  margin-right: 4px;
+}
+
 .example-hint {
   margin-top: 15px;
   font-size: 18px;
@@ -404,7 +418,7 @@ h2 {
   position: absolute;
   top: 100%;
   left: 0;
-  right: 0;
+  min-width: 600px;
   margin-top: 4px;
   background: white;
   border: 1px solid #ddd;
@@ -430,7 +444,9 @@ h2 {
 
 .category-list {
   overflow-y: auto;
-  max-height: 240px;
+  max-height: 300px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .category-list .category-item {
