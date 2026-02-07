@@ -45,6 +45,7 @@ export interface StartRequest {
   mode: PracticeMode;
   wordSelection: 'mixed' | 'new' | 'review' | 'random';
   categories?: string[];
+  singleCharOnly?: boolean;
 }
 
 export interface StartResponse {

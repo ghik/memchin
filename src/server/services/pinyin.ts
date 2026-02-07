@@ -90,8 +90,8 @@ export function toNumberedPinyin(pinyin: string): string {
 }
 
 export function normalizePinyin(input: string): string {
-  // Convert to numbered format for comparison
-  return toNumberedPinyin(input.toLowerCase().trim());
+  // Convert to numbered format and strip non-alphanumeric characters
+  return toNumberedPinyin(input.toLowerCase().trim()).replace(/[^a-z0-9]/g, '');
 }
 
 export function pinyinMatches(input: string, expected: string): boolean {
@@ -117,6 +117,22 @@ export function stripTones(pinyin: string): string {
       return entry ? entry[0] : ch === 'ü' ? 'v' : ch;
     })
     .join('');
+}
+
+/**
+ * Check if an answer is synonymous with the expected pinyin.
+ * For multi-character words, tolerates:
+ * - missing tone number on the last syllable (e.g. "wei1xiao" for "wei1xiao4")
+ * - extra tone number on a neutral-tone last syllable (e.g. "dong1xi1" for "dong1xi")
+ */
+export function lastNeutralToneMismatch(
+  normalizedAnswer: string,
+  normalizedExpected: string
+): boolean {
+  return (
+    normalizedAnswer === normalizedExpected.replace(/[1-4]$/, '') ||
+    normalizedAnswer.replace(/[1-4]$/, '') === normalizedExpected
+  );
 }
 
 // Mapping from numbered pinyin to tone marks

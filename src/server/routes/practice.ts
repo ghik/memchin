@@ -1,30 +1,37 @@
 import { Router } from 'express';
 import type {
-  PracticeMode,
-  PracticeQuestion,
-  StartRequest,
-  StartResponse,
   AnswerRequest,
   AnswerResponse,
   CompleteRequest,
   CompleteResponse,
+  PracticeMode,
+  PracticeQuestion,
+  StartRequest,
+  StartResponse,
   Word,
 } from '../../shared/types.js';
 import {
+  addPinyinSynonym,
+  getNewWords,
+  getProgress,
+  getRandomReviewWords,
+  getStats,
+  getWordByHanzi,
   getWordsForPractice,
   getWordsForReview,
-  getRandomReviewWords,
-  getNewWords,
-  getStats,
-  saveDb,
-  getProgress,
-  getWordByHanzi,
   isAmbiguousTranslation,
-  addPinyinSynonym,
   isPinyinSynonym,
+  saveDb,
 } from '../db.js';
 import { updateProgress } from '../services/srs.js';
-import { pinyinMatches, englishMatches, hanziMatches, toNumberedPinyin } from '../services/pinyin.js';
+import {
+  englishMatches,
+  hanziMatches,
+  lastNeutralToneMismatch,
+  normalizePinyin,
+  pinyinMatches,
+  toNumberedPinyin,
+} from '../services/pinyin.js';
 import { getCharacterBreakdown } from '../services/cedict.js';
 
 const router = Router();
@@ -74,7 +81,7 @@ function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
 }
 
 router.post('/start', (req, res) => {
-  const { count, mode, wordSelection, categories } = req.body as StartRequest;
+  const { count, mode, wordSelection, categories, singleCharOnly } = req.body as StartRequest;
 
   if (!count || !mode) {
     return res.status(400).json({ error: 'count and mode are required' });
@@ -87,16 +94,16 @@ router.post('/start', (req, res) => {
   let words: Word[];
   switch (wordSelection) {
     case 'new':
-      words = getNewWords(mode, count, categories);
+      words = getNewWords(mode, count, categories, singleCharOnly);
       break;
     case 'review':
-      words = getWordsForReview(mode, count, categories);
+      words = getWordsForReview(mode, count, categories, singleCharOnly);
       break;
     case 'random':
-      words = getRandomReviewWords(mode, count, categories);
+      words = getRandomReviewWords(mode, count, categories, singleCharOnly);
       break;
     default:
-      words = getWordsForPractice(mode, count, categories);
+      words = getWordsForPractice(mode, count, categories, singleCharOnly);
       break;
   }
 
@@ -134,20 +141,24 @@ router.post('/answer', (req, res) => {
       synonym = isSynonym;
       break;
     case 'english2pinyin':
-      correct = pinyinMatches(answer, word.pinyin);
-      if (!correct) {
-        const normalizedAnswer = toNumberedPinyin(answer);
-        if (isPinyinSynonym(word.hanzi, normalizedAnswer)) {
-          synonym = true;
-        }
-      }
+      const normalizedAnswer = normalizePinyin(answer);
+      const normalizedExpected = normalizePinyin(word.pinyin);
+      correct = normalizedAnswer === normalizedExpected;
+      synonym =
+        !correct &&
+        (isPinyinSynonym(word.hanzi, normalizedAnswer) ||
+          (word.hanzi.length > 1 && lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)));
       break;
   }
 
   const response: AnswerResponse = {
     correct,
     correctAnswers:
-      mode === 'english2hanzi' ? [word.hanzi] : (mode === 'hanzi2pinyin' || mode === 'english2pinyin') ? [toNumberedPinyin(word.pinyin)] : word.english,
+      mode === 'english2hanzi'
+        ? [word.hanzi]
+        : mode === 'hanzi2pinyin' || mode === 'english2pinyin'
+          ? [toNumberedPinyin(word.pinyin)]
+          : word.english,
     synonym,
   };
   res.json(response);
@@ -191,7 +202,12 @@ router.post('/complete', (req, res) => {
 });
 
 router.get('/stats', (req, res) => {
-  const modes: PracticeMode[] = ['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'];
+  const modes: PracticeMode[] = [
+    'hanzi2pinyin',
+    'hanzi2english',
+    'english2hanzi',
+    'english2pinyin',
+  ];
   const stats = modes.map((mode) => ({
     mode,
     ...getStats(mode),

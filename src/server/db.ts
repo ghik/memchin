@@ -174,7 +174,7 @@ export function upsertProgress(
   );
 }
 
-function getWordFilters(mode: PracticeMode, categories?: string[]) {
+function getWordFilters(mode: PracticeMode, categories?: string[], singleCharOnly?: boolean) {
   const translatableFilter =
     mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin'
       ? 'AND w.translatable = 1'
@@ -183,18 +183,19 @@ function getWordFilters(mode: PracticeMode, categories?: string[]) {
   const categoryFilter = catParams.length > 0
     ? `AND EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${catParams.map(() => '?').join(',')}))`
     : '';
-  return { translatableFilter, catParams, categoryFilter };
+  const singleCharFilter = singleCharOnly ? 'AND length(w.hanzi) = 1' : '';
+  return { translatableFilter, catParams, categoryFilter, singleCharFilter };
 }
 
-export function getWordsForReview(mode: PracticeMode, count: number, categories?: string[]): Word[] {
-  const { translatableFilter, catParams, categoryFilter } = getWordFilters(mode, categories);
+export function getWordsForReview(mode: PracticeMode, count: number, categories?: string[], singleCharOnly?: boolean): Word[] {
+  const { translatableFilter, catParams, categoryFilter, singleCharFilter } = getWordFilters(mode, categories, singleCharOnly);
   const params: any[] = [mode, ...catParams, count];
 
   const stmt = db.prepare(`
       SELECT w.*
       FROM words w
                JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? ${translatableFilter} ${categoryFilter}
+      WHERE p.mode = ? ${translatableFilter} ${categoryFilter} ${singleCharFilter}
       ORDER BY p.next_eligible ASC
           LIMIT ?
   `);
@@ -208,15 +209,15 @@ export function getWordsForReview(mode: PracticeMode, count: number, categories?
   return result;
 }
 
-export function getRandomReviewWords(mode: PracticeMode, count: number, categories?: string[]): Word[] {
-  const { translatableFilter, catParams, categoryFilter } = getWordFilters(mode, categories);
+export function getRandomReviewWords(mode: PracticeMode, count: number, categories?: string[], singleCharOnly?: boolean): Word[] {
+  const { translatableFilter, catParams, categoryFilter, singleCharFilter } = getWordFilters(mode, categories, singleCharOnly);
   const params: any[] = [mode, ...catParams, count];
 
   const stmt = db.prepare(`
       SELECT w.*
       FROM words w
                JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? ${translatableFilter} ${categoryFilter}
+      WHERE p.mode = ? ${translatableFilter} ${categoryFilter} ${singleCharFilter}
       ORDER BY RANDOM()
           LIMIT ?
   `);
@@ -230,15 +231,15 @@ export function getRandomReviewWords(mode: PracticeMode, count: number, categori
   return result;
 }
 
-export function getNewWords(mode: PracticeMode, count: number, categories?: string[]): Word[] {
-  const { translatableFilter, catParams, categoryFilter } = getWordFilters(mode, categories);
+export function getNewWords(mode: PracticeMode, count: number, categories?: string[], singleCharOnly?: boolean): Word[] {
+  const { translatableFilter, catParams, categoryFilter, singleCharFilter } = getWordFilters(mode, categories, singleCharOnly);
   const params: any[] = [mode, ...catParams, count];
 
   const stmt = db.prepare(`
       SELECT w.*
       FROM words w
                LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
-      WHERE p.id IS NULL ${translatableFilter} ${categoryFilter}
+      WHERE p.id IS NULL ${translatableFilter} ${categoryFilter} ${singleCharFilter}
       ORDER BY w.rank ASC
           LIMIT ?
   `);
@@ -252,9 +253,9 @@ export function getNewWords(mode: PracticeMode, count: number, categories?: stri
   return result;
 }
 
-export function getWordsForPractice(mode: PracticeMode, count: number, categories?: string[]): Word[] {
+export function getWordsForPractice(mode: PracticeMode, count: number, categories?: string[], singleCharOnly?: boolean): Word[] {
   const now = new Date().toISOString();
-  const { translatableFilter, catParams, categoryFilter } = getWordFilters(mode, categories);
+  const { translatableFilter, catParams, categoryFilter, singleCharFilter } = getWordFilters(mode, categories, singleCharOnly);
 
   // First get words that are due for review
   const dueParams: any[] = [mode, now, ...catParams, count];
@@ -263,7 +264,7 @@ export function getWordsForPractice(mode: PracticeMode, count: number, categorie
       FROM words w
                JOIN progress p ON w.hanzi = p.hanzi
       WHERE p.mode = ?
-        AND p.next_eligible <= ? ${translatableFilter} ${categoryFilter}
+        AND p.next_eligible <= ? ${translatableFilter} ${categoryFilter} ${singleCharFilter}
       ORDER BY p.next_eligible ASC
           LIMIT ?
   `);
@@ -286,7 +287,7 @@ export function getWordsForPractice(mode: PracticeMode, count: number, categorie
         SELECT w.*
         FROM words w
                  LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
-        WHERE p.id IS NULL ${placeholders} ${translatableFilter} ${categoryFilter}
+        WHERE p.id IS NULL ${placeholders} ${translatableFilter} ${categoryFilter} ${singleCharFilter}
         ORDER BY w.rank ASC
             LIMIT ?
     `);

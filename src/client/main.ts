@@ -38,11 +38,16 @@ const categoryList = document.getElementById('category-list')!;
 const selectedCategoriesDiv = document.getElementById('selected-categories')!;
 const categoryDropdown = categoryToggle.parentElement!;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
+const singleCharCheckbox = document.getElementById('single-char-only') as HTMLInputElement;
 
-// Load autoplay preference from localStorage
+// Load preferences from localStorage
 autoplayCheckbox.checked = localStorage.getItem('autoplayAudio') !== 'false';
 autoplayCheckbox.addEventListener('change', () => {
   localStorage.setItem('autoplayAudio', String(autoplayCheckbox.checked));
+});
+singleCharCheckbox.checked = localStorage.getItem('singleCharOnly') === 'true';
+singleCharCheckbox.addEventListener('change', () => {
+  localStorage.setItem('singleCharOnly', String(singleCharCheckbox.checked));
 });
 
 // State
@@ -181,7 +186,7 @@ async function handleStart() {
 
     const selectedCategories = getSelectedCategories();
     const wordSelection = (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
-    const response = await startPractice(count, currentMode, wordSelection, selectedCategories.length > 0 ? selectedCategories : undefined);
+    const response = await startPractice(count, currentMode, wordSelection, selectedCategories.length > 0 ? selectedCategories : undefined, singleCharCheckbox.checked || undefined);
     questions = shuffle(response.questions);
     currentIndex = 0;
     results.clear();

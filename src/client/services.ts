@@ -58,9 +58,10 @@ interface Stats {
 
 const API_BASE = '/api';
 
-export async function startPractice(count: number, mode: PracticeMode, wordSelection: string, categories?: string[]): Promise<StartResponse> {
+export async function startPractice(count: number, mode: PracticeMode, wordSelection: string, categories?: string[], singleCharOnly?: boolean): Promise<StartResponse> {
   const body: Record<string, unknown> = { count, mode, wordSelection };
   if (categories && categories.length > 0) body.categories = categories;
+  if (singleCharOnly) body.singleCharOnly = true;
   const response = await fetch(`${API_BASE}/practice/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
