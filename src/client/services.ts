@@ -122,6 +122,19 @@ export async function getStats(): Promise<Stats[]> {
   return response.json();
 }
 
+export async function markPinyinSynonym(hanzi: string, synonymPinyin: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/practice/synonym`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hanzi, synonymPinyin }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to mark synonym');
+  }
+}
+
 export async function getCategories(): Promise<string[]> {
   const response = await fetch(`${API_BASE}/categories`);
   if (!response.ok) {

@@ -4,6 +4,7 @@ import {
   getCategories,
   getStats,
   getWordCount,
+  markPinyinSynonym,
   startPractice,
   submitAnswer,
 } from './services.js';
@@ -363,7 +364,41 @@ async function handleSubmit() {
     if (response.correct) {
       feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>`;
     } else {
-      feedbackDiv.innerHTML = `✗ Incorrect<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+      const synonymBtn = currentMode === 'english2pinyin'
+        ? `<button class="synonym-btn" id="synonym-btn">Synonym</button>`
+        : '';
+      feedbackDiv.innerHTML = `✗ Incorrect${synonymBtn}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+
+      if (currentMode === 'english2pinyin') {
+        document.getElementById('synonym-btn')!.addEventListener('click', async () => {
+          try {
+            await markPinyinSynonym(question.word.hanzi, answer);
+            // Undo incorrect tracking
+            incorrectThisRound = incorrectThisRound.filter((q) => q !== question);
+            results.delete(question.word.hanzi);
+            // Show synonym message and let user retry
+            feedbackDiv.classList.remove('incorrect');
+            feedbackDiv.classList.add('synonym');
+            feedbackDiv.innerHTML = `✓ "${answer}" saved as synonym. Try again!`;
+            answerInput.value = '';
+            answerInput.disabled = false;
+            answerInput.focus();
+            submitBtn.classList.remove('hidden');
+            skipBtn.classList.remove('hidden');
+            nextBtn.classList.add('hidden');
+
+            submitBlocked = true;
+            const unblock = () => { submitBlocked = false; };
+            const timer = setTimeout(unblock, 1000);
+            answerInput.addEventListener('input', () => {
+              clearTimeout(timer);
+              unblock();
+            }, { once: true });
+          } catch (error) {
+            console.error('Failed to mark synonym:', error);
+          }
+        });
+      }
     }
 
     // Play word pronunciation (auto)

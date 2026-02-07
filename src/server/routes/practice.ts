@@ -20,6 +20,8 @@ import {
   getProgress,
   getWordByHanzi,
   isAmbiguousTranslation,
+  addPinyinSynonym,
+  isPinyinSynonym,
 } from '../db.js';
 import { updateProgress } from '../services/srs.js';
 import { pinyinMatches, englishMatches, hanziMatches, toNumberedPinyin } from '../services/pinyin.js';
@@ -133,6 +135,12 @@ router.post('/answer', (req, res) => {
       break;
     case 'english2pinyin':
       correct = pinyinMatches(answer, word.pinyin);
+      if (!correct) {
+        const normalizedAnswer = toNumberedPinyin(answer);
+        if (isPinyinSynonym(word.hanzi, normalizedAnswer)) {
+          synonym = true;
+        }
+      }
       break;
   }
 
@@ -143,6 +151,23 @@ router.post('/answer', (req, res) => {
     synonym,
   };
   res.json(response);
+});
+
+router.post('/synonym', (req, res) => {
+  const { hanzi, synonymPinyin } = req.body as { hanzi: string; synonymPinyin: string };
+
+  if (!hanzi || !synonymPinyin) {
+    return res.status(400).json({ error: 'hanzi and synonymPinyin are required' });
+  }
+
+  const word = getWordByHanzi(hanzi);
+  if (!word) {
+    return res.status(404).json({ error: 'Word not found' });
+  }
+
+  const normalized = toNumberedPinyin(synonymPinyin);
+  addPinyinSynonym(hanzi, normalized);
+  res.json({ ok: true });
 });
 
 router.post('/complete', (req, res) => {

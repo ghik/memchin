@@ -350,6 +350,25 @@ export function getAllCategories(): string[] {
   return categories;
 }
 
+// Pinyin synonym operations
+export function addPinyinSynonym(hanzi: string, synonymPinyin: string): void {
+  db.run(
+    `INSERT OR IGNORE INTO pinyin_synonyms (hanzi, synonym_pinyin) VALUES (?, ?)`,
+    [hanzi, synonymPinyin]
+  );
+  saveDb();
+}
+
+export function isPinyinSynonym(hanzi: string, pinyin: string): boolean {
+  const stmt = db.prepare(
+    `SELECT 1 FROM pinyin_synonyms WHERE hanzi = ? AND synonym_pinyin = ?`
+  );
+  stmt.bind([hanzi, pinyin]);
+  const found = stmt.step();
+  stmt.free();
+  return found;
+}
+
 function rowToWord(row: any): Word {
   return {
     hanzi: row.hanzi,

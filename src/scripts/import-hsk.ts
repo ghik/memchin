@@ -61,6 +61,15 @@ async function importWords(start?: number, end?: number): Promise<void> {
   `);
   // @formatter:on
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS pinyin_synonyms (
+      hanzi TEXT NOT NULL,
+      synonym_pinyin TEXT NOT NULL,
+      FOREIGN KEY (hanzi) REFERENCES words(hanzi),
+      UNIQUE(hanzi, synonym_pinyin)
+    );
+  `);
+
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_rank ON words(rank);`);
 

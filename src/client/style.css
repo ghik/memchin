@@ -271,6 +271,24 @@ h2 {
   color: #856404;
 }
 
+.synonym-btn {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #856404;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.synonym-btn:hover {
+  background: #ffe69c;
+}
+
 .feedback .correct-answer {
   margin-top: 10px;
   font-weight: 500;
