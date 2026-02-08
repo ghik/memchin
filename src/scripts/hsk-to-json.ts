@@ -2,12 +2,15 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as cheerio from 'cheerio';
+import { numberedToToneMarked } from '../server/services/pinyin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const mainHtmlPath = path.join(__dirname, '../../hsk_words.html');
-const commonWordsPath = path.join(__dirname, '../../1000_common_words.html');
-const labelledDir = path.join(__dirname, '../../hsk_labelled_words');
-const freqPath = path.join(__dirname, '../../internet-zh.num.txt');
+const sourcesDir = path.join(__dirname, '../../sources');
+const mainHtmlPath = path.join(sourcesDir, 'hsk_words.html');
+const commonWordsPath = path.join(sourcesDir, '1000_common_words.html');
+const labelledDir = path.join(sourcesDir, 'hsk_labelled_words');
+const freqPath = path.join(sourcesDir, 'internet-zh.num.txt');
+const hanziFreqPath = path.join(sourcesDir, 'hanzi_frequency.html');
 const outputPath = path.join(__dirname, '../../hsk_words.json');
 
 function loadFrequencyData(): Map<string, number> {
@@ -108,11 +111,16 @@ interface WordEntry {
   english: string[];
   hskLevel?: number;
   categories: string[];
-  frequencyRank: number;
+  wordFrequencyRank?: number;
+  hanziFrequencyRank?: number;
 }
 
 const frequencyData = loadFrequencyData();
 const wordMap = new Map<string, WordEntry>();
+
+function splitSlashes(translations: string[]): string[] {
+  return translations.flatMap((t) => splitEnglish(t, /^\//));
+}
 
 function addWord(
   hanzi: string,
@@ -123,6 +131,8 @@ function addWord(
   levelCategory?: string
 ) {
   if (!hanzi || !/[\u4e00-\u9fff]/.test(hanzi)) return;
+  hanzi = hanzi.split('/')[0].trim();
+  english = splitSlashes(english);
 
   const existing = wordMap.get(hanzi);
   if (existing) {
@@ -162,13 +172,14 @@ function addWord(
     if (levelCategory) {
       categories.push(levelCategory);
     }
+    const wordFreqRank = frequencyData.get(hanzi);
     wordMap.set(hanzi, {
       hanzi,
       pinyin,
       english,
       hskLevel,
       categories,
-      frequencyRank: frequencyData.get(hanzi) ?? 999999,
+      wordFrequencyRank: wordFreqRank,
     });
   }
 }
@@ -261,6 +272,77 @@ function parseCommonWordsFile(htmlPath: string) {
   });
 }
 
+// Parse hanzi_frequency.html for character-level frequency data
+function parseHanziFrequencyFile(htmlPath: string) {
+  const buf = fs.readFileSync(htmlPath);
+  const html = new TextDecoder('gbk').decode(buf);
+  const $ = cheerio.load(html);
+  $('pre').find('br').replaceWith('\n');
+  const preText = $('pre').text();
+  const lines = preText.split('\n');
+
+  let count = 0;
+  for (const line of lines) {
+    if (count >= 1000) break;
+    const cols = line.split('\t');
+    if (cols.length < 6) continue;
+
+    const rank = parseInt(cols[0]);
+    if (isNaN(rank)) continue;
+
+    const hanzi = cols[1].trim();
+    if (!hanzi || !/[\u4e00-\u9fff]/.test(hanzi)) continue;
+
+    // Parse pinyin: take first reading if multiple separated by /
+    let rawPinyin = cols[4].trim();
+    if (rawPinyin.includes('/')) {
+      rawPinyin = rawPinyin.split('/')[0];
+    }
+    const pinyin = numberedToToneMarked(rawPinyin);
+
+    // Parse english
+    const rawEnglish = cols[5].trim();
+    // Split by comma (respecting parens/brackets), take first group
+    const commaGroups = splitEnglish(rawEnglish, /^,\s*/);
+    const firstGroup = commaGroups[0] || '';
+    // Split by / and ; to get individual translations
+    const translations = firstGroup.split(/[\/;]/).map((s) => s.trim()).filter((s) => s.length > 0);
+
+    // Filter out "(surname)" entries and extract word-class categories
+    const english: string[] = [];
+    const categories: string[] = [];
+    for (const t of translations) {
+      if (t === '(surname)') continue;
+      // Check for leading word-class indicator like "(n) ", "(v) ", "(adj) "
+      const wcMatch = t.match(/^\((\w+)\)\s+(.+)$/);
+      if (wcMatch) {
+        const wc = wcMatch[1].toLowerCase();
+        if (!categories.includes(wc)) categories.push(wc);
+        english.push(wcMatch[2]);
+      } else {
+        english.push(t);
+      }
+    }
+
+    if (english.length === 0) continue;
+
+    const existing = wordMap.get(hanzi);
+    if (existing) {
+      // Already in word list - just set hanzi frequency rank
+      existing.hanziFrequencyRank = rank;
+    } else {
+      // New character entry
+      addWord(hanzi, pinyin, english, undefined, '');
+      const entry = wordMap.get(hanzi);
+      if (entry) {
+        entry.hanziFrequencyRank = rank;
+      }
+    }
+
+    count++;
+  }
+}
+
 // Parse main HSK words file
 console.log('Parsing hsk_words.html...');
 parseMainHskFile(mainHtmlPath);
@@ -287,8 +369,18 @@ if (fs.existsSync(labelledDir)) {
   }
 }
 
+// Parse hanzi frequency file
+if (fs.existsSync(hanziFreqPath)) {
+  const sizeBefore = wordMap.size;
+  console.log('Parsing hanzi_frequency.html...');
+  parseHanziFrequencyFile(hanziFreqPath);
+  console.log(`  +${wordMap.size - sizeBefore} new characters (${wordMap.size} total)`);
+}
+
 // Convert to array and sort by frequency rank
-const words = Array.from(wordMap.values()).sort((a, b) => a.frequencyRank - b.frequencyRank);
+const words = Array.from(wordMap.values()).sort((a, b) =>
+  (a.wordFrequencyRank ?? a.hanziFrequencyRank ?? 999999) - (b.wordFrequencyRank ?? b.hanziFrequencyRank ?? 999999)
+);
 
 fs.writeFileSync(outputPath, JSON.stringify(words, null, 2));
 console.log(`\nWrote ${words.length} words to ${outputPath}`);
@@ -296,4 +388,7 @@ console.log(`\nWrote ${words.length} words to ${outputPath}`);
 // Stats
 const withHsk = words.filter((w) => w.hskLevel !== undefined).length;
 const withoutHsk = words.filter((w) => w.hskLevel === undefined).length;
+const withHanziRank = words.filter((w) => w.hanziFrequencyRank !== undefined).length;
+const withWordRank = words.filter((w) => w.wordFrequencyRank !== undefined).length;
 console.log(`  ${withHsk} with HSK level, ${withoutHsk} without`);
+console.log(`  ${withWordRank} with word frequency rank, ${withHanziRank} with hanzi frequency rank`);

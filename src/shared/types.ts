@@ -15,7 +15,8 @@ export interface Word {
   pinyin: string;
   english: string[];
   hskLevel: number;
-  frequencyRank: number;
+  wordFrequencyRank?: number;
+  hanziFrequencyRank?: number;
   examples: Example[];
   translatable: boolean;
   breakdown?: CharacterBreakdown[];
@@ -44,8 +45,8 @@ export interface StartRequest {
   count: number;
   mode: PracticeMode;
   wordSelection: 'mixed' | 'new' | 'review' | 'random';
-  categories?: string[];
-  singleCharOnly?: boolean;
+  categories: string[];
+  singleCharOnly: boolean;
 }
 
 export interface StartResponse {

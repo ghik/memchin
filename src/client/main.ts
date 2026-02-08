@@ -49,6 +49,31 @@ singleCharCheckbox.checked = localStorage.getItem('singleCharOnly') === 'true';
 singleCharCheckbox.addEventListener('change', () => {
   localStorage.setItem('singleCharOnly', String(singleCharCheckbox.checked));
 });
+const savedWordCount = localStorage.getItem('wordCount');
+if (savedWordCount) wordCountInput.value = savedWordCount;
+wordCountInput.addEventListener('change', () => {
+  localStorage.setItem('wordCount', wordCountInput.value);
+});
+const savedMode = localStorage.getItem('mode');
+if (savedMode) {
+  const radio = document.querySelector(`input[name="mode"][value="${savedMode}"]`) as HTMLInputElement | null;
+  if (radio) radio.checked = true;
+}
+document.querySelectorAll('input[name="mode"]').forEach((radio) => {
+  radio.addEventListener('change', () => {
+    localStorage.setItem('mode', (radio as HTMLInputElement).value);
+  });
+});
+const savedWordSelection = localStorage.getItem('wordSelection');
+if (savedWordSelection) {
+  const radio = document.querySelector(`input[name="word-selection"][value="${savedWordSelection}"]`) as HTMLInputElement | null;
+  if (radio) radio.checked = true;
+}
+document.querySelectorAll('input[name="word-selection"]').forEach((radio) => {
+  radio.addEventListener('change', () => {
+    localStorage.setItem('wordSelection', (radio as HTMLInputElement).value);
+  });
+});
 
 // State
 let currentMode: PracticeMode = 'hanzi2pinyin';
@@ -83,7 +108,8 @@ const MODE_LABELS: Record<PracticeMode, string> = {
 };
 
 // Category selection state
-let selectedCategories: Set<string> = new Set();
+const savedCategories = localStorage.getItem('selectedCategories');
+let selectedCategories: Set<string> = savedCategories ? new Set(JSON.parse(savedCategories)) : new Set();
 
 function updateCategoryToggleText() {
   if (selectedCategories.size === 0) {
@@ -109,6 +135,7 @@ function toggleCategory(cat: string, checked: boolean) {
   } else {
     selectedCategories.delete(cat);
   }
+  localStorage.setItem('selectedCategories', JSON.stringify([...selectedCategories]));
   updateCategoryToggleText();
   updateSelectedTags();
   // Sync checkbox state
@@ -186,7 +213,7 @@ async function handleStart() {
 
     const selectedCategories = getSelectedCategories();
     const wordSelection = (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
-    const response = await startPractice(count, currentMode, wordSelection, selectedCategories.length > 0 ? selectedCategories : undefined, singleCharCheckbox.checked || undefined);
+    const response = await startPractice(count, currentMode, wordSelection, selectedCategories, singleCharCheckbox.checked);
     questions = shuffle(response.questions);
     currentIndex = 0;
     results.clear();
@@ -245,7 +272,11 @@ function showQuestion() {
   const word = question.word;
   const bucketLabel = question.bucket === null ? 'new' : `bucket ${question.bucket}`;
 
-  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length} (${bucketLabel}, rank #${word.frequencyRank})`;
+  const ranks = [
+    word.wordFrequencyRank != null ? `word #${word.wordFrequencyRank}` : null,
+    word.hanziFrequencyRank != null ? `char #${word.hanziFrequencyRank}` : null,
+  ].filter(Boolean).join(', ') || '?';
+  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length} (${bucketLabel}, ${ranks})`;
 
   // Show example hints alongside the question
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
@@ -557,6 +588,7 @@ document.addEventListener('keydown', (e) => {
 document.querySelectorAll('.preset-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     wordCountInput.value = (btn as HTMLElement).dataset.count!;
+    localStorage.setItem('wordCount', wordCountInput.value);
   });
 });
 

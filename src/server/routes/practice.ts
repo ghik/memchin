@@ -147,7 +147,8 @@ router.post('/answer', (req, res) => {
       synonym =
         !correct &&
         (isPinyinSynonym(word.hanzi, normalizedAnswer) ||
-          (word.hanzi.length > 1 && lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)));
+          (word.hanzi.length > 1 && lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)) ||
+          isAmbiguousTranslation(word.english));
       break;
   }
 

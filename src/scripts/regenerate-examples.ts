@@ -9,7 +9,7 @@ async function regenerate(start?: number, end?: number, skipAudio?: boolean): Pr
   // Get all words sorted by frequency rank
   const wordsMap = getAllWords();
   const allWords: Word[] = [...wordsMap.values()].sort(
-    (a, b) => (a.frequencyRank ?? 999999) - (b.frequencyRank ?? 999999)
+    (a, b) => (a.wordFrequencyRank ?? a.hanziFrequencyRank ?? 999999) - (b.wordFrequencyRank ?? b.hanziFrequencyRank ?? 999999)
   );
 
   console.log(`Total words in database: ${allWords.length}`);

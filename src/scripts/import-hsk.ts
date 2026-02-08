@@ -25,7 +25,8 @@ interface WordEntry {
   english: string[];
   categories: string[];
   hskLevel?: number;
-  frequencyRank: number;
+  wordFrequencyRank?: number;
+  hanziFrequencyRank?: number;
 }
 
 async function importWords(start?: number, end?: number): Promise<void> {
@@ -43,6 +44,7 @@ async function importWords(start?: number, end?: number): Promise<void> {
       examples TEXT NOT NULL DEFAULT '[]',
       translatable INTEGER NOT NULL DEFAULT 1,
       rank INTEGER,
+      hanzi_rank INTEGER,
       categories TEXT NOT NULL DEFAULT '[]'
     );
   `);
@@ -80,6 +82,13 @@ async function importWords(start?: number, end?: number): Promise<void> {
     // Column already exists
   }
 
+  // Add hanzi_rank column to existing words table if missing
+  try {
+    db.run(`ALTER TABLE words ADD COLUMN hanzi_rank INTEGER`);
+  } catch {
+    // Column already exists
+  }
+
   saveDb();
 
   // Get existing words to reuse examples
@@ -90,7 +99,7 @@ async function importWords(start?: number, end?: number): Promise<void> {
   let entries: WordEntry[] = JSON.parse(fs.readFileSync(wordsPath, 'utf-8'));
 
   // Sort all words by frequency
-  entries.sort((a, b) => a.frequencyRank - b.frequencyRank);
+  entries.sort((a, b) => (a.wordFrequencyRank ?? a.hanziFrequencyRank ?? 999999) - (b.wordFrequencyRank ?? b.hanziFrequencyRank ?? 999999));
 
   console.log(`Total words in JSON: ${entries.length}`);
 
@@ -156,7 +165,8 @@ async function importWords(start?: number, end?: number): Promise<void> {
         pinyin: raw.pinyin,
         english: raw.english,
         hskLevel: raw.hskLevel ?? 0,
-        frequencyRank: raw.frequencyRank,
+        wordFrequencyRank: raw.wordFrequencyRank,
+        hanziFrequencyRank: raw.hanziFrequencyRank,
         examples: wordExamples,
         translatable: hasTranslatableMeaning(raw.english),
         categories: raw.categories ?? [],

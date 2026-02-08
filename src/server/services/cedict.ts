@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { numberedToToneMarked, stripTones } from './pinyin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const cedictPath = path.join(__dirname, '../../../cedict_1_0_ts_utf-8_mdbg.txt');
+const cedictPath = path.join(__dirname, '../../../sources/cedict_1_0_ts_utf-8_mdbg.txt');
 
 export interface CedictEntry {
   traditional: string;

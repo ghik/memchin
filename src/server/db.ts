@@ -94,7 +94,8 @@ export interface WordToInsert {
   pinyin: string;
   english: string[];
   hskLevel: number;
-  frequencyRank: number;
+  wordFrequencyRank?: number;
+  hanziFrequencyRank?: number;
   examples: Example[];
   translatable: boolean;
   categories: string[];
@@ -104,8 +105,8 @@ export function insertWords(words: WordToInsert[]): void {
   for (const word of words) {
     db.run(
       `
-          INSERT INTO words (hanzi, pinyin, english, hsk_level, examples, translatable, rank, categories)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO words (hanzi, pinyin, english, hsk_level, examples, translatable, rank, hanzi_rank, categories)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(hanzi) DO UPDATE SET
             pinyin = excluded.pinyin,
             english = excluded.english,
@@ -113,6 +114,7 @@ export function insertWords(words: WordToInsert[]): void {
             examples = excluded.examples,
             translatable = excluded.translatable,
             rank = excluded.rank,
+            hanzi_rank = excluded.hanzi_rank,
             categories = excluded.categories
       `,
       [
@@ -122,7 +124,8 @@ export function insertWords(words: WordToInsert[]): void {
         word.hskLevel,
         JSON.stringify(word.examples),
         word.translatable ? 1 : 0,
-        word.frequencyRank,
+        word.wordFrequencyRank ?? null,
+        word.hanziFrequencyRank ?? null,
         JSON.stringify(word.categories),
       ]
     );
@@ -174,28 +177,28 @@ export function upsertProgress(
   );
 }
 
-function getWordFilters(mode: PracticeMode, categories?: string[], singleCharOnly?: boolean) {
+function getWordFilters(mode: PracticeMode, categories: string[], singleCharOnly: boolean) {
   const translatableFilter =
     mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin'
       ? 'AND w.translatable = 1'
       : '';
-  const catParams = categories && categories.length > 0 ? categories : [];
+  const catParams = categories.length > 0 ? categories : [];
   const categoryFilter = catParams.length > 0
     ? `AND EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${catParams.map(() => '?').join(',')}))`
     : '';
-  const singleCharFilter = singleCharOnly ? 'AND length(w.hanzi) = 1' : '';
-  return { translatableFilter, catParams, categoryFilter, singleCharFilter };
+  const rankColumn = singleCharOnly ? 'w.hanzi_rank' : 'w.rank';
+  return { translatableFilter, catParams, categoryFilter, rankColumn };
 }
 
-export function getWordsForReview(mode: PracticeMode, count: number, categories?: string[], singleCharOnly?: boolean): Word[] {
-  const { translatableFilter, catParams, categoryFilter, singleCharFilter } = getWordFilters(mode, categories, singleCharOnly);
+export function getWordsForReview(mode: PracticeMode, count: number, categories: string[], singleCharOnly: boolean): Word[] {
+  const { translatableFilter, catParams, categoryFilter, rankColumn } = getWordFilters(mode, categories, singleCharOnly);
   const params: any[] = [mode, ...catParams, count];
 
   const stmt = db.prepare(`
       SELECT w.*
       FROM words w
                JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? ${translatableFilter} ${categoryFilter} ${singleCharFilter}
+      WHERE p.mode = ? ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
       ORDER BY p.next_eligible ASC
           LIMIT ?
   `);
@@ -209,15 +212,15 @@ export function getWordsForReview(mode: PracticeMode, count: number, categories?
   return result;
 }
 
-export function getRandomReviewWords(mode: PracticeMode, count: number, categories?: string[], singleCharOnly?: boolean): Word[] {
-  const { translatableFilter, catParams, categoryFilter, singleCharFilter } = getWordFilters(mode, categories, singleCharOnly);
+export function getRandomReviewWords(mode: PracticeMode, count: number, categories: string[], singleCharOnly: boolean): Word[] {
+  const { translatableFilter, catParams, categoryFilter, rankColumn } = getWordFilters(mode, categories, singleCharOnly);
   const params: any[] = [mode, ...catParams, count];
 
   const stmt = db.prepare(`
       SELECT w.*
       FROM words w
                JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? ${translatableFilter} ${categoryFilter} ${singleCharFilter}
+      WHERE p.mode = ? ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
       ORDER BY RANDOM()
           LIMIT ?
   `);
@@ -231,16 +234,16 @@ export function getRandomReviewWords(mode: PracticeMode, count: number, categori
   return result;
 }
 
-export function getNewWords(mode: PracticeMode, count: number, categories?: string[], singleCharOnly?: boolean): Word[] {
-  const { translatableFilter, catParams, categoryFilter, singleCharFilter } = getWordFilters(mode, categories, singleCharOnly);
+export function getNewWords(mode: PracticeMode, count: number, categories: string[], singleCharOnly: boolean): Word[] {
+  const { translatableFilter, catParams, categoryFilter, rankColumn } = getWordFilters(mode, categories, singleCharOnly);
   const params: any[] = [mode, ...catParams, count];
 
   const stmt = db.prepare(`
       SELECT w.*
       FROM words w
                LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
-      WHERE p.id IS NULL ${translatableFilter} ${categoryFilter} ${singleCharFilter}
-      ORDER BY w.rank ASC
+      WHERE p.id IS NULL ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
+      ORDER BY ${rankColumn} ASC
           LIMIT ?
   `);
   stmt.bind(params);
@@ -253,9 +256,9 @@ export function getNewWords(mode: PracticeMode, count: number, categories?: stri
   return result;
 }
 
-export function getWordsForPractice(mode: PracticeMode, count: number, categories?: string[], singleCharOnly?: boolean): Word[] {
+export function getWordsForPractice(mode: PracticeMode, count: number, categories: string[], singleCharOnly: boolean): Word[] {
   const now = new Date().toISOString();
-  const { translatableFilter, catParams, categoryFilter, singleCharFilter } = getWordFilters(mode, categories, singleCharOnly);
+  const { translatableFilter, catParams, categoryFilter, rankColumn } = getWordFilters(mode, categories, singleCharOnly);
 
   // First get words that are due for review
   const dueParams: any[] = [mode, now, ...catParams, count];
@@ -264,7 +267,7 @@ export function getWordsForPractice(mode: PracticeMode, count: number, categorie
       FROM words w
                JOIN progress p ON w.hanzi = p.hanzi
       WHERE p.mode = ?
-        AND p.next_eligible <= ? ${translatableFilter} ${categoryFilter} ${singleCharFilter}
+        AND p.next_eligible <= ? ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
       ORDER BY p.next_eligible ASC
           LIMIT ?
   `);
@@ -287,8 +290,8 @@ export function getWordsForPractice(mode: PracticeMode, count: number, categorie
         SELECT w.*
         FROM words w
                  LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
-        WHERE p.id IS NULL ${placeholders} ${translatableFilter} ${categoryFilter} ${singleCharFilter}
-        ORDER BY w.rank ASC
+        WHERE p.id IS NULL ${placeholders} ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
+        ORDER BY ${rankColumn} ASC
             LIMIT ?
     `);
     newStmt.bind(newParams);
@@ -376,7 +379,8 @@ function rowToWord(row: any): Word {
     pinyin: (row.pinyin as string).toLowerCase(),
     english: JSON.parse(row.english),
     hskLevel: row.hsk_level,
-    frequencyRank: row.rank ?? 999999,
+    wordFrequencyRank: row.rank ?? undefined,
+    hanziFrequencyRank: row.hanzi_rank ?? undefined,
     examples: JSON.parse(row.examples || '[]'),
     translatable: Boolean(row.translatable),
     categories: JSON.parse(row.categories || '[]'),

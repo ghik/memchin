@@ -52,11 +52,21 @@ export function splitPinyin(pinyin: string): string {
   const syllables: string[] = [];
   let remaining = pinyin;
 
+  const VOWEL_PATTERN = new RegExp(`^(?:${FINALS})`, 'i');
+
   while (remaining.length > 0) {
     const match = remaining.match(SYLLABLE_PATTERN);
     if (match && match[1]) {
-      syllables.push(remaining.slice(0, match[1].length));
-      remaining = remaining.slice(match[1].length);
+      let len = match[1].length;
+      // If syllable ends in 'n' (not 'ng') and next char starts a vowel,
+      // the 'n' belongs to the next syllable as an initial
+      if (len > 1 && remaining[len - 1]?.toLowerCase() === 'n'
+        && remaining[len]?.toLowerCase() !== 'g'
+        && VOWEL_PATTERN.test(remaining.slice(len))) {
+        len--;
+      }
+      syllables.push(remaining.slice(0, len));
+      remaining = remaining.slice(len);
     } else {
       // No match - take one character and continue
       syllables.push(remaining[0]);
