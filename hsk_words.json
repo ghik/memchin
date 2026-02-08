@@ -2999,7 +2999,8 @@
     ],
     "categories": [
       "body parts",
-      "b1"
+      "b1",
+      "body"
     ],
     "wordFrequencyRank": 242,
     "hanziFrequencyRank": 143
@@ -3552,7 +3553,8 @@
     ],
     "categories": [
       "body parts",
-      "b1"
+      "b1",
+      "body"
     ],
     "wordFrequencyRank": 293,
     "hanziFrequencyRank": 147
@@ -5431,7 +5433,8 @@
     "categories": [
       "noun",
       "hsk3",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 447,
     "hanziFrequencyRank": 615
@@ -10527,14 +10530,16 @@
     "pinyin": "jiǎo",
     "english": [
       "foot",
-      "leg"
+      "leg",
+      "feet"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
       "hsk3",
       "body parts",
-      "b1"
+      "b1",
+      "body"
     ],
     "wordFrequencyRank": 915,
     "hanziFrequencyRank": 790
@@ -12192,12 +12197,14 @@
     "hanzi": "背",
     "pinyin": "bèi",
     "english": [
-      "(one's) back"
+      "(one's) back",
+      "back"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "body"
     ],
     "wordFrequencyRank": 1067,
     "hanziFrequencyRank": 787
@@ -14775,7 +14782,8 @@
       "noun",
       "hsk3",
       "body parts",
-      "b1"
+      "b1",
+      "body"
     ],
     "wordFrequencyRank": 1311
   },
@@ -17162,7 +17170,8 @@
       "noun",
       "hsk3",
       "body parts",
-      "b1"
+      "b1",
+      "body"
     ],
     "wordFrequencyRank": 1560
   },
@@ -18236,12 +18245,14 @@
     "pinyin": "máo",
     "english": [
       "hair",
-      "fur"
+      "fur",
+      "(body) hair"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "body"
     ],
     "wordFrequencyRank": 1682,
     "hanziFrequencyRank": 623
@@ -35709,6 +35720,17 @@
     "wordFrequencyRank": 4584
   },
   {
+    "hanzi": "大脑",
+    "pinyin": "dà nǎo",
+    "english": [
+      "brain"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 4588
+  },
+  {
     "hanzi": "代替",
     "pinyin": "dàitì",
     "english": [
@@ -37286,7 +37308,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 5123
   },
@@ -39671,6 +39694,17 @@
     "wordFrequencyRank": 6035
   },
   {
+    "hanzi": "额头",
+    "pinyin": "é tóu",
+    "english": [
+      "forehead"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 6043
+  },
+  {
     "hanzi": "沙滩",
     "pinyin": "shātān",
     "english": [
@@ -40926,6 +40960,17 @@
       "hsk5"
     ],
     "wordFrequencyRank": 6619
+  },
+  {
+    "hanzi": "肝",
+    "pinyin": "gān",
+    "english": [
+      "liver"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 6654
   },
   {
     "hanzi": "报社",
@@ -42744,6 +42789,17 @@
     "wordFrequencyRank": 7684
   },
   {
+    "hanzi": "膝盖",
+    "pinyin": "xī gài",
+    "english": [
+      "knee"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 7703
+  },
+  {
     "hanzi": "餐桌",
     "pinyin": "cānzhuō",
     "english": [
@@ -42784,7 +42840,8 @@
     "hskLevel": 6,
     "categories": [
       "body parts",
-      "hsk6"
+      "hsk6",
+      "body"
     ],
     "wordFrequencyRank": 7765
   },
@@ -43312,6 +43369,17 @@
       "hsk5"
     ],
     "wordFrequencyRank": 8199
+  },
+  {
+    "hanzi": "脸颊",
+    "pinyin": "liǎn jiá",
+    "english": [
+      "cheek"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 8212
   },
   {
     "hanzi": "奥地利",
@@ -46308,6 +46376,17 @@
     "wordFrequencyRank": 11288
   },
   {
+    "hanzi": "眼皮",
+    "pinyin": "yǎn pí",
+    "english": [
+      "eyelid"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 11301
+  },
+  {
     "hanzi": "况",
     "pinyin": "kuàng",
     "english": [
@@ -46684,6 +46763,17 @@
     "wordFrequencyRank": 11954
   },
   {
+    "hanzi": "睫毛",
+    "pinyin": "jié máo",
+    "english": [
+      "eyelash(es)"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 11960
+  },
+  {
     "hanzi": "洗衣机",
     "pinyin": "xǐyījī",
     "english": [
@@ -46993,6 +47083,17 @@
     "wordFrequencyRank": 12465
   },
   {
+    "hanzi": "关节",
+    "pinyin": "guān jié",
+    "english": [
+      "joints"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 12499
+  },
+  {
     "hanzi": "宣",
     "pinyin": "xuān",
     "english": [
@@ -47300,6 +47401,17 @@
       "b2"
     ],
     "wordFrequencyRank": 13212
+  },
+  {
+    "hanzi": "臀部",
+    "pinyin": "tún bù",
+    "english": [
+      "buttocks"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 13275
   },
   {
     "hanzi": "大使馆",
@@ -51705,6 +51817,17 @@
     "wordFrequencyRank": 32850
   },
   {
+    "hanzi": "胳膊肘",
+    "pinyin": "gē bo zhǒu",
+    "english": [
+      "elbow"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 33000
+  },
+  {
     "hanzi": "齐心协力",
     "pinyin": "qíxīnxiélì",
     "english": [
@@ -51740,6 +51863,17 @@
       "hsk6"
     ],
     "wordFrequencyRank": 33604
+  },
+  {
+    "hanzi": "大肠",
+    "pinyin": "dà cháng",
+    "english": [
+      "large intestine"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 33766
   },
   {
     "hanzi": "竞技场",
@@ -52402,6 +52536,17 @@
       "b2"
     ],
     "wordFrequencyRank": 46009
+  },
+  {
+    "hanzi": "小肠",
+    "pinyin": "xiǎo cháng",
+    "english": [
+      "small intestine"
+    ],
+    "categories": [
+      "body"
+    ],
+    "wordFrequencyRank": 46272
   },
   {
     "hanzi": "优胜劣汰",
@@ -54800,6 +54945,36 @@
     "categories": [
       "video games",
       "b2"
+    ]
+  },
+  {
+    "hanzi": "指关节",
+    "pinyin": "zhǐ guān jié",
+    "english": [
+      "knuckle"
+    ],
+    "categories": [
+      "body"
+    ]
+  },
+  {
+    "hanzi": "脚脖子",
+    "pinyin": "jiǎo bó zi",
+    "english": [
+      "ankle"
+    ],
+    "categories": [
+      "body"
+    ]
+  },
+  {
+    "hanzi": "脚趾甲",
+    "pinyin": "jiǎo zhǐ jiǎ",
+    "english": [
+      "toenail"
+    ],
+    "categories": [
+      "body"
     ]
   }
 ]

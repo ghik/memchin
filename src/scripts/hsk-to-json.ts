@@ -11,6 +11,7 @@ const commonWordsPath = path.join(sourcesDir, '1000_common_words.html');
 const labelledDir = path.join(sourcesDir, 'hsk_labelled_words');
 const freqPath = path.join(sourcesDir, 'internet-zh.num.txt');
 const hanziFreqPath = path.join(sourcesDir, 'hanzi_frequency.html');
+const bodyPath = path.join(sourcesDir, 'body.txt');
 const outputPath = path.join(__dirname, '../../hsk_words.json');
 
 function loadFrequencyData(): Map<string, number> {
@@ -367,6 +368,26 @@ if (fs.existsSync(labelledDir)) {
     const newWords = wordMap.size - sizeBefore;
     console.log(`Parsing ${file} (${category}): +${newWords} new words`);
   }
+}
+
+// Parse body.txt — format: 汉字 (pīnyīn) - english
+function parseSimpleWordList(filePath: string, category: string) {
+  const data = fs.readFileSync(filePath, 'utf-8');
+  for (const line of data.split('\n')) {
+    const match = line.match(/^(.+?)\s*\((.+?)\)\s*-\s*(.+)$/);
+    if (!match) continue;
+    const hanzi = match[1].trim();
+    const pinyin = match[2].trim();
+    const english = splitSlashes(splitEnglish(match[3].trim(), /^[,;]\s*/));
+    addWord(hanzi, pinyin, english, undefined, category);
+  }
+}
+
+if (fs.existsSync(bodyPath)) {
+  const sizeBefore = wordMap.size;
+  console.log('Parsing body.txt...');
+  parseSimpleWordList(bodyPath, 'body');
+  console.log(`  +${wordMap.size - sizeBefore} new words (${wordMap.size} total)`);
 }
 
 // Parse hanzi frequency file
