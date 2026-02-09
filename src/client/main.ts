@@ -1,4 +1,4 @@
-import type { PracticeMode, PracticeQuestion } from './services.js';
+import type { PracticeMode, PracticeQuestion, WordProgress } from './services.js';
 import {
   completePractice,
   getCategories,
@@ -79,8 +79,10 @@ document.querySelectorAll('input[name="word-selection"]').forEach((radio) => {
 let currentMode: PracticeMode = 'hanzi2pinyin';
 let questions: PracticeQuestion[] = [];
 let currentIndex = 0;
-let results: Map<string, boolean> = new Map(); // hanzi -> correctFirstTry
+let results: Map<string, number> = new Map(); // hanzi -> round answered correctly (1 = first try)
+let allQuestions: PracticeQuestion[] = []; // original question list for results display
 let incorrectThisRound: PracticeQuestion[] = [];
+let roundNumber = 1;
 let submitBlocked = false;
 
 // Utility functions
@@ -89,6 +91,14 @@ function showScreen(screen: HTMLElement) {
   practiceScreen.classList.remove('active');
   resultScreen.classList.remove('active');
   screen.classList.add('active');
+}
+
+function formatNextEligible(isoString: string): string {
+  const diff = new Date(isoString).getTime() - Date.now();
+  if (diff < 60_000) return '< 1m';
+  if (diff < 3600_000) return `${Math.round(diff / 60_000)}m`;
+  if (diff < 86400_000) return `${Math.round(diff / 3600_000)}h`;
+  return `${Math.round(diff / 86400_000)}d`;
 }
 
 function shuffle<T>(array: T[]): T[] {
@@ -215,9 +225,11 @@ async function handleStart() {
     const wordSelection = (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
     const response = await startPractice(count, currentMode, wordSelection, selectedCategories, singleCharCheckbox.checked);
     questions = shuffle(response.questions);
+    allQuestions = [...questions];
     currentIndex = 0;
     results.clear();
     incorrectThisRound = [];
+    roundNumber = 1;
 
     showScreen(practiceScreen);
     showQuestion();
@@ -384,9 +396,9 @@ async function handleSubmit() {
       return;
     }
 
-    // Track first attempt for bucket calculation
-    if (!results.has(question.word.hanzi)) {
-      results.set(question.word.hanzi, response.correct);
+    // Track round when answered correctly
+    if (response.correct && !results.has(question.word.hanzi)) {
+      results.set(question.word.hanzi, roundNumber);
     }
     // Track for iteration retry (always, if wrong)
     if (!response.correct) {
@@ -455,10 +467,6 @@ async function handleSubmit() {
 function handleSkip() {
   const question = questions[currentIndex];
 
-  // Track first attempt for bucket calculation
-  if (!results.has(question.word.hanzi)) {
-    results.set(question.word.hanzi, false);
-  }
   // Track for iteration retry
   incorrectThisRound.push(question);
 
@@ -486,6 +494,7 @@ function handleNext() {
       // Retry incorrect questions
       questions = shuffle(incorrectThisRound);
       incorrectThisRound = [];
+      roundNumber++;
       currentIndex = 0;
       showQuestion();
     } else {
@@ -500,12 +509,13 @@ function handleNext() {
 // Finish practice session
 async function finishPractice() {
   try {
-    const resultArray = Array.from(results.entries()).map(([hanzi, correctFirstTry]) => ({
+    const resultArray = Array.from(results.entries()).map(([hanzi, round]) => ({
       hanzi,
-      correctFirstTry,
+      correctFirstTry: round === 1,
     }));
 
-    await completePractice(currentMode, resultArray);
+    const response = await completePractice(currentMode, resultArray);
+    const progressMap = new Map(response.progress.map((p) => [p.hanzi, p]));
 
     // Show results
     const correctCount = resultArray.filter((r) => r.correctFirstTry).length;
@@ -516,27 +526,32 @@ async function finishPractice() {
       <p class="retry">✗ ${incorrectCount} needed retry</p>
     `;
 
-    // Show mistakes
-    const mistakes = resultArray
-      .filter((r) => !r.correctFirstTry)
-      .map((r) => questions.find((q) => q.word.hanzi === r.hanzi)!)
-      .filter(Boolean);
-
-    if (mistakes.length > 0) {
-      mistakesSection.classList.remove('hidden');
-      mistakesList.innerHTML = mistakes
-        .map(
-          (q) => `
-        <li>
+    // Show all practiced words with attempt info
+    mistakesSection.classList.remove('hidden');
+    mistakesList.innerHTML = [...allQuestions]
+      .sort((a, b) => {
+        const ra = results.get(a.word.hanzi) ?? Infinity;
+        const rb = results.get(b.word.hanzi) ?? Infinity;
+        if (ra !== rb) return rb - ra;
+        const pa = progressMap.get(a.word.hanzi)?.nextEligible ?? '';
+        const pb = progressMap.get(b.word.hanzi)?.nextEligible ?? '';
+        return pa < pb ? -1 : pa > pb ? 1 : 0;
+      })
+      .map((q) => {
+        const round = results.get(q.word.hanzi);
+        const prog = progressMap.get(q.word.hanzi);
+        const label = round === 1 ? '✓' : round !== undefined ? `try ${round}` : '?';
+        const className = round === 1 ? 'result-correct' : 'result-retry';
+        const progressInfo = prog ? `<span class="progress-info">B${prog.bucket} · ${formatNextEligible(prog.nextEligible)}</span>` : '';
+        return `
+        <li class="${className}">
           ${clickableHanzi(q.word.hanzi, 'hanzi')}
           <span class="details">(${q.word.pinyin}) - ${q.word.english[0]}</span>
-        </li>
-      `
-        )
-        .join('');
-    } else {
-      mistakesSection.classList.add('hidden');
-    }
+          <span class="attempt-label">${label}</span>
+          ${progressInfo}
+        </li>`;
+      })
+      .join('');
 
     showScreen(resultScreen);
   } catch (error) {

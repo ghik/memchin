@@ -70,9 +70,16 @@ export interface CompleteRequest {
   results: Array<{ hanzi: string; correctFirstTry: boolean }>;
 }
 
+export interface WordProgress {
+  hanzi: string;
+  bucket: number;
+  nextEligible: string;
+}
+
 export interface CompleteResponse {
   wordsReviewed: number;
   newWordsLearned: number;
+  progress: WordProgress[];
 }
 
 export interface Stats {

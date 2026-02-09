@@ -195,9 +195,15 @@ router.post('/complete', (req, res) => {
   }
   saveDb();
 
+  const progress = results.map((r) => {
+    const p = getProgress(r.hanzi, mode);
+    return { hanzi: r.hanzi, bucket: p?.bucket ?? 0, nextEligible: p?.nextEligible ?? '' };
+  });
+
   const response: CompleteResponse = {
     wordsReviewed: results.length,
     newWordsLearned,
+    progress,
   };
   res.json(response);
 });

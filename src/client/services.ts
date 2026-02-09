@@ -43,9 +43,16 @@ interface AnswerResponse {
   synonym: boolean;
 }
 
+export interface WordProgress {
+  hanzi: string;
+  bucket: number;
+  nextEligible: string;
+}
+
 interface CompleteResponse {
   wordsReviewed: number;
   newWordsLearned: number;
+  progress: WordProgress[];
 }
 
 interface Stats {
