@@ -65,6 +65,18 @@ export function splitPinyin(pinyin: string): string {
         && VOWEL_PATTERN.test(remaining.slice(len))) {
         len--;
       }
+      // If syllable ends in 'r' (er final) and next char starts a vowel,
+      // the 'r' belongs to the next syllable as an initial
+      if (len > 1 && remaining[len - 1]?.toLowerCase() === 'r'
+        && VOWEL_PATTERN.test(remaining.slice(len))) {
+        len--;
+      }
+      // General backtrack: if remaining can't start a valid syllable
+      // (e.g. lone consonant), the greedy match took too much
+      while (len > 1 && remaining.length > len
+        && !SYLLABLE_PATTERN.test(remaining.slice(len))) {
+        len--;
+      }
       syllables.push(remaining.slice(0, len));
       remaining = remaining.slice(len);
     } else {

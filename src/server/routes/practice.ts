@@ -128,9 +128,16 @@ router.post('/answer', (req, res) => {
   let synonym = false;
 
   switch (mode) {
-    case 'hanzi2pinyin':
+    case 'hanzi2pinyin': {
       correct = pinyinMatches(answer, word.pinyin);
+      const na = normalizePinyin(answer);
+      const ne = normalizePinyin(word.pinyin);
+      synonym =
+        !correct &&
+        (isPinyinSynonym(word.hanzi, na) ||
+          (word.hanzi.length > 1 && lastNeutralToneMismatch(na, ne)));
       break;
+    }
     case 'hanzi2english':
       correct = englishMatches(answer, word.english);
       break;

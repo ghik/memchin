@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toNumberedPinyin } from './pinyin.js';
+import { splitPinyin, toNumberedPinyin, normalizePinyin, pinyinMatches } from './pinyin.js';
 
 describe('toNumberedPinyin', () => {
   it('converts single syllable with tone 1', () => {
@@ -60,5 +60,54 @@ describe('toNumberedPinyin', () => {
   it('handles mixed tones in phrase', () => {
     expect(toNumberedPinyin('wǒ ài nǐ')).toBe('wo3ai4ni3');
     expect(toNumberedPinyin('zài jiàn')).toBe('zai4jian4');
+  });
+});
+
+describe('splitPinyin', () => {
+  it('splits basic multi-syllable words', () => {
+    expect(splitPinyin('nǐhǎo')).toBe('nǐ hǎo');
+    expect(splitPinyin('zhōngguó')).toBe('zhōng guó');
+    expect(splitPinyin('xuéshēng')).toBe('xué shēng');
+    expect(splitPinyin('lǎoshī')).toBe('lǎo shī');
+    expect(splitPinyin('péngyǒu')).toBe('péng yǒu');
+  });
+
+  it('returns already-spaced pinyin as-is', () => {
+    expect(splitPinyin('gè rén')).toBe('gè rén');
+    expect(splitPinyin('nǐ hǎo')).toBe('nǐ hǎo');
+  });
+
+  it('gives r to next syllable when followed by a vowel', () => {
+    expect(splitPinyin('gèrén')).toBe('gè rén');
+    expect(splitPinyin('rènshi')).toBe('rèn shi');
+  });
+
+  it('keeps er final when r is not followed by a vowel', () => {
+    expect(splitPinyin('ér')).toBe('ér');
+    expect(splitPinyin('értóng')).toBe('ér tóng');
+  });
+
+  it('backtracks when greedy match leaves invalid remainder', () => {
+    expect(splitPinyin('nǚér')).toBe('nǚ ér');
+  });
+
+  it('gives n to next syllable when followed by a vowel', () => {
+    expect(splitPinyin('zhīdào')).toBe('zhī dào');
+  });
+});
+
+describe('pinyinMatches', () => {
+  it('matches numbered input against tone-marked expected', () => {
+    expect(pinyinMatches('ge4ren2', 'gèrén')).toBe(true);
+    expect(pinyinMatches('ni3hao3', 'nǐhǎo')).toBe(true);
+    expect(pinyinMatches('zhong1guo2', 'zhōngguó')).toBe(true);
+  });
+
+  it('matches tone-marked input against tone-marked expected', () => {
+    expect(pinyinMatches('gèrén', 'gè rén')).toBe(true);
+  });
+
+  it('rejects incorrect tones', () => {
+    expect(pinyinMatches('ge4ren3', 'gèrén')).toBe(false);
   });
 });

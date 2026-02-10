@@ -39,6 +39,7 @@ const selectedCategoriesDiv = document.getElementById('selected-categories')!;
 const categoryDropdown = categoryToggle.parentElement!;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
 const singleCharCheckbox = document.getElementById('single-char-only') as HTMLInputElement;
+const dueBtn = document.getElementById('due-btn') as HTMLButtonElement;
 
 // Load preferences from localStorage
 autoplayCheckbox.checked = localStorage.getItem('autoplayAudio') !== 'false';
@@ -61,7 +62,9 @@ if (savedMode) {
 }
 document.querySelectorAll('input[name="mode"]').forEach((radio) => {
   radio.addEventListener('change', () => {
-    localStorage.setItem('mode', (radio as HTMLInputElement).value);
+    currentMode = (radio as HTMLInputElement).value as PracticeMode;
+    localStorage.setItem('mode', currentMode);
+    updateDueBtn();
   });
 });
 const savedWordSelection = localStorage.getItem('wordSelection');
@@ -76,7 +79,8 @@ document.querySelectorAll('input[name="word-selection"]').forEach((radio) => {
 });
 
 // State
-let currentMode: PracticeMode = 'hanzi2pinyin';
+let latestStats: { mode: PracticeMode; dueForReview: number }[] = [];
+let currentMode: PracticeMode = (document.querySelector('input[name="mode"]:checked') as HTMLInputElement)?.value as PracticeMode || 'hanzi2pinyin';
 let questions: PracticeQuestion[] = [];
 let currentIndex = 0;
 let results: Map<string, number> = new Map(); // hanzi -> round answered correctly (1 = first try)
@@ -84,6 +88,7 @@ let allQuestions: PracticeQuestion[] = []; // original question list for results
 let incorrectThisRound: PracticeQuestion[] = [];
 let roundNumber = 1;
 let submitBlocked = false;
+let newWords: Set<string> = new Set(); // words that were new (bucket null) and shown answer on first round
 
 // Utility functions
 function showScreen(screen: HTMLElement) {
@@ -108,6 +113,13 @@ function shuffle<T>(array: T[]): T[] {
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
+}
+
+function updateDueBtn() {
+  const stat = latestStats.find((s) => s.mode === currentMode);
+  const due = stat?.dueForReview ?? 0;
+  dueBtn.textContent = 'all due';
+  dueBtn.dataset.count = String(due);
 }
 
 const MODE_LABELS: Record<PracticeMode, string> = {
@@ -201,6 +213,8 @@ async function loadStats() {
       .join('');
 
     statsDiv.innerHTML = html;
+    latestStats = stats;
+    updateDueBtn();
   } catch (error) {
     console.error('Failed to load stats:', error);
     statsDiv.innerHTML = '<p>Failed to load stats</p>';
@@ -230,6 +244,7 @@ async function handleStart() {
     results.clear();
     incorrectThisRound = [];
     roundNumber = 1;
+    newWords.clear();
 
     showScreen(practiceScreen);
     showQuestion();
@@ -282,7 +297,7 @@ function formatExampleAnswers(
 function showQuestion() {
   const question = questions[currentIndex];
   const word = question.word;
-  const bucketLabel = question.bucket === null ? 'new' : `bucket ${question.bucket}`;
+  const bucketLabel = question.bucket === null ? 'new' : `B${question.bucket}`;
 
   const ranks = [
     word.wordFrequencyRank != null ? `word #${word.wordFrequencyRank}` : null,
@@ -310,13 +325,28 @@ function showQuestion() {
   promptDiv.className = (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') ? 'prompt english-prompt' : 'prompt';
 
   answerInput.value = '';
-  answerInput.disabled = false;
-  answerInput.focus();
 
-  feedbackDiv.classList.add('hidden');
-  nextBtn.classList.add('hidden');
-  submitBtn.classList.remove('hidden');
-  skipBtn.classList.remove('hidden');
+  if (question.bucket === null && !newWords.has(word.hanzi)) {
+    // New word — show answer immediately for learning, will be quizzed next round
+    newWords.add(word.hanzi);
+    answerInput.disabled = true;
+    feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
+    feedbackDiv.classList.add('correct');
+    feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+    playAudio(question.word.hanzi, true);
+    submitBtn.classList.add('hidden');
+    skipBtn.classList.add('hidden');
+    nextBtn.classList.remove('hidden');
+    // Don't set results — will be retried in next round
+    incorrectThisRound.push(question);
+  } else {
+    answerInput.disabled = false;
+    answerInput.focus();
+    feedbackDiv.classList.add('hidden');
+    nextBtn.classList.add('hidden');
+    submitBtn.classList.remove('hidden');
+    skipBtn.classList.remove('hidden');
+  }
 }
 
 // Format character breakdown
@@ -380,7 +410,6 @@ async function handleSubmit() {
       feedbackDiv.classList.remove('hidden', 'correct', 'incorrect');
       feedbackDiv.classList.add('synonym');
       feedbackDiv.innerHTML = `✓ "${answer}" is correct, but not the word I'm looking for. Try again!`;
-      answerInput.value = '';
       answerInput.focus();
       submitBtn.disabled = false;
 
@@ -412,12 +441,13 @@ async function handleSubmit() {
     if (response.correct) {
       feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>`;
     } else {
-      const synonymBtn = currentMode === 'english2pinyin'
+      const isPinyinMode = currentMode === 'english2pinyin' || currentMode === 'hanzi2pinyin';
+      const synonymBtn = isPinyinMode
         ? `<button class="synonym-btn" id="synonym-btn">Synonym</button>`
         : '';
       feedbackDiv.innerHTML = `✗ Incorrect${synonymBtn}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
 
-      if (currentMode === 'english2pinyin') {
+      if (isPinyinMode) {
         document.getElementById('synonym-btn')!.addEventListener('click', async () => {
           try {
             await markPinyinSynonym(question.word.hanzi, answer);
@@ -511,7 +541,7 @@ async function finishPractice() {
   try {
     const resultArray = Array.from(results.entries()).map(([hanzi, round]) => ({
       hanzi,
-      correctFirstTry: round === 1,
+      correctFirstTry: newWords.has(hanzi) ? round === 2 : round === 1,
     }));
 
     const response = await completePractice(currentMode, resultArray);
@@ -530,8 +560,10 @@ async function finishPractice() {
     mistakesSection.classList.remove('hidden');
     mistakesList.innerHTML = [...allQuestions]
       .sort((a, b) => {
-        const ra = results.get(a.word.hanzi) ?? Infinity;
-        const rb = results.get(b.word.hanzi) ?? Infinity;
+        const rawRa = results.get(a.word.hanzi) ?? Infinity;
+        const rawRb = results.get(b.word.hanzi) ?? Infinity;
+        const ra = newWords.has(a.word.hanzi) && rawRa !== Infinity ? rawRa - 1 : rawRa;
+        const rb = newWords.has(b.word.hanzi) && rawRb !== Infinity ? rawRb - 1 : rawRb;
         if (ra !== rb) return rb - ra;
         const pa = progressMap.get(a.word.hanzi)?.nextEligible ?? '';
         const pb = progressMap.get(b.word.hanzi)?.nextEligible ?? '';
@@ -540,8 +572,10 @@ async function finishPractice() {
       .map((q) => {
         const round = results.get(q.word.hanzi);
         const prog = progressMap.get(q.word.hanzi);
-        const label = round === 1 ? '✓' : round !== undefined ? `try ${round}` : '?';
-        const className = round === 1 ? 'result-correct' : 'result-retry';
+        const isNew = newWords.has(q.word.hanzi);
+        const firstTry = isNew ? round === 2 : round === 1;
+        const label = firstTry ? '✓' : round !== undefined ? `try ${isNew ? round - 1 : round}` : '?';
+        const className = firstTry ? 'result-correct' : 'result-retry';
         const progressInfo = prog ? `<span class="progress-info">B${prog.bucket} · ${formatNextEligible(prog.nextEligible)}</span>` : '';
         return `
         <li class="${className}">
@@ -605,6 +639,13 @@ document.querySelectorAll('.preset-btn').forEach((btn) => {
     wordCountInput.value = (btn as HTMLElement).dataset.count!;
     localStorage.setItem('wordCount', wordCountInput.value);
   });
+});
+
+// "All due" button also sets word selection to mixed
+dueBtn.addEventListener('click', () => {
+  const mixedRadio = document.querySelector('input[name="word-selection"][value="mixed"]') as HTMLInputElement;
+  mixedRadio.checked = true;
+  localStorage.setItem('wordSelection', 'mixed');
 });
 
 // Click handler for audio playback on hanzi
