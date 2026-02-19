@@ -8,128 +8,167 @@
 </head>
 <body>
   <div id="app">
-    <div id="start-screen" class="screen active">
-      <h1>Chinese Practice</h1>
+    <nav class="sidebar">
+      <h2 class="sidebar-title">Memchin</h2>
+      <a class="nav-item active" data-view="practice">Practice</a>
+      <a class="nav-item" data-view="add-word">Add Word</a>
+    </nav>
+    <div class="main-content">
+      <div id="start-screen" class="screen active">
+        <h1>Chinese Practice</h1>
 
-      <div class="form-group">
-        <label for="word-count">How many words?</label>
-        <div class="count-row">
-          <input type="number" id="word-count" value="10" min="1" max="100">
-          <div class="count-presets">
-            <button type="button" class="preset-btn" data-count="5">5</button>
-            <button type="button" class="preset-btn" data-count="10">10</button>
-            <button type="button" class="preset-btn" data-count="20">20</button>
-            <button type="button" class="preset-btn" data-count="30">30</button>
-            <button type="button" class="preset-btn" data-count="50">50</button>
-            <button type="button" class="preset-btn" id="due-btn">all due</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-group" id="category-filter-group">
-        <label>Filter by category:</label>
-        <div id="category-picker" class="category-picker">
-          <div class="category-dropdown">
-            <button type="button" class="category-dropdown-toggle" id="category-toggle">
-              <span id="category-toggle-text">All categories</span>
-              <span class="dropdown-arrow">▼</span>
-            </button>
-            <div class="category-dropdown-menu hidden" id="category-menu">
-              <input type="text" class="category-search" id="category-search" placeholder="Search categories...">
-              <div class="category-list" id="category-list"></div>
+        <div class="form-group">
+          <label for="word-count">How many words?</label>
+          <div class="count-row">
+            <input type="number" id="word-count" value="10" min="1" max="100">
+            <div class="count-presets">
+              <button type="button" class="preset-btn" data-count="5">5</button>
+              <button type="button" class="preset-btn" data-count="10">10</button>
+              <button type="button" class="preset-btn" data-count="20">20</button>
+              <button type="button" class="preset-btn" data-count="30">30</button>
+              <button type="button" class="preset-btn" data-count="50">50</button>
+              <button type="button" class="preset-btn" id="due-btn">all due</button>
             </div>
           </div>
-          <div class="selected-categories" id="selected-categories"></div>
+        </div>
+
+        <div class="form-group" id="category-filter-group">
+          <label>Filter by category:</label>
+          <div id="category-picker" class="category-picker">
+            <div class="category-dropdown">
+              <button type="button" class="category-dropdown-toggle" id="category-toggle">
+                <span id="category-toggle-text">All categories</span>
+                <span class="dropdown-arrow">▼</span>
+              </button>
+              <div class="category-dropdown-menu hidden" id="category-menu">
+                <input type="text" class="category-search" id="category-search" placeholder="Search categories...">
+                <div class="category-list" id="category-list"></div>
+              </div>
+            </div>
+            <div class="selected-categories" id="selected-categories"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Practice mode:</label>
+          <div class="radio-group radio-group--horizontal">
+            <label>
+              <input type="radio" name="mode" value="hanzi2pinyin" checked>
+              Hanzi → Pinyin
+            </label>
+            <label>
+              <input type="radio" name="mode" value="english2hanzi">
+              English → Hanzi
+            </label>
+            <label>
+              <input type="radio" name="mode" value="english2pinyin">
+              English → Pinyin
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Word selection:</label>
+          <div class="radio-group radio-group--horizontal">
+            <label>
+              <input type="radio" name="word-selection" value="mixed" checked>
+              Mixed (new + review)
+            </label>
+            <label>
+              <input type="radio" name="word-selection" value="new">
+              New words only
+            </label>
+            <label>
+              <input type="radio" name="word-selection" value="review">
+              Review only
+            </label>
+            <label>
+              <input type="radio" name="word-selection" value="random">
+              Random review
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="character-mode">
+            Character mode (characters from learned words)
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="autoplay-audio" checked>
+            Auto-play pronunciation on reveal
+          </label>
+        </div>
+
+        <button id="start-btn" class="primary-btn">Start Practice</button>
+
+        <div id="stats" class="stats"></div>
+      </div>
+
+      <div id="practice-screen" class="screen">
+        <div class="progress-bar">
+          <span id="progress-text">Question 1 of 10</span>
+        </div>
+
+        <div id="prompt" class="prompt"></div>
+
+        <div class="answer-section">
+          <input type="text" id="answer-input" placeholder="Your answer..." autocomplete="off">
+          <button id="submit-btn" class="primary-btn">Submit</button>
+          <button id="skip-btn" class="secondary-btn">I don't know</button>
+        </div>
+
+        <div id="feedback" class="feedback hidden"></div>
+        <button id="next-btn" class="primary-btn hidden">Next</button>
+      </div>
+
+      <div id="result-screen" class="screen">
+        <h2>Session Complete!</h2>
+
+        <div id="result-stats" class="result-stats"></div>
+
+        <div id="mistakes-section" class="mistakes-section hidden">
+          <h3>Results:</h3>
+          <ul id="mistakes-list"></ul>
+        </div>
+
+        <button id="restart-btn" class="primary-btn">Practice Again</button>
+      </div>
+
+      <div id="add-word-screen" class="screen">
+        <h1>Add Word</h1>
+        <div class="add-word-form">
+          <div class="form-group">
+            <label for="add-hanzi">Hanzi</label>
+            <input type="text" id="add-hanzi" placeholder="e.g. 电脑" autocomplete="off">
+            <div id="cedict-entries" class="cedict-entries hidden"></div>
+          </div>
+          <div class="form-group">
+            <label for="add-pinyin">Pinyin</label>
+            <input type="text" id="add-pinyin" placeholder="e.g. diànnǎo or dian4nao3" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>English</label>
+            <div class="chip-input-container">
+              <div id="english-chips" class="chips"></div>
+              <input type="text" id="add-english" placeholder="Type and press Enter" autocomplete="off">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Categories</label>
+            <div class="chip-input-container">
+              <div id="category-chips" class="chips"></div>
+              <input type="text" id="add-categories" placeholder="Type and press Enter" autocomplete="off">
+              <div id="category-suggestions" class="category-suggestions hidden"></div>
+            </div>
+          </div>
+          <button id="add-word-btn" class="primary-btn">Add</button>
+          <div id="add-word-status" class="add-word-status hidden"></div>
         </div>
       </div>
-
-      <div class="form-group">
-        <label>Practice mode:</label>
-        <div class="radio-group radio-group--horizontal">
-          <label>
-            <input type="radio" name="mode" value="hanzi2pinyin" checked>
-            Hanzi → Pinyin
-          </label>
-          <label>
-            <input type="radio" name="mode" value="english2hanzi">
-            English → Hanzi
-          </label>
-          <label>
-            <input type="radio" name="mode" value="english2pinyin">
-            English → Pinyin
-          </label>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Word selection:</label>
-        <div class="radio-group radio-group--horizontal">
-          <label>
-            <input type="radio" name="word-selection" value="mixed" checked>
-            Mixed (new + review)
-          </label>
-          <label>
-            <input type="radio" name="word-selection" value="new">
-            New words only
-          </label>
-          <label>
-            <input type="radio" name="word-selection" value="review">
-            Review only
-          </label>
-          <label>
-            <input type="radio" name="word-selection" value="random">
-            Random review
-          </label>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input type="checkbox" id="single-char-only">
-          Single-character words only
-        </label>
-      </div>
-
-      <div class="form-group">
-        <label class="checkbox-label">
-          <input type="checkbox" id="autoplay-audio" checked>
-          Auto-play pronunciation on reveal
-        </label>
-      </div>
-
-      <button id="start-btn" class="primary-btn">Start Practice</button>
-
-      <div id="stats" class="stats"></div>
-    </div>
-
-    <div id="practice-screen" class="screen">
-      <div class="progress-bar">
-        <span id="progress-text">Question 1 of 10</span>
-      </div>
-
-      <div id="prompt" class="prompt"></div>
-
-      <div class="answer-section">
-        <input type="text" id="answer-input" placeholder="Your answer..." autocomplete="off">
-        <button id="submit-btn" class="primary-btn">Submit</button>
-        <button id="skip-btn" class="secondary-btn">I don't know</button>
-      </div>
-
-      <div id="feedback" class="feedback hidden"></div>
-      <button id="next-btn" class="primary-btn hidden">Next</button>
-    </div>
-
-    <div id="result-screen" class="screen">
-      <h2>Session Complete!</h2>
-
-      <div id="result-stats" class="result-stats"></div>
-
-      <div id="mistakes-section" class="mistakes-section hidden">
-        <h3>Results:</h3>
-        <ul id="mistakes-list"></ul>
-      </div>
-
-      <button id="restart-btn" class="primary-btn">Practice Again</button>
     </div>
   </div>
 

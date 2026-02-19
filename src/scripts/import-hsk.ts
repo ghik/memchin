@@ -45,7 +45,8 @@ async function importWords(start?: number, end?: number): Promise<void> {
       translatable INTEGER NOT NULL DEFAULT 1,
       rank INTEGER,
       hanzi_rank INTEGER,
-      categories TEXT NOT NULL DEFAULT '[]'
+      categories TEXT NOT NULL DEFAULT '[]',
+      manual INTEGER NOT NULL DEFAULT 0
     );
   `);
 
@@ -85,6 +86,13 @@ async function importWords(start?: number, end?: number): Promise<void> {
   // Add hanzi_rank column to existing words table if missing
   try {
     db.run(`ALTER TABLE words ADD COLUMN hanzi_rank INTEGER`);
+  } catch {
+    // Column already exists
+  }
+
+  // Add manual column to existing words table if missing
+  try {
+    db.run(`ALTER TABLE words ADD COLUMN manual INTEGER NOT NULL DEFAULT 0`);
   } catch {
     // Column already exists
   }
@@ -170,6 +178,7 @@ async function importWords(start?: number, end?: number): Promise<void> {
         examples: wordExamples,
         translatable: hasTranslatableMeaning(raw.english),
         categories: raw.categories ?? [],
+        manual: false,
       };
     });
 

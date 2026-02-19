@@ -1,18 +1,23 @@
-import type { PracticeMode, PracticeQuestion, WordProgress } from './services.js';
+import type { PracticeMode, PracticeQuestion, WordProgress, CedictEntry } from './services.js';
 import {
+  addWord,
   completePractice,
   getCategories,
+  getDueCount,
   getStats,
   getWordCount,
+  lookupHanzi,
   markPinyinSynonym,
   startPractice,
   submitAnswer,
+  updateWord,
 } from './services.js';
 
 // DOM Elements
 const startScreen = document.getElementById('start-screen')!;
 const practiceScreen = document.getElementById('practice-screen')!;
 const resultScreen = document.getElementById('result-screen')!;
+const addWordScreen = document.getElementById('add-word-screen')!;
 
 const wordCountInput = document.getElementById('word-count') as HTMLInputElement;
 const startBtn = document.getElementById('start-btn') as HTMLButtonElement;
@@ -38,17 +43,51 @@ const categoryList = document.getElementById('category-list')!;
 const selectedCategoriesDiv = document.getElementById('selected-categories')!;
 const categoryDropdown = categoryToggle.parentElement!;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
-const singleCharCheckbox = document.getElementById('single-char-only') as HTMLInputElement;
+const characterModeCheckbox = document.getElementById('character-mode') as HTMLInputElement;
 const dueBtn = document.getElementById('due-btn') as HTMLButtonElement;
+
+// Sidebar nav
+const navItems = document.querySelectorAll('.nav-item');
+let currentView: 'practice' | 'add-word' = 'practice';
+let lastPracticeScreen: HTMLElement = startScreen;
+
+function showView(view: 'practice' | 'add-word') {
+  currentView = view;
+
+  // Update nav active state
+  navItems.forEach((item) => {
+    item.classList.toggle('active', (item as HTMLElement).dataset.view === view);
+  });
+
+  // Hide all screens
+  startScreen.classList.remove('active');
+  practiceScreen.classList.remove('active');
+  resultScreen.classList.remove('active');
+  addWordScreen.classList.remove('active');
+
+  if (view === 'practice') {
+    lastPracticeScreen.classList.add('active');
+  } else if (view === 'add-word') {
+    addWordScreen.classList.add('active');
+  }
+}
+
+navItems.forEach((item) => {
+  item.addEventListener('click', () => {
+    const view = (item as HTMLElement).dataset.view as 'practice' | 'add-word';
+    showView(view);
+  });
+});
 
 // Load preferences from localStorage
 autoplayCheckbox.checked = localStorage.getItem('autoplayAudio') !== 'false';
 autoplayCheckbox.addEventListener('change', () => {
   localStorage.setItem('autoplayAudio', String(autoplayCheckbox.checked));
 });
-singleCharCheckbox.checked = localStorage.getItem('singleCharOnly') === 'true';
-singleCharCheckbox.addEventListener('change', () => {
-  localStorage.setItem('singleCharOnly', String(singleCharCheckbox.checked));
+characterModeCheckbox.checked = localStorage.getItem('characterMode') === 'true';
+characterModeCheckbox.addEventListener('change', () => {
+  localStorage.setItem('characterMode', String(characterModeCheckbox.checked));
+  reloadStats();
 });
 const savedWordCount = localStorage.getItem('wordCount');
 if (savedWordCount) wordCountInput.value = savedWordCount;
@@ -95,7 +134,9 @@ function showScreen(screen: HTMLElement) {
   startScreen.classList.remove('active');
   practiceScreen.classList.remove('active');
   resultScreen.classList.remove('active');
+  addWordScreen.classList.remove('active');
   screen.classList.add('active');
+  lastPracticeScreen = screen;
 }
 
 function formatNextEligible(isoString: string): string {
@@ -163,12 +204,18 @@ function toggleCategory(cat: string, checked: boolean) {
   // Sync checkbox state
   const checkbox = categoryList.querySelector(`input[value="${CSS.escape(cat)}"]`) as HTMLInputElement | null;
   if (checkbox) checkbox.checked = checked;
+  reloadStats();
 }
 
 // Load stats on start
 async function loadStats() {
   try {
-    const [stats, wordCount, categories] = await Promise.all([getStats(), getWordCount(), getCategories()]);
+    const [stats, wordCount, categories] = await Promise.all([
+      getStats(getSelectedCategories(), characterModeCheckbox.checked),
+      getWordCount(),
+      getCategories(),
+    ]);
+    allCategoriesList = categories;
 
     // Populate category dropdown list
     categoryList.innerHTML = '';
@@ -197,27 +244,40 @@ async function loadStats() {
       return;
     }
 
-    const html = stats
-      .filter((s) => s.mode !== 'hanzi2english')
-      .map(
-        (s) => {
-          const bucketBar = s.buckets
-            .map((count, i) => `<span class="bucket-count" title="Bucket ${i}">${count}</span>`)
-            .join('');
-          return `
-      <p><strong>${MODE_LABELS[s.mode] ?? s.mode}:</strong> ${s.learned}/${s.totalWords} learned, ${s.mastered} mastered, ${s.dueForReview} due</p>
-      <div class="bucket-bar">${bucketBar}</div>
-    `;
-        }
-      )
-      .join('');
-
-    statsDiv.innerHTML = html;
-    latestStats = stats;
-    updateDueBtn();
+    renderStats(stats);
   } catch (error) {
     console.error('Failed to load stats:', error);
     statsDiv.innerHTML = '<p>Failed to load stats</p>';
+  }
+}
+
+function renderStats(stats: { mode: PracticeMode; learned: number; totalWords: number; mastered: number; dueForReview: number; buckets: number[] }[]) {
+  const html = stats
+    .filter((s) => s.mode !== 'hanzi2english')
+    .map(
+      (s) => {
+        const bucketBar = s.buckets
+          .map((count, i) => `<span class="bucket-count" title="Bucket ${i}">${count}</span>`)
+          .join('');
+        return `
+      <p><strong>${MODE_LABELS[s.mode] ?? s.mode}:</strong> ${s.learned}/${s.totalWords} learned, ${s.mastered} mastered, ${s.dueForReview} due</p>
+      <div class="bucket-bar">${bucketBar}</div>
+    `;
+      }
+    )
+    .join('');
+
+  statsDiv.innerHTML = html;
+  latestStats = stats;
+  updateDueBtn();
+}
+
+async function reloadStats() {
+  try {
+    const stats = await getStats(getSelectedCategories(), characterModeCheckbox.checked);
+    renderStats(stats);
+  } catch (error) {
+    console.error('Failed to reload stats:', error);
   }
 }
 
@@ -237,7 +297,7 @@ async function handleStart() {
 
     const selectedCategories = getSelectedCategories();
     const wordSelection = (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
-    const response = await startPractice(count, currentMode, wordSelection, selectedCategories, singleCharCheckbox.checked);
+    const response = await startPractice(count, currentMode, wordSelection, selectedCategories, characterModeCheckbox.checked);
     questions = shuffle(response.questions);
     allQuestions = [...questions];
     currentIndex = 0;
@@ -389,6 +449,14 @@ function formatFullAnswer(question: PracticeQuestion): string {
   // Show character breakdown for multi-character words (at the bottom)
   if (word.breakdown && word.breakdown.length > 0) {
     result += formatBreakdown(word.breakdown);
+  }
+
+  // Show containing words (character mode)
+  if (question.containingWords.length > 0) {
+    const items = question.containingWords
+      .map((w) => `<span class="containing-word">${clickableHanzi(w.hanzi, 'containing-hanzi')} <span class="containing-pinyin">(${w.pinyin})</span> <span class="containing-english">${w.english[0]}</span></span>`)
+      .join('');
+    result += `<div class="containing-words"><span class="containing-label">Words with ${word.hanzi}:</span>${items}</div>`;
   }
 
   return result;
@@ -544,7 +612,7 @@ async function finishPractice() {
       correctFirstTry: newWords.has(hanzi) ? round === 2 : round === 1,
     }));
 
-    const response = await completePractice(currentMode, resultArray);
+    const response = await completePractice(currentMode, resultArray, characterModeCheckbox.checked);
     const progressMap = new Map(response.progress.map((p) => [p.hanzi, p]));
 
     // Show results
@@ -622,6 +690,7 @@ answerInput.addEventListener('keydown', (e) => {
 
 document.addEventListener('keydown', (e) => {
   if (e.isComposing) return;
+  if (currentView !== 'practice') return;
   if (e.key === 'Enter') {
     if (resultScreen.classList.contains('active')) {
       handleRestart();
@@ -641,11 +710,21 @@ document.querySelectorAll('.preset-btn').forEach((btn) => {
   });
 });
 
-// "All due" button also sets word selection to mixed
-dueBtn.addEventListener('click', () => {
-  const mixedRadio = document.querySelector('input[name="word-selection"][value="mixed"]') as HTMLInputElement;
-  mixedRadio.checked = true;
-  localStorage.setItem('wordSelection', 'mixed');
+// "All due" button: set review-only mode with due count respecting categories
+dueBtn.addEventListener('click', async () => {
+  const reviewRadio = document.querySelector('input[name="word-selection"][value="review"]') as HTMLInputElement;
+  reviewRadio.checked = true;
+  localStorage.setItem('wordSelection', 'review');
+
+  try {
+    const count = await getDueCount(currentMode, getSelectedCategories(), characterModeCheckbox.checked);
+    if (count > 0) {
+      wordCountInput.value = String(count);
+      localStorage.setItem('wordCount', String(count));
+    }
+  } catch (error) {
+    console.error('Failed to get due count:', error);
+  }
 });
 
 // Click handler for audio playback on hanzi
@@ -708,6 +787,226 @@ selectedCategoriesDiv.addEventListener('click', (e) => {
     }
   }
 });
+
+// Add word form
+const addWordForm = document.getElementById('add-word-screen')!;
+const addHanziInput = document.getElementById('add-hanzi') as HTMLInputElement;
+const addPinyinInput = document.getElementById('add-pinyin') as HTMLInputElement;
+const addEnglishInput = document.getElementById('add-english') as HTMLInputElement;
+const addCategoriesInput = document.getElementById('add-categories') as HTMLInputElement;
+const englishChips = document.getElementById('english-chips')!;
+const categoryChips = document.getElementById('category-chips')!;
+const cedictEntries = document.getElementById('cedict-entries')!;
+const categorySuggestions = document.getElementById('category-suggestions')!;
+const addWordBtn = document.getElementById('add-word-btn') as HTMLButtonElement;
+const addWordStatus = document.getElementById('add-word-status')!;
+
+let englishValues: string[] = [];
+let categoryValues: string[] = [];
+let allCategoriesList: string[] = [];
+let lookupTimer: ReturnType<typeof setTimeout> | null = null;
+let editingExistingWord = false;
+
+function renderChips(container: HTMLElement, values: string[], onRemove: (index: number) => void) {
+  container.innerHTML = '';
+  values.forEach((val, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.innerHTML = `${val}<button type="button" class="chip-remove" data-index="${i}">×</button>`;
+    chip.querySelector('.chip-remove')!.addEventListener('click', () => onRemove(i));
+    container.appendChild(chip);
+  });
+}
+
+function addEnglishChip(value: string) {
+  const trimmed = value.trim();
+  if (trimmed && !englishValues.includes(trimmed)) {
+    englishValues.push(trimmed);
+    renderChips(englishChips, englishValues, removeEnglishChip);
+  }
+  addEnglishInput.value = '';
+}
+
+function removeEnglishChip(index: number) {
+  englishValues.splice(index, 1);
+  renderChips(englishChips, englishValues, removeEnglishChip);
+}
+
+function addCategoryChip(value: string) {
+  const trimmed = value.trim();
+  if (trimmed && !categoryValues.includes(trimmed)) {
+    categoryValues.push(trimmed);
+    renderChips(categoryChips, categoryValues, removeCategoryChip);
+  }
+  addCategoriesInput.value = '';
+  categorySuggestions.classList.add('hidden');
+}
+
+function removeCategoryChip(index: number) {
+  categoryValues.splice(index, 1);
+  renderChips(categoryChips, categoryValues, removeCategoryChip);
+}
+
+addEnglishInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addEnglishChip(addEnglishInput.value);
+  }
+});
+
+addCategoriesInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addCategoryChip(addCategoriesInput.value);
+  }
+});
+
+addCategoriesInput.addEventListener('input', () => {
+  const query = addCategoriesInput.value.toLowerCase().trim();
+  if (!query) {
+    categorySuggestions.classList.add('hidden');
+    return;
+  }
+  const matches = allCategoriesList.filter(
+    (c) => c.toLowerCase().includes(query) && !categoryValues.includes(c)
+  );
+  if (matches.length === 0) {
+    categorySuggestions.classList.add('hidden');
+    return;
+  }
+  categorySuggestions.innerHTML = '';
+  for (const cat of matches.slice(0, 8)) {
+    const div = document.createElement('div');
+    div.className = 'category-suggestion';
+    div.textContent = cat;
+    div.addEventListener('click', () => addCategoryChip(cat));
+    categorySuggestions.appendChild(div);
+  }
+  categorySuggestions.classList.remove('hidden');
+});
+
+addCategoriesInput.addEventListener('blur', () => {
+  // Delay to allow click on suggestion
+  setTimeout(() => categorySuggestions.classList.add('hidden'), 150);
+});
+
+// Debounced CEDICT lookup + existing word check
+addHanziInput.addEventListener('input', () => {
+  if (lookupTimer) clearTimeout(lookupTimer);
+  const hanzi = addHanziInput.value.trim();
+  if (!hanzi) {
+    cedictEntries.classList.add('hidden');
+    editingExistingWord = false;
+    addWordBtn.textContent = 'Add';
+    return;
+  }
+  lookupTimer = setTimeout(async () => {
+    try {
+      const { entries, existing } = await lookupHanzi(hanzi);
+
+      if (existing) {
+        editingExistingWord = true;
+        addWordBtn.textContent = 'Save';
+        addPinyinInput.value = existing.pinyin;
+        englishValues = [...existing.english];
+        renderChips(englishChips, englishValues, removeEnglishChip);
+        categoryValues = [...existing.categories];
+        renderChips(categoryChips, categoryValues, removeCategoryChip);
+      } else {
+        editingExistingWord = false;
+        addWordBtn.textContent = 'Add';
+      }
+
+      if (entries.length === 0) {
+        cedictEntries.classList.add('hidden');
+        return;
+      }
+      renderCedictEntries(entries);
+      cedictEntries.classList.remove('hidden');
+
+      // Auto-fill from CEDICT only for new words
+      if (!existing) {
+        if (entries.length === 1) {
+          addPinyinInput.value = entries[0].pinyin;
+          englishValues = [...entries[0].definitions];
+          renderChips(englishChips, englishValues, removeEnglishChip);
+        } else {
+          const allSamePinyin = entries.every((e) => e.pinyin === entries[0].pinyin);
+          if (allSamePinyin) {
+            addPinyinInput.value = entries[0].pinyin;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Lookup failed:', error);
+    }
+  }, 300);
+});
+
+function renderCedictEntries(entries: CedictEntry[]) {
+  cedictEntries.innerHTML = '';
+  for (const entry of entries) {
+    const div = document.createElement('div');
+    div.className = 'cedict-entry';
+    div.innerHTML = `<span class="cedict-pinyin">${entry.pinyin}</span><span class="cedict-defs">${entry.definitions.join('; ')}</span>`;
+    div.addEventListener('click', () => {
+      addPinyinInput.value = entry.pinyin;
+      englishValues = [...entry.definitions];
+      renderChips(englishChips, englishValues, removeEnglishChip);
+    });
+    cedictEntries.appendChild(div);
+  }
+}
+
+addWordBtn.addEventListener('click', async () => {
+  const hanzi = addHanziInput.value.trim();
+  const pinyin = addPinyinInput.value.trim();
+
+  if (!hanzi || !pinyin || englishValues.length === 0) {
+    showAddWordStatus('Please fill in hanzi, pinyin, and at least one English translation', 'error');
+    return;
+  }
+
+  try {
+    addWordBtn.disabled = true;
+    addWordBtn.textContent = editingExistingWord ? 'Saving...' : 'Adding...';
+
+    if (editingExistingWord) {
+      await updateWord(hanzi, pinyin, englishValues, categoryValues);
+      showAddWordStatus(`Updated "${hanzi}" successfully!`, 'success');
+    } else {
+      await addWord(hanzi, pinyin, englishValues, categoryValues);
+      showAddWordStatus(`Added "${hanzi}" successfully!`, 'success');
+    }
+
+    // Reset form
+    addHanziInput.value = '';
+    addPinyinInput.value = '';
+    addEnglishInput.value = '';
+    addCategoriesInput.value = '';
+    englishValues = [];
+    categoryValues = [];
+    editingExistingWord = false;
+    renderChips(englishChips, englishValues, removeEnglishChip);
+    renderChips(categoryChips, categoryValues, removeCategoryChip);
+    cedictEntries.classList.add('hidden');
+
+    // Reload stats
+    loadStats();
+  } catch (error) {
+    showAddWordStatus(error instanceof Error ? error.message : 'Failed to save word', 'error');
+  } finally {
+    addWordBtn.disabled = false;
+    addWordBtn.textContent = editingExistingWord ? 'Save' : 'Add';
+  }
+});
+
+function showAddWordStatus(message: string, type: 'success' | 'error') {
+  addWordStatus.textContent = message;
+  addWordStatus.className = `add-word-status ${type}`;
+  addWordStatus.classList.remove('hidden');
+  setTimeout(() => addWordStatus.classList.add('hidden'), 5000);
+}
 
 // Initialize
 loadStats();

@@ -21,6 +21,7 @@ export interface Word {
   translatable: boolean;
   breakdown?: CharacterBreakdown[];
   categories: string[];
+  manual: boolean;
 }
 
 export type PracticeMode = 'hanzi2pinyin' | 'hanzi2english' | 'english2hanzi' | 'english2pinyin';
@@ -39,6 +40,7 @@ export interface PracticeQuestion {
   prompt: string;
   acceptedAnswers: string[];
   bucket: number | null; // null = new word
+  containingWords: ContainingWord[];
 }
 
 export interface StartRequest {
@@ -46,7 +48,7 @@ export interface StartRequest {
   mode: PracticeMode;
   wordSelection: 'mixed' | 'new' | 'review' | 'random';
   categories: string[];
-  singleCharOnly: boolean;
+  characterMode: boolean;
 }
 
 export interface StartResponse {
@@ -59,6 +61,12 @@ export interface AnswerRequest {
   answer: string;
 }
 
+export interface ContainingWord {
+  hanzi: string;
+  pinyin: string;
+  english: string[];
+}
+
 export interface AnswerResponse {
   correct: boolean;
   correctAnswers: string[];
@@ -68,6 +76,7 @@ export interface AnswerResponse {
 export interface CompleteRequest {
   mode: PracticeMode;
   results: Array<{ hanzi: string; correctFirstTry: boolean }>;
+  characterMode: boolean;
 }
 
 export interface WordProgress {
@@ -89,4 +98,12 @@ export interface Stats {
   mastered: number;
   dueForReview: number;
   buckets: number[]; // count of words in each bucket (index = bucket number)
+}
+
+export interface CedictEntry {
+  traditional: string;
+  simplified: string;
+  pinyin: string; // With tone marks
+  pinyinNumbered: string; // Original numbered format from CEDICT
+  definitions: string[];
 }

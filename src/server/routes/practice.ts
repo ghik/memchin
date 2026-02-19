@@ -12,9 +12,11 @@ import type {
 } from '../../shared/types.js';
 import {
   addPinyinSynonym,
+  getDueCount,
+  getLearnedWordsContaining,
   getNewWords,
   getProgress,
-  getRandomReviewWords,
+
   getStats,
   getWordByHanzi,
   getWordsForPractice,
@@ -43,10 +45,11 @@ function enrichWord(word: Word): Word {
   };
 }
 
-function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
+function createQuestion(word: Word, mode: PracticeMode, characterMode: boolean): PracticeQuestion {
   const progress = getProgress(word.hanzi, mode);
   const bucket = progress?.bucket ?? null;
   const wordWithBreakdown = enrichWord(word);
+  const containingWords = characterMode ? getLearnedWordsContaining(word.hanzi) : [];
 
   switch (mode) {
     case 'hanzi2pinyin':
@@ -55,6 +58,7 @@ function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
         prompt: word.hanzi,
         acceptedAnswers: [toNumberedPinyin(word.pinyin)],
         bucket,
+        containingWords,
       };
     case 'hanzi2english':
       return {
@@ -62,6 +66,7 @@ function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
         prompt: word.hanzi,
         acceptedAnswers: word.english,
         bucket,
+        containingWords,
       };
     case 'english2hanzi':
       return {
@@ -69,6 +74,7 @@ function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
         prompt: word.english.join(', '),
         acceptedAnswers: [word.hanzi],
         bucket,
+        containingWords,
       };
     case 'english2pinyin':
       return {
@@ -76,12 +82,13 @@ function createQuestion(word: Word, mode: PracticeMode): PracticeQuestion {
         prompt: word.english.join(', '),
         acceptedAnswers: [toNumberedPinyin(word.pinyin)],
         bucket,
+        containingWords,
       };
   }
 }
 
 router.post('/start', (req, res) => {
-  const { count, mode, wordSelection, categories, singleCharOnly } = req.body as StartRequest;
+  const { count, mode, wordSelection, categories, characterMode } = req.body as StartRequest;
 
   if (!count || !mode) {
     return res.status(400).json({ error: 'count and mode are required' });
@@ -94,16 +101,16 @@ router.post('/start', (req, res) => {
   let words: Word[];
   switch (wordSelection) {
     case 'new':
-      words = getNewWords(mode, count, categories, singleCharOnly);
+      words = getNewWords(mode, count, categories, characterMode);
       break;
     case 'review':
-      words = getWordsForReview(mode, count, categories, singleCharOnly);
+      words = getWordsForReview(mode, count, categories, characterMode, false);
       break;
     case 'random':
-      words = getRandomReviewWords(mode, count, categories, singleCharOnly);
+      words = getWordsForReview(mode, count, categories, characterMode, true);
       break;
     default:
-      words = getWordsForPractice(mode, count, categories, singleCharOnly);
+      words = getWordsForPractice(mode, count, categories, characterMode);
       break;
   }
 
@@ -111,7 +118,7 @@ router.post('/start', (req, res) => {
     return res.status(400).json({ error: 'No words available for practice' });
   }
 
-  const questions = words.map((word) => createQuestion(word, mode));
+  const questions = words.map((word) => createQuestion(word, mode, characterMode));
   const response: StartResponse = { questions };
   res.json(response);
 });
@@ -190,12 +197,12 @@ router.post('/synonym', (req, res) => {
 });
 
 router.post('/complete', (req, res) => {
-  const { mode, results } = req.body as CompleteRequest;
+  const { mode, results, characterMode } = req.body as CompleteRequest;
 
   let newWordsLearned = 0;
 
   for (const result of results) {
-    updateProgress(result.hanzi, mode, result.correctFirstTry);
+    updateProgress(result.hanzi, mode, result.correctFirstTry, characterMode ?? false);
     if (result.correctFirstTry) {
       newWordsLearned++;
     }
@@ -215,7 +222,22 @@ router.post('/complete', (req, res) => {
   res.json(response);
 });
 
+router.get('/due-count', (req, res) => {
+  const mode = req.query.mode as PracticeMode;
+  const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
+  const characterMode = req.query.characterMode === 'true';
+
+  if (!mode || !['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)) {
+    return res.status(400).json({ error: 'Valid mode is required' });
+  }
+
+  const count = getDueCount(mode, categories, characterMode);
+  res.json({ count });
+});
+
 router.get('/stats', (req, res) => {
+  const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
+  const characterMode = req.query.characterMode === 'true';
   const modes: PracticeMode[] = [
     'hanzi2pinyin',
     'hanzi2english',
@@ -224,7 +246,7 @@ router.get('/stats', (req, res) => {
   ];
   const stats = modes.map((mode) => ({
     mode,
-    ...getStats(mode),
+    ...getStats(mode, categories, characterMode),
   }));
   res.json(stats);
 });

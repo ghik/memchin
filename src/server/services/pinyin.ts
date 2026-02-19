@@ -43,10 +43,10 @@ const SYLLABLE_PATTERN = new RegExp(`^(${INITIALS}?(?:${FINALS}))`, 'i');
  * e.g. "zhīdào" -> "zhī dào"
  */
 export function splitPinyin(pinyin: string): string {
-  // Handle already-spaced pinyin and apostrophes
+  // Handle apostrophes by replacing with spaces, then split each token
   const normalized = pinyin.replace(/['\s]+/g, ' ').trim();
   if (normalized.includes(' ')) {
-    return normalized;
+    return normalized.split(' ').map(splitPinyin).join(' ');
   }
 
   const syllables: string[] = [];

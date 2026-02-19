@@ -1,162 +1,104 @@
-// Types (duplicated from shared to avoid Vite path issues)
-export type PracticeMode = 'hanzi2pinyin' | 'hanzi2english' | 'english2hanzi' | 'english2pinyin';
+import type {
+  AnswerResponse,
+  CedictEntry,
+  CompleteResponse,
+  PracticeMode,
+  PracticeQuestion,
+  StartResponse,
+  Stats,
+  Word,
+  WordProgress,
+} from '../shared/types.js';
 
-export interface Example {
-  hanzi: string;
-  pinyin: string;
-  english: string;
-}
-
-export interface CharacterBreakdown {
-  hanzi: string;
-  pinyin: string;
-  meaning: string;
-}
-
-export interface Word {
-  hanzi: string;
-  pinyin: string;
-  english: string[];
-  hskLevel: number;
-  wordFrequencyRank?: number;
-  hanziFrequencyRank?: number;
-  examples: Example[];
-  translatable: boolean;
-  breakdown?: CharacterBreakdown[];
-  categories: string[];
-}
-
-export interface PracticeQuestion {
-  word: Word;
-  prompt: string;
-  acceptedAnswers: string[];
-  bucket: number | null;
-}
-
-interface StartResponse {
-  questions: PracticeQuestion[];
-}
-
-interface AnswerResponse {
-  correct: boolean;
-  correctAnswers: string[];
-  synonym: boolean;
-}
-
-export interface WordProgress {
-  hanzi: string;
-  bucket: number;
-  nextEligible: string;
-}
-
-interface CompleteResponse {
-  wordsReviewed: number;
-  newWordsLearned: number;
-  progress: WordProgress[];
-}
-
-interface Stats {
-  mode: PracticeMode;
-  totalWords: number;
-  learned: number;
-  mastered: number;
-  dueForReview: number;
-  buckets: number[];
-}
+export type { CedictEntry, PracticeMode, PracticeQuestion, Word, WordProgress } from '../shared/types.js';
 
 const API_BASE = '/api';
 
-export async function startPractice(count: number, mode: PracticeMode, wordSelection: string, categories: string[], singleCharOnly: boolean): Promise<StartResponse> {
-  const body = { count, mode, wordSelection, categories, singleCharOnly };
-  const response = await fetch(`${API_BASE}/practice/start`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
+async function apiGet<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`);
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to start practice');
+    const body = await response.json();
+    throw new Error(body.error || `GET ${path} failed`);
   }
-
   return response.json();
 }
 
-export async function submitAnswer(
-  mode: PracticeMode,
-  hanzi: string,
-  answer: string
-): Promise<AnswerResponse> {
-  const response = await fetch(`${API_BASE}/practice/answer`, {
+async function apiPost<T>(path: string, data: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mode, hanzi, answer }),
+    body: JSON.stringify(data),
   });
-
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to submit answer');
+    const body = await response.json();
+    throw new Error(body.error || `POST ${path} failed`);
   }
-
   return response.json();
 }
 
-export async function completePractice(
+async function apiPut<T>(path: string, data: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const body = await response.json();
+    throw new Error(body.error || `PUT ${path} failed`);
+  }
+  return response.json();
+}
+
+export function startPractice(count: number, mode: PracticeMode, wordSelection: string, categories: string[], characterMode: boolean): Promise<StartResponse> {
+  return apiPost('/practice/start', { count, mode, wordSelection, categories, characterMode });
+}
+
+export function submitAnswer(mode: PracticeMode, hanzi: string, answer: string): Promise<AnswerResponse> {
+  return apiPost('/practice/answer', { mode, hanzi, answer });
+}
+
+export function completePractice(
   mode: PracticeMode,
-  results: Array<{ hanzi: string; correctFirstTry: boolean }>
+  results: Array<{ hanzi: string; correctFirstTry: boolean }>,
+  characterMode: boolean
 ): Promise<CompleteResponse> {
-  const response = await fetch(`${API_BASE}/practice/complete`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mode, results }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to complete practice');
-  }
-
-  return response.json();
+  return apiPost('/practice/complete', { mode, results, characterMode });
 }
 
-export async function getStats(): Promise<Stats[]> {
-  const response = await fetch(`${API_BASE}/practice/stats`);
-
-  if (!response.ok) {
-    throw new Error('Failed to get stats');
-  }
-
-  return response.json();
+export function getStats(categories: string[], characterMode: boolean): Promise<Stats[]> {
+  const params = new URLSearchParams({ characterMode: String(characterMode) });
+  if (categories.length > 0) params.set('categories', categories.join(','));
+  return apiGet(`/practice/stats?${params}`);
 }
 
-export async function markPinyinSynonym(hanzi: string, synonymPinyin: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/practice/synonym`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ hanzi, synonymPinyin }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to mark synonym');
-  }
+export function markPinyinSynonym(hanzi: string, synonymPinyin: string): Promise<void> {
+  return apiPost('/practice/synonym', { hanzi, synonymPinyin });
 }
 
-export async function getCategories(): Promise<string[]> {
-  const response = await fetch(`${API_BASE}/categories`);
-  if (!response.ok) {
-    throw new Error('Failed to get categories');
-  }
-  return response.json();
+export async function getDueCount(mode: PracticeMode, categories: string[], characterMode: boolean): Promise<number> {
+  const params = new URLSearchParams({ mode, characterMode: String(characterMode) });
+  if (categories.length > 0) params.set('categories', categories.join(','));
+  const data = await apiGet<{ count: number }>(`/practice/due-count?${params}`);
+  return data.count;
+}
+
+export function getCategories(): Promise<string[]> {
+  return apiGet('/categories');
 }
 
 export async function getWordCount(): Promise<number> {
-  const response = await fetch(`${API_BASE}/words/count`);
-
-  if (!response.ok) {
-    throw new Error('Failed to get word count');
-  }
-
-  const data = await response.json();
+  const data = await apiGet<{ count: number }>('/words/count');
   return data.count;
+}
+
+export function updateWord(hanzi: string, pinyin: string, english: string[], categories: string[]): Promise<Word> {
+  return apiPut(`/words/${encodeURIComponent(hanzi)}`, { pinyin, english, categories });
+}
+
+export function lookupHanzi(hanzi: string): Promise<{ entries: CedictEntry[]; existing: Word | null }> {
+  return apiGet(`/words/lookup/${encodeURIComponent(hanzi)}`);
+}
+
+export function addWord(hanzi: string, pinyin: string, english: string[], categories: string[]): Promise<Word> {
+  return apiPost('/words', { hanzi, pinyin, english, categories });
 }

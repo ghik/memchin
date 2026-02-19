@@ -2,7 +2,7 @@ import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { Example, PracticeMode, Progress, Word } from '../shared/types.js';
+import type { ContainingWord, Example, PracticeMode, Progress, Word } from '../shared/types.js';
 import { MAX_BUCKET } from './services/srs.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -26,6 +26,24 @@ export async function initDb(): Promise<void> {
   } else {
     db = new SQL.Database();
   }
+
+  // Migration: add manual column if missing
+  try {
+    db.run(`ALTER TABLE words ADD COLUMN manual INTEGER NOT NULL DEFAULT 0`);
+  } catch {
+    // Column already exists
+  }
+
+  // Migration: add character_mode_only column to progress
+  try {
+    db.run(`ALTER TABLE progress ADD COLUMN character_mode_only INTEGER NOT NULL DEFAULT 0`);
+  } catch {
+    // Column already exists
+  }
+
+  // Migration: convert ISO timestamps (2024-01-15T10:30:00.000Z) to SQLite format (2024-01-15 10:30:00)
+  db.run(`UPDATE progress SET last_practiced = REPLACE(SUBSTR(last_practiced, 1, 19), 'T', ' ') WHERE last_practiced LIKE '%T%'`);
+  db.run(`UPDATE progress SET next_eligible = REPLACE(SUBSTR(next_eligible, 1, 19), 'T', ' ') WHERE next_eligible LIKE '%T%'`);
 
   saveDb();
 }
@@ -59,6 +77,11 @@ export function getAllWords(): Map<string, Word> {
 
 export function getWordByHanzi(hanzi: string): Word | undefined {
   return getAllWords().get(hanzi);
+}
+
+export function invalidateWordCache(): void {
+  allWords = null;
+  ambiguousTranslations = null;
 }
 
 let allWords: Map<string, Word> | null = null;
@@ -99,14 +122,15 @@ export interface WordToInsert {
   examples: Example[];
   translatable: boolean;
   categories: string[];
+  manual: boolean;
 }
 
 export function insertWords(words: WordToInsert[]): void {
   for (const word of words) {
     db.run(
       `
-          INSERT INTO words (hanzi, pinyin, english, hsk_level, examples, translatable, rank, hanzi_rank, categories)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO words (hanzi, pinyin, english, hsk_level, examples, translatable, rank, hanzi_rank, categories, manual)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(hanzi) DO UPDATE SET
             pinyin = excluded.pinyin,
             english = excluded.english,
@@ -115,7 +139,8 @@ export function insertWords(words: WordToInsert[]): void {
             translatable = excluded.translatable,
             rank = excluded.rank,
             hanzi_rank = excluded.hanzi_rank,
-            categories = excluded.categories
+            categories = excluded.categories,
+            manual = excluded.manual
       `,
       [
         word.hanzi,
@@ -127,10 +152,28 @@ export function insertWords(words: WordToInsert[]): void {
         word.wordFrequencyRank ?? null,
         word.hanziFrequencyRank ?? null,
         JSON.stringify(word.categories),
+        word.manual ? 1 : 0,
       ]
     );
   }
   saveDb();
+}
+
+export function updateWord(
+  hanzi: string,
+  pinyin: string,
+  english: string[],
+  categories: string[]
+): void {
+  db.run('UPDATE words SET pinyin = ?, english = ?, categories = ? WHERE hanzi = ?', [
+    pinyin,
+    JSON.stringify(english),
+    JSON.stringify(categories),
+    hanzi,
+  ]);
+  saveDb();
+  allWords = null;
+  ambiguousTranslations = null;
 }
 
 export function updateWordExamples(hanzi: string, examples: any[]): void {
@@ -140,8 +183,7 @@ export function updateWordExamples(hanzi: string, examples: any[]): void {
 }
 
 export function getWordCount(): number {
-  const result = db.exec('SELECT COUNT(*) as count FROM words');
-  return (result[0]?.values[0]?.[0] as number) ?? 0;
+  return queryCount('SELECT COUNT(*) as cnt FROM words', []);
 }
 
 // Progress operations
@@ -161,212 +203,265 @@ export function upsertProgress(
   hanzi: string,
   mode: PracticeMode,
   bucket: number,
-  nextEligible: string
+  nextEligible: string,
+  characterMode: boolean
 ): void {
-  const now = new Date().toISOString();
+  const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
+  // character_mode_only tracks "learned in character mode only":
+  // - normal practice: always clears the flag (0)
+  // - character mode practice: sets flag on insert, preserves existing value on update
+  //   (so if already learned normally, stays 0)
+  const characterModeUpdate = characterMode
+    ? 'character_mode_only = progress.character_mode_only' // keep existing value
+    : 'character_mode_only = 0'; // clear flag (learned normally)
   db.run(
     `
-        INSERT INTO progress (hanzi, mode, bucket, last_practiced, next_eligible)
-        VALUES (?, ?, ?, ?, ?) ON CONFLICT(hanzi, mode) DO
+        INSERT INTO progress (hanzi, mode, bucket, last_practiced, next_eligible, character_mode_only)
+        VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(hanzi, mode) DO
         UPDATE SET
             bucket = excluded.bucket,
             last_practiced = excluded.last_practiced,
-            next_eligible = excluded.next_eligible
+            next_eligible = excluded.next_eligible,
+            ${characterModeUpdate}
     `,
-    [hanzi, mode, bucket, now, nextEligible]
+    [hanzi, mode, bucket, now, nextEligible, characterMode ? 1 : 0]
   );
 }
 
-function getWordFilters(mode: PracticeMode, categories: string[], singleCharOnly: boolean) {
-  const translatableFilter =
-    mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin'
-      ? 'AND w.translatable = 1'
-      : '';
-  const catParams = categories.length > 0 ? categories : [];
-  const categoryFilter = catParams.length > 0
-    ? `AND EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${catParams.map(() => '?').join(',')}))`
-    : '';
-  const rankColumn = singleCharOnly ? 'w.hanzi_rank' : 'w.rank';
-  return { translatableFilter, catParams, categoryFilter, rankColumn };
+// Word query helpers
+
+interface WordFilters {
+  rankColumn: string; // 'w.rank' or 'w.hanzi_rank', for ORDER BY
+  wordFilter: string; // AND clauses on w.* (translatable, category, rank, character mode)
+  progressFilter: string; // AND clauses on p.* (excludes character-mode-only in word mode)
+  newWordCondition: string; // WHERE condition for LEFT JOIN queries ('p.id IS NULL' or includes char-mode-only)
 }
 
-export function getWordsForReview(mode: PracticeMode, count: number, categories: string[], singleCharOnly: boolean): Word[] {
-  const { translatableFilter, catParams, categoryFilter, rankColumn } = getWordFilters(mode, categories, singleCharOnly);
-  const params: any[] = [mode, ...catParams, count];
+function getWordFilters(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean
+): WordFilters {
+  const wordParts: string[] = [];
 
-  const stmt = db.prepare(`
-      SELECT w.*
-      FROM words w
-               JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
-      ORDER BY p.next_eligible ASC
-          LIMIT ?
-  `);
+  if (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') {
+    wordParts.push('AND w.translatable = 1');
+  }
+
+  if (categories.length > 0) {
+    wordParts.push(
+      `AND EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${categories.map(() => '?').join(',')}))`
+    );
+  }
+
+  const rankColumn = characterMode ? 'w.hanzi_rank' : 'w.rank';
+  wordParts.push(`AND ${rankColumn} IS NOT NULL`);
+
+  if (characterMode) {
+    wordParts.push(
+      'AND EXISTS (SELECT 1 FROM words w2 JOIN progress p2 ON w2.hanzi = p2.hanzi WHERE INSTR(w2.hanzi, w.hanzi) > 0)'
+    );
+  }
+
+  const wordFilter = wordParts.join(' ');
+  const progressFilter = characterMode ? '' : 'AND p.character_mode_only = 0';
+  const newWordCondition = characterMode
+    ? 'p.id IS NULL'
+    : '(p.id IS NULL OR p.character_mode_only = 1)';
+
+  return { rankColumn, wordFilter, progressFilter, newWordCondition };
+}
+
+function queryCount(sql: string, params: any[]): number {
+  const stmt = db.prepare(sql);
   stmt.bind(params);
+  const count = stmt.step() ? ((stmt.getAsObject() as any).cnt as number) : 0;
+  stmt.free();
+  return count;
+}
 
-  const result: Word[] = [];
+function queryRows<T>(sql: string, params: any[], mapRow: (row: any) => T): T[] {
+  const stmt = db.prepare(sql);
+  stmt.bind(params);
+  const result: T[] = [];
   while (stmt.step()) {
-    result.push(rowToWord(stmt.getAsObject()));
+    result.push(mapRow(stmt.getAsObject()));
   }
   stmt.free();
   return result;
 }
 
-export function getRandomReviewWords(mode: PracticeMode, count: number, categories: string[], singleCharOnly: boolean): Word[] {
-  const { translatableFilter, catParams, categoryFilter, rankColumn } = getWordFilters(mode, categories, singleCharOnly);
-  const params: any[] = [mode, ...catParams, count];
+function logQuery(sql: string, params: any[], resultCount: number): void {
+  const compact = sql.replace(/\s+/g, ' ').trim();
+  console.log(`[query] ${compact} | params=${JSON.stringify(params)} | rows=${resultCount}`);
+}
 
-  const stmt = db.prepare(`
-      SELECT w.*
-      FROM words w
-               JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
-      ORDER BY RANDOM()
-          LIMIT ?
-  `);
-  stmt.bind(params);
-
-  const result: Word[] = [];
-  while (stmt.step()) {
-    result.push(rowToWord(stmt.getAsObject()));
-  }
-  stmt.free();
+function queryWords(sql: string, params: any[]): Word[] {
+  const result = queryRows(sql, params, rowToWord);
+  logQuery(sql, params, result.length);
   return result;
 }
 
-export function getNewWords(mode: PracticeMode, count: number, categories: string[], singleCharOnly: boolean): Word[] {
-  const { translatableFilter, catParams, categoryFilter, rankColumn } = getWordFilters(mode, categories, singleCharOnly);
-  const params: any[] = [mode, ...catParams, count];
-
-  const stmt = db.prepare(`
-      SELECT w.*
-      FROM words w
-               LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
-      WHERE p.id IS NULL ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
-      ORDER BY ${rankColumn} ASC
-          LIMIT ?
-  `);
-  stmt.bind(params);
-
-  const result: Word[] = [];
-  while (stmt.step()) {
-    result.push(rowToWord(stmt.getAsObject()));
-  }
-  stmt.free();
-  return result;
+function queryReviewWords(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean,
+  count: number,
+  dueOnly: boolean,
+  random: boolean
+): Word[] {
+  const f = getWordFilters(mode, categories, characterMode);
+  const dueFilter = dueOnly ? "AND p.next_eligible <= datetime('now')" : '';
+  const orderBy = random ? 'RANDOM()' : 'p.next_eligible ASC';
+  return queryWords(
+    `
+      SELECT w.* FROM words w JOIN progress p ON w.hanzi = p.hanzi
+      WHERE p.mode = ? ${dueFilter} ${f.wordFilter} ${f.progressFilter}
+      ORDER BY ${orderBy} LIMIT ?
+  `,
+    [mode, ...categories, count]
+  );
 }
 
-export function getWordsForPractice(mode: PracticeMode, count: number, categories: string[], singleCharOnly: boolean): Word[] {
-  const now = new Date().toISOString();
-  const { translatableFilter, catParams, categoryFilter, rankColumn } = getWordFilters(mode, categories, singleCharOnly);
+function queryNewWords(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean,
+  count: number
+): Word[] {
+  const f = getWordFilters(mode, categories, characterMode);
+  return queryWords(
+    `
+      SELECT w.* FROM words w LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
+      WHERE ${f.newWordCondition} ${f.wordFilter}
+      ORDER BY ${f.rankColumn} ASC LIMIT ?
+  `,
+    [mode, ...categories, count]
+  );
+}
 
-  // First get words that are due for review
-  const dueParams: any[] = [mode, now, ...catParams, count];
-  const dueStmt = db.prepare(`
-      SELECT w.*
-      FROM words w
-               JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ?
-        AND p.next_eligible <= ? ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
-      ORDER BY p.next_eligible ASC
-          LIMIT ?
-  `);
-  dueStmt.bind(dueParams);
+export function getWordsForReview(
+  mode: PracticeMode,
+  count: number,
+  categories: string[],
+  characterMode: boolean,
+  random: boolean
+): Word[] {
+  return queryReviewWords(mode, categories, characterMode, count, false, random);
+}
 
-  const result: Word[] = [];
-  while (dueStmt.step()) {
-    result.push(rowToWord(dueStmt.getAsObject()));
-  }
-  dueStmt.free();
+export function getNewWords(
+  mode: PracticeMode,
+  count: number,
+  categories: string[],
+  characterMode: boolean
+): Word[] {
+  return queryNewWords(mode, categories, characterMode, count);
+}
+
+export function getWordsForPractice(
+  mode: PracticeMode,
+  count: number,
+  categories: string[],
+  characterMode: boolean
+): Word[] {
+  const result = queryReviewWords(mode, categories, characterMode, count, true, false);
 
   if (result.length < count) {
-    // Get new words (no progress record for this mode)
-    const existingHanzi = result.map((w) => `'${w.hanzi.replace(/'/g, "''")}'`);
-    const placeholders =
-      existingHanzi.length > 0 ? `AND w.hanzi NOT IN (${existingHanzi.join(',')})` : '';
-
-    const newParams: any[] = [mode, ...catParams, count - result.length];
-    const newStmt = db.prepare(`
-        SELECT w.*
-        FROM words w
-                 LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
-        WHERE p.id IS NULL ${placeholders} ${translatableFilter} ${categoryFilter} AND ${rankColumn} IS NOT NULL
-        ORDER BY ${rankColumn} ASC
-            LIMIT ?
-    `);
-    newStmt.bind(newParams);
-
-    while (newStmt.step()) {
-      result.push(rowToWord(newStmt.getAsObject()));
-    }
-    newStmt.free();
+    result.push(...queryNewWords(mode, categories, characterMode, count - result.length));
   }
 
   return result;
 }
 
-export function getStats(mode: PracticeMode): {
+export function getStats(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean
+): {
   totalWords: number;
   learned: number;
   mastered: number;
   dueForReview: number;
   buckets: number[];
 } {
-  const now = new Date().toISOString();
-  const totalWords = getWordCount();
+  const f = getWordFilters(mode, categories, characterMode);
+  const baseJoin = `FROM words w JOIN progress p ON w.hanzi = p.hanzi WHERE p.mode = ? ${f.wordFilter} ${f.progressFilter}`;
+  const baseParams = [mode, ...categories];
 
-  const learnedResult = db.exec(`SELECT COUNT(*)
-                                 FROM progress
-                                 WHERE mode = '${mode}'`);
-  const learned = (learnedResult[0]?.values[0]?.[0] as number) ?? 0;
-
-  const masteredResult = db.exec(`SELECT COUNT(*)
-                                  FROM progress
-                                  WHERE mode = '${mode}'
-                                    AND bucket >= ${MAX_BUCKET}`);
-  const mastered = (masteredResult[0]?.values[0]?.[0] as number) ?? 0;
-
-  const dueResult = db.exec(`SELECT COUNT(*)
-                             FROM progress
-                             WHERE mode = '${mode}'
-                               AND next_eligible <= '${now}'`);
-  const dueForReview = (dueResult[0]?.values[0]?.[0] as number) ?? 0;
+  const totalWords = queryCount(
+    `SELECT COUNT(*) as cnt FROM words w WHERE 1=1 ${f.wordFilter}`,
+    categories
+  );
+  const learned = queryCount(`SELECT COUNT(*) as cnt ${baseJoin}`, baseParams);
+  const mastered = queryCount(
+    `SELECT COUNT(*) as cnt ${baseJoin} AND p.bucket >= ${MAX_BUCKET}`,
+    baseParams
+  );
+  const dueForReview = queryCount(
+    `SELECT COUNT(*) as cnt ${baseJoin} AND p.next_eligible <= datetime('now')`,
+    baseParams
+  );
 
   const buckets = new Array(MAX_BUCKET + 1).fill(0);
-  const bucketResult = db.exec(
-    `SELECT bucket, COUNT(*) FROM progress WHERE mode = '${mode}' GROUP BY bucket`
-  );
-  for (const [bucket, count] of bucketResult[0]?.values ?? []) {
-    buckets[bucket as number] = count as number;
+  for (const row of queryRows(
+    `SELECT p.bucket, COUNT(*) as cnt ${baseJoin} GROUP BY p.bucket`,
+    baseParams,
+    (r) => r
+  )) {
+    buckets[row.bucket as number] = row.cnt as number;
   }
 
   return { totalWords, learned, mastered, dueForReview, buckets };
 }
 
+export function getDueCount(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean
+): number {
+  const f = getWordFilters(mode, categories, characterMode);
+  return queryCount(
+    `
+      SELECT COUNT(*) as cnt FROM words w JOIN progress p ON w.hanzi = p.hanzi
+      WHERE p.mode = ? AND p.next_eligible <= datetime('now') ${f.wordFilter} ${f.progressFilter}
+  `,
+    [mode, ...categories]
+  );
+}
+
+// Containing words (for character mode)
+export function getLearnedWordsContaining(hanzi: string): ContainingWord[] {
+  return queryRows(
+    `SELECT DISTINCT w.hanzi, w.pinyin, w.english FROM words w
+     JOIN progress p ON w.hanzi = p.hanzi
+     WHERE INSTR(w.hanzi, ?) > 0 AND length(w.hanzi) > 1
+     ORDER BY w.rank ASC`,
+    [hanzi],
+    (row) => ({ hanzi: row.hanzi, pinyin: row.pinyin, english: JSON.parse(row.english) })
+  );
+}
+
 // Category operations
 export function getAllCategories(): string[] {
-  const stmt = db.prepare('SELECT DISTINCT value FROM words, json_each(words.categories) ORDER BY value');
-  const categories: string[] = [];
-  while (stmt.step()) {
-    categories.push(stmt.getAsObject().value as string);
-  }
-  stmt.free();
-  return categories;
+  return queryRows(
+    'SELECT DISTINCT value FROM words, json_each(words.categories) ORDER BY value',
+    [],
+    (row) => row.value as string
+  );
 }
 
 // Pinyin synonym operations
 export function addPinyinSynonym(hanzi: string, synonymPinyin: string): void {
-  db.run(
-    `INSERT OR IGNORE INTO pinyin_synonyms (hanzi, synonym_pinyin) VALUES (?, ?)`,
-    [hanzi, synonymPinyin]
-  );
+  db.run(`INSERT OR IGNORE INTO pinyin_synonyms (hanzi, synonym_pinyin) VALUES (?, ?)`, [
+    hanzi,
+    synonymPinyin,
+  ]);
   saveDb();
 }
 
 export function isPinyinSynonym(hanzi: string, pinyin: string): boolean {
-  const stmt = db.prepare(
-    `SELECT 1 FROM pinyin_synonyms WHERE hanzi = ? AND synonym_pinyin = ?`
-  );
+  const stmt = db.prepare(`SELECT 1 FROM pinyin_synonyms WHERE hanzi = ? AND synonym_pinyin = ?`);
   stmt.bind([hanzi, pinyin]);
   const found = stmt.step();
   stmt.free();
@@ -384,6 +479,7 @@ function rowToWord(row: any): Word {
     examples: JSON.parse(row.examples || '[]'),
     translatable: Boolean(row.translatable),
     categories: JSON.parse(row.categories || '[]'),
+    manual: Boolean(row.manual),
   };
 }
 

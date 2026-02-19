@@ -12,6 +12,7 @@ const labelledDir = path.join(sourcesDir, 'hsk_labelled_words');
 const freqPath = path.join(sourcesDir, 'internet-zh.num.txt');
 const hanziFreqPath = path.join(sourcesDir, 'hanzi_frequency.html');
 const bodyPath = path.join(sourcesDir, 'body.txt');
+const familyPath = path.join(sourcesDir, 'family.html');
 const outputPath = path.join(__dirname, '../../hsk_words.json');
 
 function loadFrequencyData(): Map<string, number> {
@@ -138,7 +139,9 @@ function addWord(
   const existing = wordMap.get(hanzi);
   if (existing) {
     // Same hanzi exists - only merge if pinyin matches (same reading)
-    if (existing.pinyin === pinyin) {
+    // Compare ignoring spaces/apostrophes since sources format pinyin differently
+    const normPinyin = (s: string) => s.replace(/[\s']/g, '').toLowerCase();
+    if (normPinyin(existing.pinyin) === normPinyin(pinyin)) {
       for (const eng of english) {
         const idx = existing.english.findIndex((e) => e.toLowerCase() === eng.toLowerCase());
         if (idx === -1) {
@@ -387,6 +390,47 @@ if (fs.existsSync(bodyPath)) {
   const sizeBefore = wordMap.size;
   console.log('Parsing body.txt...');
   parseSimpleWordList(bodyPath, 'body');
+  console.log(`  +${wordMap.size - sizeBefore} new words (${wordMap.size} total)`);
+}
+
+// Parse family.html — tables with 3 columns plus list items in "汉字 (pīnyīn) — English" format
+function parseFamilyHtml(htmlPath: string, category: string) {
+  const html = fs.readFileSync(htmlPath, 'utf-8');
+  const $ = cheerio.load(html);
+
+  // Parse list items: 汉字 (pīnyīn) — English
+  $('li').each((_, li) => {
+    const text = normalizeSpaces($(li).text().trim());
+    const match = text.match(/^(.+?)\s*\((.+?)\)\s*[—–-]\s*(.+)$/);
+    if (!match) return;
+    const hanzi = match[1].trim();
+    if (!/[\u4e00-\u9fff]/.test(hanzi)) return;
+    const pinyin = match[2].trim();
+    const english = splitEnglish(match[3].trim(), /^[,;]\s+/);
+    addWord(hanzi, pinyin, english, undefined, category);
+  });
+
+  // Parse tables
+  $('table').each((_, table) => {
+    $(table).find('tr').each((_, tr) => {
+      const cells = $(tr).find('td');
+      if (cells.length < 3) return;
+
+      const hanzi = normalizeSpaces($(cells[0]).text().trim());
+      if (!/[\u4e00-\u9fff]/.test(hanzi)) return;
+
+      const pinyin = normalizeSpaces($(cells[1]).text().trim());
+      const english = splitEnglish(normalizeSpaces($(cells[2]).text().trim()), /^[,;]\s+/);
+
+      addWord(hanzi, pinyin, english, undefined, category);
+    });
+  });
+}
+
+if (fs.existsSync(familyPath)) {
+  const sizeBefore = wordMap.size;
+  console.log('Parsing family.html...');
+  parseFamilyHtml(familyPath, 'family');
   console.log(`  +${wordMap.size - sizeBefore} new words (${wordMap.size} total)`);
 }
 

@@ -300,7 +300,8 @@
     "hskLevel": 1,
     "categories": [
       "personal pronoun",
-      "hsk1"
+      "hsk1",
+      "greeting"
     ],
     "wordFrequencyRank": 25
   },
@@ -1202,12 +1203,15 @@
     "pinyin": "xiànzài",
     "english": [
       "now",
+      "Present",
+      "Currently",
       "nowadays"
     ],
     "hskLevel": 1,
     "categories": [
       "noun",
       "hsk1",
+      "self-introduction",
       "time"
     ],
     "wordFrequencyRank": 97
@@ -1292,7 +1296,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "dates and time"
     ],
     "wordFrequencyRank": 105
   },
@@ -1475,12 +1480,16 @@
     "hanzi": "工作",
     "pinyin": "gōngzuò",
     "english": [
-      "to work"
+      "to work",
+      "Job",
+      "Working"
     ],
     "hskLevel": 1,
     "categories": [
       "verb",
-      "hsk1"
+      "hsk1",
+      "self-introduction",
+      "activity"
     ],
     "wordFrequencyRank": 118
   },
@@ -1729,6 +1738,7 @@
     "categories": [
       "noun",
       "hsk1",
+      "jobs and occupation",
       "education"
     ],
     "wordFrequencyRank": 135
@@ -2138,12 +2148,14 @@
     "hanzi": "爱",
     "pinyin": "ài",
     "english": [
-      "to love"
+      "to love",
+      "Love"
     ],
     "hskLevel": 1,
     "categories": [
       "verb",
-      "hsk1"
+      "hsk1",
+      "family"
     ],
     "wordFrequencyRank": 174,
     "hanziFrequencyRank": 394
@@ -2572,6 +2584,7 @@
     "categories": [
       "noun",
       "hsk1",
+      "dates and time",
       "time"
     ],
     "wordFrequencyRank": 209
@@ -2727,6 +2740,8 @@
     "categories": [
       "noun",
       "hsk2",
+      "self-introduction",
+      "place",
       "office"
     ],
     "wordFrequencyRank": 222
@@ -2846,7 +2861,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "self-introduction"
     ],
     "wordFrequencyRank": 231
   },
@@ -3085,6 +3101,7 @@
     "categories": [
       "noun",
       "hsk1",
+      "jobs and occupation",
       "careers",
       "education"
     ],
@@ -3095,13 +3112,17 @@
     "pinyin": "xuéxí",
     "english": [
       "to study",
-      "to learn"
+      "to learn",
+      "Study",
+      "Studying"
     ],
     "hskLevel": 1,
     "categories": [
       "verb",
       "hsk1",
       "hsk3",
+      "self-introduction",
+      "activity",
       "education"
     ],
     "wordFrequencyRank": 249
@@ -3368,6 +3389,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 273
@@ -3986,7 +4008,8 @@
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "family"
     ],
     "wordFrequencyRank": 324
   },
@@ -4084,7 +4107,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "place"
+      "place",
+      "shopping"
     ],
     "wordFrequencyRank": 332
   },
@@ -4187,10 +4211,12 @@
     "hanzi": "大学",
     "pinyin": "dà xué",
     "english": [
-      "University"
+      "university"
     ],
     "categories": [
-      "self-introduction"
+      "self-introduction",
+      "education",
+      "b1"
     ],
     "wordFrequencyRank": 343
   },
@@ -4276,7 +4302,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "family"
     ],
     "wordFrequencyRank": 349
   },
@@ -4564,7 +4591,9 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "self-introduction",
+      "place"
     ],
     "wordFrequencyRank": 375
   },
@@ -4805,7 +4834,8 @@
       "noun",
       "hsk2",
       "hsk3",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 395
   },
@@ -5377,12 +5407,14 @@
     "hanzi": "母亲",
     "pinyin": "mǔqīn",
     "english": [
-      "mother"
+      "mother",
+      "Mother (formal)"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "family"
     ],
     "wordFrequencyRank": 443
   },
@@ -5822,13 +5854,15 @@
     "english": [
       "professional",
       "specialty",
-      "major"
+      "major",
+      "Major (field of study)"
     ],
     "hskLevel": 4,
     "categories": [
       "adjective",
       "hsk4",
       "noun",
+      "self-introduction",
       "education"
     ],
     "wordFrequencyRank": 481
@@ -5868,7 +5902,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "self-introduction"
     ],
     "wordFrequencyRank": 484
   },
@@ -5961,6 +5996,7 @@
     "categories": [
       "noun",
       "hsk1",
+      "family",
       "shenfenguanxi"
     ],
     "wordFrequencyRank": 494
@@ -6051,12 +6087,14 @@
     "hanzi": "介绍",
     "pinyin": "jièshào",
     "english": [
-      "to introduce"
+      "to introduce",
+      "Introduce"
     ],
     "hskLevel": 2,
     "categories": [
       "verb",
-      "hsk2"
+      "hsk2",
+      "self-introduction"
     ],
     "wordFrequencyRank": 504
   },
@@ -6096,7 +6134,8 @@
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "family"
     ],
     "wordFrequencyRank": 507
   },
@@ -6153,7 +6192,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "self-introduction"
     ],
     "wordFrequencyRank": 515
   },
@@ -6750,7 +6790,8 @@
     "categories": [
       "noun",
       "hsk4",
-      "verb"
+      "verb",
+      "family"
     ],
     "wordFrequencyRank": 565
   },
@@ -6834,7 +6875,8 @@
     "categories": [
       "noun",
       "hsk2",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 571
   },
@@ -7739,7 +7781,8 @@
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "family"
     ],
     "wordFrequencyRank": 661
   },
@@ -7840,7 +7883,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "shopping"
     ],
     "wordFrequencyRank": 669
   },
@@ -8130,12 +8174,14 @@
     "hanzi": "毕业",
     "pinyin": "bìyè",
     "english": [
-      "to graduate"
+      "to graduate",
+      "Graduate"
     ],
     "hskLevel": 4,
     "categories": [
       "verb",
       "hsk4",
+      "self-introduction",
       "education"
     ],
     "wordFrequencyRank": 693
@@ -8157,12 +8203,14 @@
     "hanzi": "来自",
     "pinyin": "láizì",
     "english": [
-      "to come from"
+      "to come from",
+      "Come from"
     ],
     "hskLevel": 4,
     "categories": [
       "verb",
-      "hsk4"
+      "hsk4",
+      "self-introduction"
     ],
     "wordFrequencyRank": 697
   },
@@ -8285,12 +8333,15 @@
     "hanzi": "家庭",
     "pinyin": "jiātíng",
     "english": [
-      "household"
+      "household",
+      "Family"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "self-introduction",
+      "family"
     ],
     "wordFrequencyRank": 707
   },
@@ -8443,7 +8494,8 @@
       "House"
     ],
     "categories": [
-      "place"
+      "place",
+      "household item"
     ],
     "wordFrequencyRank": 722
   },
@@ -9131,6 +9183,7 @@
     "categories": [
       "noun",
       "hsk1",
+      "dates and time",
       "time"
     ],
     "wordFrequencyRank": 782
@@ -9237,6 +9290,7 @@
     "categories": [
       "noun",
       "hsk1",
+      "jobs and occupation",
       "covid-19"
     ],
     "wordFrequencyRank": 794
@@ -9264,7 +9318,8 @@
     "hskLevel": 1,
     "categories": [
       "verb",
-      "hsk1"
+      "hsk1",
+      "greeting"
     ],
     "wordFrequencyRank": 798
   },
@@ -9418,6 +9473,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "jobs and occupation",
       "education"
     ],
     "wordFrequencyRank": 809
@@ -9692,12 +9748,14 @@
     "english": [
       "police",
       "policeman",
-      "policewoman"
+      "policewoman",
+      "Police Officer"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
       "hsk4",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 838
@@ -9967,7 +10025,8 @@
       "adjective",
       "hsk5",
       "noun",
-      "descriptive word"
+      "descriptive word",
+      "family"
     ],
     "wordFrequencyRank": 863
   },
@@ -10048,7 +10107,8 @@
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "place"
     ],
     "wordFrequencyRank": 871
   },
@@ -10118,6 +10178,7 @@
     "categories": [
       "noun",
       "hsk1",
+      "dates and time",
       "time"
     ],
     "wordFrequencyRank": 877
@@ -10182,6 +10243,7 @@
     "categories": [
       "noun",
       "hsk5",
+      "jobs and occupation",
       "careers",
       "office",
       "b1",
@@ -10576,12 +10638,14 @@
     "pinyin": "pángbiān",
     "english": [
       "the side",
-      "next to"
+      "next to",
+      "Beside"
     ],
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "place"
     ],
     "wordFrequencyRank": 918
   },
@@ -11068,7 +11132,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "family"
     ],
     "wordFrequencyRank": 958
   },
@@ -11465,13 +11530,16 @@
     "pinyin": "lǚyóu",
     "english": [
       "travel",
-      "to travel"
+      "to travel",
+      "Traveling"
     ],
     "hskLevel": 2,
     "categories": [
       "noun",
       "hsk2",
       "verb",
+      "self-introduction",
+      "activity",
       "summer"
     ],
     "wordFrequencyRank": 995
@@ -11635,7 +11703,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "self-introduction"
     ],
     "wordFrequencyRank": 1015
   },
@@ -11757,6 +11826,7 @@
     "categories": [
       "noun",
       "hsk2",
+      "family",
       "shenfenguanxi"
     ],
     "wordFrequencyRank": 1026
@@ -11912,7 +11982,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "self-introduction"
     ],
     "wordFrequencyRank": 1042
   },
@@ -12184,12 +12255,14 @@
     "hanzi": "欢迎",
     "pinyin": "huānyíng",
     "english": [
-      "to welcome"
+      "to welcome",
+      "Welcome"
     ],
     "hskLevel": 3,
     "categories": [
       "verb",
-      "hsk3"
+      "hsk3",
+      "greeting"
     ],
     "wordFrequencyRank": 1066
   },
@@ -12252,6 +12325,7 @@
       "noun",
       "hsk4",
       "verb",
+      "jobs and occupation",
       "careers",
       "b2"
     ],
@@ -12342,12 +12416,14 @@
     "hanzi": "留学",
     "pinyin": "liúxué",
     "english": [
-      "to study abroad"
+      "to study abroad",
+      "Study abroad"
     ],
     "hskLevel": 3,
     "categories": [
       "verb",
-      "hsk3"
+      "hsk3",
+      "self-introduction"
     ],
     "wordFrequencyRank": 1083
   },
@@ -12355,12 +12431,14 @@
     "hanzi": "编辑",
     "pinyin": "biānjí",
     "english": [
-      "to edit"
+      "to edit",
+      "Editor"
     ],
     "hskLevel": 5,
     "categories": [
       "verb",
-      "hsk5"
+      "hsk5",
+      "jobs and occupation"
     ],
     "wordFrequencyRank": 1085
   },
@@ -12400,7 +12478,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "place"
     ],
     "wordFrequencyRank": 1088
   },
@@ -12701,7 +12780,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "place"
     ],
     "wordFrequencyRank": 1116
   },
@@ -12735,12 +12815,14 @@
     "hanzi": "前面",
     "pinyin": "qiánmiàn",
     "english": [
-      "front"
+      "front",
+      "In front"
     ],
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "place"
     ],
     "wordFrequencyRank": 1119
   },
@@ -12754,7 +12836,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "place"
     ],
     "wordFrequencyRank": 1120
   },
@@ -12768,7 +12851,8 @@
     "categories": [
       "noun",
       "hsk2",
-      "shenfenguanxi"
+      "shenfenguanxi",
+      "family"
     ],
     "wordFrequencyRank": 1122
   },
@@ -12862,6 +12946,7 @@
     "categories": [
       "noun",
       "hsk3",
+      "jobs and occupation",
       "careers",
       "car-related"
     ],
@@ -13214,7 +13299,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "dates and time"
     ],
     "wordFrequencyRank": 1162
   },
@@ -13285,7 +13371,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "family"
     ],
     "wordFrequencyRank": 1167
   },
@@ -13355,7 +13442,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "place"
     ],
     "wordFrequencyRank": 1172
   },
@@ -13369,6 +13457,7 @@
     "categories": [
       "noun",
       "hsk5",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 1173
@@ -13763,7 +13852,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "dates and time"
     ],
     "wordFrequencyRank": 1213
   },
@@ -13813,12 +13903,14 @@
     "pinyin": "guǎngchǎng",
     "english": [
       "public square",
-      "plaza"
+      "plaza",
+      "Square"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "place"
     ],
     "wordFrequencyRank": 1218
   },
@@ -13845,7 +13937,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "shopping"
     ],
     "wordFrequencyRank": 1222
   },
@@ -14077,7 +14170,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "place"
     ],
     "wordFrequencyRank": 1242
   },
@@ -14239,7 +14333,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "family"
     ],
     "wordFrequencyRank": 1254
   },
@@ -14275,12 +14370,14 @@
     "hanzi": "睡觉",
     "pinyin": "shuìjiào",
     "english": [
-      "to sleep"
+      "to sleep",
+      "Sleeping"
     ],
     "hskLevel": 1,
     "categories": [
       "verb",
-      "hsk1"
+      "hsk1",
+      "activity"
     ],
     "wordFrequencyRank": 1259
   },
@@ -14557,6 +14654,7 @@
     "categories": [
       "noun",
       "hsk5",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 1287
@@ -14685,14 +14783,16 @@
     "hanzi": "头发",
     "pinyin": "tóufa",
     "english": [
-      "hair (on the head)"
+      "hair (on the head)",
+      "hair (on head)"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
       "hsk3",
       "body parts",
-      "b1"
+      "b1",
+      "body"
     ],
     "wordFrequencyRank": 1303
   },
@@ -14886,12 +14986,15 @@
     "hanzi": "兄弟",
     "pinyin": "xiōngdì",
     "english": [
-      "bros"
+      "bros",
+      "Brothers",
+      "Brother"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "family"
     ],
     "wordFrequencyRank": 1321
   },
@@ -15295,12 +15398,14 @@
     "hanzi": "兴趣",
     "pinyin": "xìngqù",
     "english": [
-      "interest (in something)"
+      "interest (in something)",
+      "Hobby"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "self-introduction"
     ],
     "wordFrequencyRank": 1365
   },
@@ -15825,12 +15930,14 @@
     "hanzi": "年龄",
     "pinyin": "niánlíng",
     "english": [
-      "(a person's) age"
+      "(a person's) age",
+      "Age"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "self-introduction"
     ],
     "wordFrequencyRank": 1415
   },
@@ -15961,7 +16068,8 @@
     "categories": [
       "adjective",
       "hsk2",
-      "hsk3"
+      "hsk3",
+      "shopping"
     ],
     "wordFrequencyRank": 1430
   },
@@ -16097,7 +16205,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "food & eating"
     ],
     "wordFrequencyRank": 1444
   },
@@ -16542,7 +16651,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "family"
     ],
     "wordFrequencyRank": 1494
   },
@@ -16667,12 +16777,14 @@
     "hanzi": "奶奶",
     "pinyin": "nǎinai",
     "english": [
-      "paternal grandmother"
+      "paternal grandmother",
+      "Grandmother (paternal)"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "family"
     ],
     "wordFrequencyRank": 1505
   },
@@ -16699,6 +16811,7 @@
     "categories": [
       "noun",
       "hsk1",
+      "dates and time",
       "time"
     ],
     "wordFrequencyRank": 1509
@@ -17192,12 +17305,14 @@
     "hanzi": "上班",
     "pinyin": "shàngbān",
     "english": [
-      "to go to work"
+      "to go to work",
+      "Go to work"
     ],
     "hskLevel": 2,
     "categories": [
       "verb",
-      "hsk2"
+      "hsk2",
+      "self-introduction"
     ],
     "wordFrequencyRank": 1562
   },
@@ -17334,7 +17449,9 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "shopping",
+      "color"
     ],
     "wordFrequencyRank": 1574
   },
@@ -17425,12 +17542,14 @@
     "hanzi": "总统",
     "pinyin": "zǒngtǒng",
     "english": [
-      "president (of a country)"
+      "president (of a country)",
+      "President"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
       "hsk5",
+      "jobs and occupation",
       "national leader"
     ],
     "wordFrequencyRank": 1585
@@ -17917,6 +18036,7 @@
     "categories": [
       "noun",
       "hsk2",
+      "food & eating",
       "beverage",
       "coffee"
     ],
@@ -18316,12 +18436,14 @@
     "hanzi": "爷爷",
     "pinyin": "yéye",
     "english": [
-      "paternal grandfather"
+      "paternal grandfather",
+      "Grandfather (paternal)"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "family"
     ],
     "wordFrequencyRank": 1689
   },
@@ -18538,12 +18660,14 @@
     "hanzi": "聊天",
     "pinyin": "liáotiān",
     "english": [
-      "to chat"
+      "to chat",
+      "Chatting"
     ],
     "hskLevel": 3,
     "categories": [
       "verb",
-      "hsk3"
+      "hsk3",
+      "activity"
     ],
     "wordFrequencyRank": 1711
   },
@@ -18604,14 +18728,16 @@
     "english": [
       "an exit",
       "export",
-      "to export"
+      "to export",
+      "Exit"
     ],
     "hskLevel": 5,
     "categories": [
       "adjective",
       "hsk5",
       "noun",
-      "verb"
+      "verb",
+      "place"
     ],
     "wordFrequencyRank": 1718
   },
@@ -18633,12 +18759,14 @@
     "hanzi": "风格",
     "pinyin": "fēnggé",
     "english": [
-      "style"
+      "style",
+      "Fashion"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "shopping"
     ],
     "wordFrequencyRank": 1721
   },
@@ -18794,12 +18922,14 @@
     "pinyin": "duìmiàn",
     "english": [
       "opposite to",
-      "across from"
+      "across from",
+      "Opposite"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "place"
     ],
     "wordFrequencyRank": 1740
   },
@@ -18861,10 +18991,13 @@
     "hanzi": "高中",
     "pinyin": "gāo zhōng",
     "english": [
-      "High school"
+      "High school",
+      "senior high school"
     ],
     "categories": [
-      "self-introduction"
+      "self-introduction",
+      "education",
+      "b2"
     ],
     "wordFrequencyRank": 1748
   },
@@ -18893,7 +19026,8 @@
     "hskLevel": 1,
     "categories": [
       "verb",
-      "hsk1"
+      "hsk1",
+      "greeting"
     ],
     "wordFrequencyRank": 1752
   },
@@ -18922,6 +19056,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 1754
@@ -19417,12 +19552,14 @@
     "hanzi": "演员",
     "pinyin": "yǎnyuán",
     "english": [
-      "actor or actress"
+      "actor or actress",
+      "Actor"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
       "hsk4",
+      "jobs and occupation",
       "careers",
       "b2"
     ],
@@ -19437,7 +19574,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "self-introduction"
     ],
     "wordFrequencyRank": 1803
   },
@@ -19595,6 +19733,7 @@
     "categories": [
       "noun",
       "hsk3",
+      "jobs and occupation",
       "careers",
       "education"
     ],
@@ -19621,6 +19760,7 @@
     "categories": [
       "noun",
       "hsk5",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 1824
@@ -19819,12 +19959,14 @@
     "pinyin": "shāngpǐn",
     "english": [
       "commodity",
-      "goods"
+      "goods",
+      "Product"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "shopping"
     ],
     "wordFrequencyRank": 1848
   },
@@ -20655,7 +20797,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "place"
     ],
     "wordFrequencyRank": 1934
   },
@@ -20880,6 +21023,7 @@
     "categories": [
       "noun",
       "hsk3",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 1967
@@ -21221,13 +21365,15 @@
     "pinyin": "píngjià",
     "english": [
       "evaluation",
-      "to evaluate"
+      "to evaluate",
+      "Review"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
       "hsk5",
-      "verb"
+      "verb",
+      "shopping"
     ],
     "wordFrequencyRank": 2003
   },
@@ -22045,7 +22191,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "self-introduction"
     ],
     "wordFrequencyRank": 2104
   },
@@ -22138,12 +22285,14 @@
     "pinyin": "shàngwǎng",
     "english": [
       "to go online",
-      "to use the internet"
+      "to use the internet",
+      "Surfing the Internet"
     ],
     "hskLevel": 3,
     "categories": [
       "verb",
-      "hsk3"
+      "hsk3",
+      "activity"
     ],
     "wordFrequencyRank": 2120
   },
@@ -22222,12 +22371,14 @@
     "hanzi": "出生",
     "pinyin": "chūshēng",
     "english": [
-      "to be born"
+      "to be born",
+      "Born"
     ],
     "hskLevel": 4,
     "categories": [
       "verb",
-      "hsk4"
+      "hsk4",
+      "self-introduction"
     ],
     "wordFrequencyRank": 2134
   },
@@ -22624,6 +22775,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "shopping",
       "education"
     ],
     "wordFrequencyRank": 2189
@@ -22787,7 +22939,8 @@
     "categories": [
       "noun",
       "hsk4",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 2209
   },
@@ -22809,12 +22962,14 @@
     "hanzi": "尊重",
     "pinyin": "zūnzhòng",
     "english": [
-      "to respect"
+      "to respect",
+      "Respect"
     ],
     "hskLevel": 4,
     "categories": [
       "verb",
-      "hsk4"
+      "hsk4",
+      "family"
     ],
     "wordFrequencyRank": 2213
   },
@@ -22845,12 +23000,14 @@
     "hanzi": "梦想",
     "pinyin": "mèngxiǎng",
     "english": [
-      "life dream"
+      "life dream",
+      "Dream"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "self-introduction"
     ],
     "wordFrequencyRank": 2217
   },
@@ -23263,7 +23420,8 @@
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "place"
     ],
     "wordFrequencyRank": 2269
   },
@@ -23627,6 +23785,7 @@
     "categories": [
       "noun",
       "hsk3",
+      "food & eating",
       "alcohol",
       "a2",
       "beverage",
@@ -23983,7 +24142,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "place"
     ],
     "wordFrequencyRank": 2365
   },
@@ -24442,12 +24602,14 @@
     "pinyin": "cānguān",
     "english": [
       "to visit",
-      "to tour"
+      "to tour",
+      "Visiting"
     ],
     "hskLevel": 4,
     "categories": [
       "verb",
-      "hsk4"
+      "hsk4",
+      "activity"
     ],
     "wordFrequencyRank": 2430
   },
@@ -24468,12 +24630,14 @@
     "hanzi": "公园",
     "pinyin": "gōngyuán",
     "english": [
-      "public park"
+      "public park",
+      "Park"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "place"
     ],
     "wordFrequencyRank": 2432
   },
@@ -24723,7 +24887,8 @@
     "categories": [
       "noun",
       "hsk3",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 2466
   },
@@ -24761,7 +24926,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "household item"
     ],
     "wordFrequencyRank": 2471
   },
@@ -24785,6 +24951,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 2477
@@ -25077,7 +25244,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 2514
   },
@@ -25217,12 +25385,14 @@
     "hanzi": "收拾",
     "pinyin": "shōushi",
     "english": [
-      "to clear away"
+      "to clear away",
+      "Tidying up"
     ],
     "hskLevel": 4,
     "categories": [
       "verb",
-      "hsk4"
+      "hsk4",
+      "activity"
     ],
     "wordFrequencyRank": 2536
   },
@@ -26002,7 +26172,8 @@
       "noun",
       "hsk4",
       "video games",
-      "b1"
+      "b1",
+      "body"
     ],
     "wordFrequencyRank": 2646
   },
@@ -26161,6 +26332,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "shopping",
       "shenfenguanxi"
     ],
     "wordFrequencyRank": 2672
@@ -26270,7 +26442,8 @@
     "categories": [
       "noun",
       "hsk3",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 2686
   },
@@ -26450,12 +26623,15 @@
     "hanzi": "商店",
     "pinyin": "shāngdiàn",
     "english": [
-      "store"
+      "store",
+      "Shop"
     ],
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "place",
+      "shopping"
     ],
     "wordFrequencyRank": 2708
   },
@@ -26464,12 +26640,15 @@
     "pinyin": "āyí",
     "english": [
       "maternal aunt",
-      "housekeeper"
+      "housekeeper",
+      "Aunt (mother’s sister)",
+      "Aunt (paternal sister of father)"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "family"
     ],
     "wordFrequencyRank": 2710
   },
@@ -26539,7 +26718,8 @@
     "categories": [
       "verb",
       "hsk1",
-      "hsk3"
+      "hsk3",
+      "greeting"
     ],
     "wordFrequencyRank": 2722
   },
@@ -27065,6 +27245,7 @@
     "categories": [
       "adjective",
       "hsk3",
+      "food & eating",
       "descriptive word"
     ],
     "wordFrequencyRank": 2808
@@ -27160,7 +27341,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 2825
   },
@@ -27272,7 +27454,8 @@
     "hskLevel": 2,
     "categories": [
       "adjective",
-      "hsk2"
+      "hsk2",
+      "food & eating"
     ],
     "wordFrequencyRank": 2836
   },
@@ -27387,12 +27570,15 @@
     "pinyin": "shūshu",
     "english": [
       "uncle",
-      "father's younger brother"
+      "father's younger brother",
+      "Uncle (father’s younger brother)",
+      "Uncle (paternal younger brother of father)"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "family"
     ],
     "wordFrequencyRank": 2858
   },
@@ -27940,13 +28126,15 @@
     "hanzi": "起床",
     "pinyin": "qǐchuáng",
     "english": [
-      "to get up (out of bed)"
+      "to get up (out of bed)",
+      "Getting up"
     ],
     "hskLevel": 2,
     "categories": [
       "verb",
       "hsk2",
-      "hsk3"
+      "hsk3",
+      "activity"
     ],
     "wordFrequencyRank": 2948
   },
@@ -27985,7 +28173,9 @@
     "hskLevel": 4,
     "categories": [
       "verb",
-      "hsk4"
+      "hsk4",
+      "shopping",
+      "activity"
     ],
     "wordFrequencyRank": 2954
   },
@@ -28509,7 +28699,8 @@
     "hskLevel": 6,
     "categories": [
       "body parts",
-      "hsk6"
+      "hsk6",
+      "body"
     ],
     "wordFrequencyRank": 3042
   },
@@ -28627,12 +28818,14 @@
     "hanzi": "唱歌",
     "pinyin": "chànggē",
     "english": [
-      "to sing a song"
+      "to sing a song",
+      "Singing"
     ],
     "hskLevel": 2,
     "categories": [
       "verb",
-      "hsk2"
+      "hsk2",
+      "activity"
     ],
     "wordFrequencyRank": 3070
   },
@@ -28958,7 +29151,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "self-introduction"
     ],
     "wordFrequencyRank": 3140
   },
@@ -29411,7 +29605,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "shopping"
     ],
     "wordFrequencyRank": 3222
   },
@@ -29450,7 +29645,8 @@
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "fruit"
     ],
     "wordFrequencyRank": 3228
   },
@@ -29665,12 +29861,14 @@
     "hanzi": "牛奶",
     "pinyin": "niúnǎi",
     "english": [
-      "(cow) milk"
+      "(cow) milk",
+      "Milk"
     ],
     "hskLevel": 2,
     "categories": [
       "noun",
       "hsk2",
+      "food & eating",
       "beverage"
     ],
     "wordFrequencyRank": 3275
@@ -29735,7 +29933,8 @@
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "fruit"
     ],
     "wordFrequencyRank": 3288
   },
@@ -29749,7 +29948,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 3291
   },
@@ -29793,7 +29993,8 @@
     "categories": [
       "noun",
       "hsk3",
-      "place"
+      "place",
+      "shopping"
     ],
     "wordFrequencyRank": 3300
   },
@@ -30163,7 +30364,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "verb"
+      "verb",
+      "family"
     ],
     "wordFrequencyRank": 3367
   },
@@ -30410,10 +30612,13 @@
     "hanzi": "歌手",
     "pinyin": "gē shǒu",
     "english": [
-      "Singer"
+      "singer",
+      "vocalist"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 3416
   },
@@ -30441,7 +30646,8 @@
     "categories": [
       "noun",
       "hsk4",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 3419
   },
@@ -30555,12 +30761,14 @@
     "hanzi": "鸡蛋",
     "pinyin": "jīdàn",
     "english": [
-      "(chicken) egg"
+      "(chicken) egg",
+      "Egg"
     ],
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "food & eating"
     ],
     "wordFrequencyRank": 3444
   },
@@ -30734,6 +30942,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 3486
@@ -30823,7 +31032,8 @@
     "hanzi": "姐妹",
     "pinyin": "jiě mèi",
     "english": [
-      "Sisters"
+      "Sisters",
+      "Sister"
     ],
     "categories": [
       "family"
@@ -30974,10 +31184,12 @@
     "hanzi": "科学家",
     "pinyin": "kē xué jiā",
     "english": [
-      "Scientist"
+      "scientist"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 3542
   },
@@ -31131,7 +31343,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "food & eating"
     ],
     "wordFrequencyRank": 3577
   },
@@ -31167,12 +31380,14 @@
     "pinyin": "xǐzǎo",
     "english": [
       "to bathe",
-      "to take a shower"
+      "to take a shower",
+      "Taking a shower"
     ],
     "hskLevel": 3,
     "categories": [
       "verb",
       "hsk3",
+      "activity",
       "summer"
     ],
     "wordFrequencyRank": 3588
@@ -31342,6 +31557,7 @@
     "categories": [
       "noun",
       "hsk5",
+      "jobs and occupation",
       "careers",
       "b2"
     ],
@@ -31658,12 +31874,14 @@
     "hanzi": "嘴唇",
     "pinyin": "zuǐchún",
     "english": [
-      "lips"
+      "lips",
+      "lip"
     ],
     "hskLevel": 6,
     "categories": [
       "body parts",
-      "hsk6"
+      "hsk6",
+      "body"
     ],
     "wordFrequencyRank": 3675
   },
@@ -32077,6 +32295,7 @@
     "categories": [
       "noun",
       "hsk5",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 3752
@@ -32224,10 +32443,14 @@
     "hanzi": "开会",
     "pinyin": "kāi huì",
     "english": [
-      "Having a meeting"
+      "Having a meeting",
+      "to have a meeting",
+      "to attend a meeting"
     ],
     "categories": [
-      "activity"
+      "activity",
+      "office",
+      "a2"
     ],
     "wordFrequencyRank": 3782
   },
@@ -32255,7 +32478,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "food & eating"
     ],
     "wordFrequencyRank": 3791
   },
@@ -32296,7 +32520,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "place"
     ],
     "wordFrequencyRank": 3794
   },
@@ -32468,6 +32693,7 @@
     "categories": [
       "noun",
       "hsk2",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 3822
@@ -32650,7 +32876,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "place"
     ],
     "wordFrequencyRank": 3852
   },
@@ -32857,7 +33084,8 @@
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "place"
     ],
     "wordFrequencyRank": 3895
   },
@@ -33106,12 +33334,14 @@
     "hanzi": "跳舞",
     "pinyin": "tiàowǔ",
     "english": [
-      "to dance (a dance)"
+      "to dance (a dance)",
+      "Dancing"
     ],
     "hskLevel": 2,
     "categories": [
       "verb",
       "hsk2",
+      "activity",
       "sports"
     ],
     "wordFrequencyRank": 3961
@@ -33189,7 +33419,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "self-introduction"
     ],
     "wordFrequencyRank": 3969
   },
@@ -33860,6 +34091,7 @@
       "noun",
       "hsk2",
       "verb",
+      "activity",
       "sport",
       "sports",
       "summer"
@@ -34631,12 +34863,14 @@
     "hanzi": "庆祝",
     "pinyin": "qìngzhù",
     "english": [
-      "to celebrate"
+      "to celebrate",
+      "Celebrate"
     ],
     "hskLevel": 5,
     "categories": [
       "verb",
-      "hsk5"
+      "hsk5",
+      "family"
     ],
     "wordFrequencyRank": 4296
   },
@@ -34884,6 +35118,7 @@
     "categories": [
       "noun",
       "hsk5",
+      "food & eating",
       "vegetables"
     ],
     "wordFrequencyRank": 4354
@@ -35099,6 +35334,7 @@
     "categories": [
       "noun",
       "hsk5",
+      "jobs and occupation",
       "careers",
       "b2"
     ],
@@ -35484,10 +35720,12 @@
     "hanzi": "保安",
     "pinyin": "bǎo ān",
     "english": [
-      "Security Guard"
+      "security guard"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 4516
   },
@@ -36133,12 +36371,14 @@
     "hanzi": "散步",
     "pinyin": "sànbù",
     "english": [
-      "to take a walk"
+      "to take a walk",
+      "Walking"
     ],
     "hskLevel": 4,
     "categories": [
       "verb",
       "hsk4",
+      "activity",
       "sports"
     ],
     "wordFrequencyRank": 4714
@@ -36212,10 +36452,12 @@
     "hanzi": "工程师",
     "pinyin": "gōng chéng shī",
     "english": [
-      "Engineer"
+      "engineer"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 4731
   },
@@ -36648,7 +36890,8 @@
       "noun",
       "hsk5",
       "body parts",
-      "b1"
+      "b1",
+      "body"
     ],
     "wordFrequencyRank": 4898
   },
@@ -36788,7 +37031,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "self-introduction"
     ],
     "wordFrequencyRank": 4951
   },
@@ -36837,12 +37081,14 @@
     "hanzi": "包子",
     "pinyin": "bāozi",
     "english": [
-      "steamed (stuffed) bun"
+      "steamed (stuffed) bun",
+      "Steamed bun"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "food & eating"
     ],
     "wordFrequencyRank": 4974
   },
@@ -37068,10 +37314,13 @@
     "hanzi": "公务员",
     "pinyin": "gōng wù yuán",
     "english": [
-      "Civil Servant"
+      "Civil Servant",
+      "government employee"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 5046
   },
@@ -37239,10 +37488,13 @@
     "hanzi": "顾问",
     "pinyin": "gù wèn",
     "english": [
-      "Consultant"
+      "consultant"
     ],
+    "hskLevel": 6,
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "hsk6"
     ],
     "wordFrequencyRank": 5090
   },
@@ -37250,12 +37502,14 @@
     "hanzi": "孙子",
     "pinyin": "sūnzi",
     "english": [
-      "grandson"
+      "grandson",
+      "Grandson (paternal)"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "family"
     ],
     "wordFrequencyRank": 5093
   },
@@ -37631,7 +37885,8 @@
     "hskLevel": 6,
     "categories": [
       "body parts",
-      "hsk6"
+      "hsk6",
+      "body"
     ],
     "wordFrequencyRank": 5222
   },
@@ -37674,7 +37929,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "self-introduction"
     ],
     "wordFrequencyRank": 5233
   },
@@ -37967,7 +38223,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 5329
   },
@@ -37981,7 +38238,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 5332
   },
@@ -38277,10 +38535,12 @@
     "hanzi": "牛肉",
     "pinyin": "niú ròu",
     "english": [
-      "Beef"
+      "beef"
     ],
     "categories": [
-      "food & eating"
+      "food & eating",
+      "meat",
+      "a2"
     ],
     "wordFrequencyRank": 5473
   },
@@ -38391,6 +38651,17 @@
     "wordFrequencyRank": 5503
   },
   {
+    "hanzi": "亲密",
+    "pinyin": "qīn mì",
+    "english": [
+      "Intimate"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 5506
+  },
+  {
     "hanzi": "董事长",
     "pinyin": "dǒngshìzhǎng",
     "english": [
@@ -38446,12 +38717,16 @@
     "hanzi": "舅舅",
     "pinyin": "jiùjiu",
     "english": [
-      "uncle (mother's brother)"
+      "uncle (mother's brother)",
+      "Uncle (mother’s brother)",
+      "Uncle (maternal brother of mother)",
+      "Mother's brother-in-law"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "family"
     ],
     "wordFrequencyRank": 5542
   },
@@ -38726,7 +39001,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "place"
     ],
     "wordFrequencyRank": 5672
   },
@@ -38962,6 +39238,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "self-introduction",
       "sexual identity"
     ],
     "wordFrequencyRank": 5783
@@ -39009,10 +39286,12 @@
     "hanzi": "设计师",
     "pinyin": "shè jì shī",
     "english": [
-      "Designer"
+      "designer"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 5793
   },
@@ -39052,7 +39331,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "food & eating"
     ],
     "wordFrequencyRank": 5800
   },
@@ -39472,6 +39752,7 @@
     "categories": [
       "noun",
       "hsk3",
+      "food & eating",
       "tableware"
     ],
     "wordFrequencyRank": 5948
@@ -39582,7 +39863,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "body parts"
+      "body parts",
+      "body"
     ],
     "wordFrequencyRank": 5994
   },
@@ -40120,12 +40402,14 @@
     "pinyin": "jiābān",
     "english": [
       "work overtime",
-      "work an extra shift"
+      "work an extra shift",
+      "Overtime"
     ],
     "hskLevel": 4,
     "categories": [
       "verb",
       "hsk4",
+      "activity",
       "office"
     ],
     "wordFrequencyRank": 6225
@@ -40134,10 +40418,14 @@
     "hanzi": "保姆",
     "pinyin": "bǎo mǔ",
     "english": [
-      "Nanny"
+      "nanny",
+      "housekeeper"
     ],
+    "hskLevel": 6,
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "hsk6"
     ],
     "wordFrequencyRank": 6230
   },
@@ -40410,12 +40698,14 @@
     "hanzi": "姥姥",
     "pinyin": "lǎolao",
     "english": [
-      "maternal grandmother"
+      "maternal grandmother",
+      "Maternal grandmother (used in Northern China)"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "family"
     ],
     "wordFrequencyRank": 6318
   },
@@ -40512,6 +40802,7 @@
     "categories": [
       "noun",
       "hsk5",
+      "food & eating",
       "vegetables"
     ],
     "wordFrequencyRank": 6346
@@ -40572,7 +40863,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "food & eating"
     ],
     "wordFrequencyRank": 6377
   },
@@ -40674,12 +40966,14 @@
     "hanzi": "饺子",
     "pinyin": "jiǎozi",
     "english": [
-      "dumpling"
+      "dumpling",
+      "Dumplings"
     ],
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "food & eating"
     ],
     "wordFrequencyRank": 6434
   },
@@ -40873,12 +41167,14 @@
     "hanzi": "模特",
     "pinyin": "mótè",
     "english": [
-      "(fashion) model"
+      "(fashion) model",
+      "Model"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
       "hsk5",
+      "jobs and occupation",
       "careers"
     ],
     "wordFrequencyRank": 6530
@@ -40926,10 +41222,12 @@
     "hanzi": "前天",
     "pinyin": "qián tiān",
     "english": [
-      "The day before yesterday"
+      "the day before yesterday"
     ],
     "categories": [
-      "dates and time"
+      "dates and time",
+      "time",
+      "a2"
     ],
     "wordFrequencyRank": 6594
   },
@@ -41204,7 +41502,8 @@
     "categories": [
       "noun",
       "hsk4",
-      "verb"
+      "verb",
+      "shopping"
     ],
     "wordFrequencyRank": 6742
   },
@@ -41333,12 +41632,14 @@
     "hanzi": "海关",
     "pinyin": "hǎiguān",
     "english": [
-      "customs (i.e. at the airport)"
+      "customs (i.e. at the airport)",
+      "Customs"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "place"
     ],
     "wordFrequencyRank": 6787
   },
@@ -41599,6 +41900,7 @@
     "categories": [
       "noun",
       "hsk2",
+      "fruit",
       "summer"
     ],
     "wordFrequencyRank": 6896
@@ -41634,12 +41936,14 @@
     "english": [
       "to jog",
       "to go running",
+      "Jogging",
       "Running"
     ],
     "hskLevel": 2,
     "categories": [
       "verb",
       "hsk2",
+      "activity",
       "sport",
       "sports"
     ],
@@ -41852,7 +42156,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "shopping"
     ],
     "wordFrequencyRank": 7023
   },
@@ -42098,6 +42403,17 @@
       "b1"
     ],
     "wordFrequencyRank": 7212
+  },
+  {
+    "hanzi": "祖父",
+    "pinyin": "zǔ fù",
+    "english": [
+      "Grandfather (paternal)"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 7217
   },
   {
     "hanzi": "郊区",
@@ -42384,12 +42700,14 @@
     "hanzi": "辣椒",
     "pinyin": "làjiāo",
     "english": [
-      "hot pepper"
+      "hot pepper",
+      "Chili"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
       "hsk5",
+      "food & eating",
       "vegetables"
     ],
     "wordFrequencyRank": 7454
@@ -42508,7 +42826,8 @@
     "categories": [
       "noun",
       "hsk2",
-      "hsk3"
+      "hsk3",
+      "food & eating"
     ],
     "wordFrequencyRank": 7530
   },
@@ -42643,6 +42962,17 @@
       "hsk5"
     ],
     "wordFrequencyRank": 7602
+  },
+  {
+    "hanzi": "亲情",
+    "pinyin": "qīn qíng",
+    "english": [
+      "Famile affection"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 7604
   },
   {
     "hanzi": "专心",
@@ -43069,7 +43399,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "place"
     ],
     "wordFrequencyRank": 7933
   },
@@ -43191,10 +43522,12 @@
     "hanzi": "猪肉",
     "pinyin": "zhū ròu",
     "english": [
-      "Pork"
+      "pork"
     ],
     "categories": [
-      "food & eating"
+      "food & eating",
+      "meat",
+      "a2"
     ],
     "wordFrequencyRank": 8113
   },
@@ -43241,12 +43574,14 @@
     "hanzi": "米饭",
     "pinyin": "mǐfàn",
     "english": [
-      "rice"
+      "rice",
+      "White rice"
     ],
     "hskLevel": 1,
     "categories": [
       "noun",
-      "hsk1"
+      "hsk1",
+      "food & eating"
     ],
     "wordFrequencyRank": 8151
   },
@@ -43254,12 +43589,15 @@
     "hanzi": "打折",
     "pinyin": "dǎzhé",
     "english": [
-      "to give a discount"
+      "to give a discount",
+      "Sale",
+      "To discount"
     ],
     "hskLevel": 4,
     "categories": [
       "verb",
-      "hsk4"
+      "hsk4",
+      "shopping"
     ],
     "wordFrequencyRank": 8161
   },
@@ -43493,6 +43831,17 @@
     "wordFrequencyRank": 8264
   },
   {
+    "hanzi": "姐夫",
+    "pinyin": "jiě fū",
+    "english": [
+      "Sister's husband"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 8273
+  },
+  {
     "hanzi": "羽毛球",
     "pinyin": "yǔmáoqiú",
     "english": [
@@ -43527,10 +43876,12 @@
     "hanzi": "烧烤",
     "pinyin": "shāo kǎo",
     "english": [
-      "Barbecue"
+      "barbecue"
     ],
     "categories": [
-      "food & eating"
+      "food & eating",
+      "summer",
+      "b1"
     ],
     "wordFrequencyRank": 8282
   },
@@ -43623,14 +43974,27 @@
     "hanzi": "发票",
     "pinyin": "fāpiào",
     "english": [
-      "official receipt for purchase"
+      "official receipt for purchase",
+      "Invoice"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "shopping"
     ],
     "wordFrequencyRank": 8363
+  },
+  {
+    "hanzi": "祖母",
+    "pinyin": "zǔ mǔ",
+    "english": [
+      "Grandmother (paternal)"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 8366
   },
   {
     "hanzi": "坚",
@@ -43770,10 +44134,12 @@
     "hanzi": "后天",
     "pinyin": "hòu tiān",
     "english": [
-      "The day after tomorrow"
+      "the day after tomorrow"
     ],
     "categories": [
-      "dates and time"
+      "dates and time",
+      "time",
+      "a2"
     ],
     "wordFrequencyRank": 8479
   },
@@ -43786,7 +44152,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "body"
     ],
     "wordFrequencyRank": 8489
   },
@@ -43807,12 +44174,14 @@
     "hanzi": "姑姑",
     "pinyin": "gūgu",
     "english": [
-      "paternal aunt"
+      "paternal aunt",
+      "Aunt (father’s sister)"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "family"
     ],
     "wordFrequencyRank": 8504
   },
@@ -43870,6 +44239,17 @@
       "allergy"
     ],
     "wordFrequencyRank": 8551
+  },
+  {
+    "hanzi": "习俗",
+    "pinyin": "xí sú",
+    "english": [
+      "Custom"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 8575
   },
   {
     "hanzi": "材",
@@ -44143,10 +44523,13 @@
     "hanzi": "洗脸",
     "pinyin": "xǐ liǎn",
     "english": [
-      "Washing face"
+      "Washing face",
+      "to wash one's face"
     ],
     "categories": [
-      "activity"
+      "activity",
+      "covid-19",
+      "a2"
     ],
     "wordFrequencyRank": 8813
   },
@@ -44282,12 +44665,14 @@
     "hanzi": "指甲",
     "pinyin": "zhǐjia",
     "english": [
-      "fingernails"
+      "fingernails",
+      "fingernail"
     ],
     "hskLevel": 6,
     "categories": [
       "body parts",
-      "hsk6"
+      "hsk6",
+      "body"
     ],
     "wordFrequencyRank": 8944
   },
@@ -44337,12 +44722,16 @@
     "hanzi": "外公",
     "pinyin": "wàigōng",
     "english": [
-      "(coll.) mother's father"
+      "(coll.) mother's father",
+      "Grandfather (maternal)",
+      "Maternal grandfather (used in Southern China)",
+      "Maternal grandmother (used in Southern China)"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "family"
     ],
     "wordFrequencyRank": 8966
   },
@@ -44450,6 +44839,17 @@
     "categories": [],
     "wordFrequencyRank": 9035,
     "hanziFrequencyRank": 714
+  },
+  {
+    "hanzi": "感恩",
+    "pinyin": "gǎn ēn",
+    "english": [
+      "Gratitude"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 9053
   },
   {
     "hanzi": "单调",
@@ -44596,7 +44996,8 @@
     "hskLevel": 3,
     "categories": [
       "noun",
-      "hsk3"
+      "hsk3",
+      "fruit"
     ],
     "wordFrequencyRank": 9185
   },
@@ -44888,10 +45289,12 @@
     "hanzi": "冰淇淋",
     "pinyin": "bīng qí lín",
     "english": [
-      "Ice cream"
+      "ice cream"
     ],
     "categories": [
-      "food & eating"
+      "food & eating",
+      "summer",
+      "b1"
     ],
     "wordFrequencyRank": 9471
   },
@@ -45186,12 +45589,14 @@
     "hanzi": "零食",
     "pinyin": "língshí",
     "english": [
-      "snack"
+      "snack",
+      "Snacks"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "food & eating"
     ],
     "wordFrequencyRank": 9824
   },
@@ -45554,12 +45959,14 @@
     "pinyin": "páshān",
     "english": [
       "to climb a mountain",
-      "to go hiking"
+      "to go hiking",
+      "Hiking"
     ],
     "hskLevel": 3,
     "categories": [
       "verb",
-      "hsk3"
+      "hsk3",
+      "activity"
     ],
     "wordFrequencyRank": 10216
   },
@@ -45937,10 +46344,12 @@
     "hanzi": "飞行员",
     "pinyin": "fēi xíng yuán",
     "english": [
-      "Pilot"
+      "pilot"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 10754
   },
@@ -46006,12 +46415,14 @@
     "hanzi": "刷牙",
     "pinyin": "shuāyá",
     "english": [
-      "to brush one's teeth"
+      "to brush one's teeth",
+      "Brushing teeth"
     ],
     "hskLevel": 3,
     "categories": [
       "verb",
-      "hsk3"
+      "hsk3",
+      "activity"
     ],
     "wordFrequencyRank": 10824
   },
@@ -46159,10 +46570,13 @@
     "hanzi": "空姐",
     "pinyin": "kōng jiě",
     "english": [
-      "Flight Attendant (Female)"
+      "Flight Attendant (Female)",
+      "(female) flight attendant"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 10995
   },
@@ -46293,6 +46707,17 @@
       "hsk6"
     ],
     "wordFrequencyRank": 11147
+  },
+  {
+    "hanzi": "姨妈",
+    "pinyin": "yí mā",
+    "english": [
+      "Aunt (maternal sister of mother)"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 11151
   },
   {
     "hanzi": "舰",
@@ -46468,10 +46893,12 @@
     "hanzi": "建筑师",
     "pinyin": "jiàn zhù shī",
     "english": [
-      "Architect"
+      "architect"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 11388
   },
@@ -46484,7 +46911,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "food & eating"
     ],
     "wordFrequencyRank": 11426
   },
@@ -46509,6 +46937,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "food & eating",
       "vegetables"
     ],
     "wordFrequencyRank": 11441
@@ -46817,7 +47246,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "fruit"
     ],
     "wordFrequencyRank": 12013
   },
@@ -47138,7 +47568,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "dates and time"
     ],
     "wordFrequencyRank": 12645
   },
@@ -47193,6 +47624,17 @@
     "wordFrequencyRank": 12727
   },
   {
+    "hanzi": "岳父",
+    "pinyin": "yuè fù",
+    "english": [
+      "Father-in-law"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 12770
+  },
+  {
     "hanzi": "病例",
     "pinyin": "bìnglì",
     "english": [
@@ -47235,13 +47677,15 @@
     "hanzi": "果汁",
     "pinyin": "guǒzhī",
     "english": [
-      "fruit juice"
+      "fruit juice",
+      "Juice"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
       "hsk3",
       "hsk4",
+      "food & eating",
       "beverage",
       "summer"
     ],
@@ -47348,7 +47792,8 @@
     "hanzi": "伯伯",
     "pinyin": "bó bo",
     "english": [
-      "Uncle (father’s older brother)"
+      "Uncle (father’s older brother)",
+      "Uncle (paternal older brother of father)"
     ],
     "categories": [
       "family"
@@ -47422,7 +47867,8 @@
     "hskLevel": 4,
     "categories": [
       "noun",
-      "hsk4"
+      "hsk4",
+      "place"
     ],
     "wordFrequencyRank": 13333
   },
@@ -47664,12 +48110,14 @@
     "hanzi": "清淡",
     "pinyin": "qīngdàn",
     "english": [
-      "light (of food, not greasy or strongly seasoned)"
+      "light (of food, not greasy or strongly seasoned)",
+      "Mild"
     ],
     "hskLevel": 5,
     "categories": [
       "adjective",
-      "hsk5"
+      "hsk5",
+      "food & eating"
     ],
     "wordFrequencyRank": 13880
   },
@@ -47682,7 +48130,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "shopping"
     ],
     "wordFrequencyRank": 13886
   },
@@ -47720,6 +48169,17 @@
       "hsk5"
     ],
     "wordFrequencyRank": 13905
+  },
+  {
+    "hanzi": "岳母",
+    "pinyin": "yuè mǔ",
+    "english": [
+      "Mother-in-law"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 13938
   },
   {
     "hanzi": "实习生",
@@ -47843,6 +48303,17 @@
       "hsk6"
     ],
     "wordFrequencyRank": 14136
+  },
+  {
+    "hanzi": "姥爷",
+    "pinyin": "lǎo ye",
+    "english": [
+      "Maternal grandfather (used in Northern China)"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 14144
   },
   {
     "hanzi": "竹子",
@@ -48209,6 +48680,17 @@
     "wordFrequencyRank": 14836
   },
   {
+    "hanzi": "婶婶",
+    "pinyin": "shěn shen",
+    "english": [
+      "Aunt (paternal wife of father's older brother)"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 14848
+  },
+  {
     "hanzi": "时差",
     "pinyin": "shíchā",
     "english": [
@@ -48309,10 +48791,13 @@
     "hanzi": "鸡肉",
     "pinyin": "jī ròu",
     "english": [
-      "Chicken"
+      "Chicken",
+      "chicken (meat)"
     ],
     "categories": [
-      "food & eating"
+      "food & eating",
+      "meat",
+      "a2"
     ],
     "wordFrequencyRank": 15038
   },
@@ -48320,10 +48805,12 @@
     "hanzi": "程序员",
     "pinyin": "chéng xù yuán",
     "english": [
-      "Programmer"
+      "programmer"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 15076
   },
@@ -48346,10 +48833,12 @@
     "hanzi": "胡萝卜",
     "pinyin": "hú luó bo",
     "english": [
-      "Carrot"
+      "carrot"
     ],
     "categories": [
-      "food & eating"
+      "food & eating",
+      "vegetables",
+      "b1"
     ],
     "wordFrequencyRank": 15119
   },
@@ -48433,10 +48922,13 @@
     "hanzi": "裁缝",
     "pinyin": "cái féng",
     "english": [
-      "Tailor"
+      "tailor"
     ],
+    "hskLevel": 6,
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "hsk6"
     ],
     "wordFrequencyRank": 15314
   },
@@ -48912,10 +49404,13 @@
     "hanzi": "渔民",
     "pinyin": "yú mín",
     "english": [
-      "Fisherman"
+      "fisherman"
     ],
+    "hskLevel": 6,
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "hsk6"
     ],
     "wordFrequencyRank": 16785
   },
@@ -48983,7 +49478,8 @@
     ],
     "categories": [
       "body parts",
-      "b2"
+      "b2",
+      "body"
     ],
     "wordFrequencyRank": 16956
   },
@@ -49159,6 +49655,7 @@
     "categories": [
       "noun",
       "hsk4",
+      "food & eating",
       "household item",
       "tableware"
     ],
@@ -49348,10 +49845,12 @@
     "hanzi": "洋葱",
     "pinyin": "yáng cōng",
     "english": [
-      "Onion"
+      "onion"
     ],
     "categories": [
-      "food & eating"
+      "food & eating",
+      "vegetables",
+      "b1"
     ],
     "wordFrequencyRank": 18206
   },
@@ -50284,10 +50783,12 @@
     "hanzi": "牙医",
     "pinyin": "yá yī",
     "english": [
-      "Dentist"
+      "dentist"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ],
     "wordFrequencyRank": 21780
   },
@@ -50320,12 +50821,14 @@
     "pinyin": "jiézhàng",
     "english": [
       "to pay the bill",
-      "to settle accounts"
+      "to settle accounts",
+      "Pay bill"
     ],
     "hskLevel": 5,
     "categories": [
       "verb",
-      "hsk5"
+      "hsk5",
+      "food & eating"
     ],
     "wordFrequencyRank": 21968
   },
@@ -50936,6 +51439,17 @@
     "wordFrequencyRank": 24957
   },
   {
+    "hanzi": "外祖母",
+    "pinyin": "wài zǔ mǔ",
+    "english": [
+      "Grandmother (maternal)"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 24985
+  },
+  {
     "hanzi": "纸袋",
     "pinyin": "zhǐdài",
     "english": [
@@ -51009,6 +51523,17 @@
       "chinese idioms"
     ],
     "wordFrequencyRank": 25568
+  },
+  {
+    "hanzi": "妹夫",
+    "pinyin": "mèi fū",
+    "english": [
+      "Younger sister's husband"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 25696
   },
   {
     "hanzi": "鸦雀无声",
@@ -51414,6 +51939,17 @@
     "wordFrequencyRank": 28994
   },
   {
+    "hanzi": "外祖父",
+    "pinyin": "wài zǔ fù",
+    "english": [
+      "Grandfather (maternal)"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 29084
+  },
+  {
     "hanzi": "游乐园",
     "pinyin": "yóulèyuán",
     "english": [
@@ -51521,6 +52057,17 @@
       "hsk5"
     ],
     "wordFrequencyRank": 29885
+  },
+  {
+    "hanzi": "祖传",
+    "pinyin": "zǔ chuán",
+    "english": [
+      "Inherited from ancestors"
+    ],
+    "categories": [
+      "family"
+    ],
+    "wordFrequencyRank": 29966
   },
   {
     "hanzi": "射箭",
@@ -52704,24 +53251,28 @@
     "hanzi": "打篮球",
     "pinyin": "dǎ lánqiú",
     "english": [
-      "to play basketball"
+      "to play basketball",
+      "Playing basketball"
     ],
     "hskLevel": 2,
     "categories": [
       "phrase",
-      "hsk2"
+      "hsk2",
+      "activity"
     ]
   },
   {
     "hanzi": "踢足球",
     "pinyin": "tī zúqiú",
     "english": [
-      "to play soccer"
+      "to play soccer",
+      "Playing soccer"
     ],
     "hskLevel": 2,
     "categories": [
       "phrase",
-      "hsk2"
+      "hsk2",
+      "activity"
     ]
   },
   {
@@ -53072,10 +53623,12 @@
     "hanzi": "消防员",
     "pinyin": "xiāo fáng yuán",
     "english": [
-      "Firefighter"
+      "firefighter"
     ],
     "categories": [
-      "jobs and occupation"
+      "jobs and occupation",
+      "careers",
+      "b2"
     ]
   },
   {
@@ -53482,10 +54035,12 @@
     "hanzi": "牛油果",
     "pinyin": "niú yóu guǒ",
     "english": [
-      "Avocado"
+      "avocado"
     ],
     "categories": [
-      "fruit"
+      "fruit",
+      "vegetables",
+      "b2"
     ]
   },
   {
@@ -54975,6 +55530,106 @@
     ],
     "categories": [
       "body"
+    ]
+  },
+  {
+    "hanzi": "堂兄弟",
+    "pinyin": "táng xiōng dì",
+    "english": [
+      "Cousin (paternal)"
+    ],
+    "categories": [
+      "family"
+    ]
+  },
+  {
+    "hanzi": "表兄弟",
+    "pinyin": "biǎo xiōng dì",
+    "english": [
+      "Cousin (maternal)"
+    ],
+    "categories": [
+      "family"
+    ]
+  },
+  {
+    "hanzi": "姐婿",
+    "pinyin": "jiě xù",
+    "english": [
+      "Husband of one's own sister"
+    ],
+    "categories": [
+      "family"
+    ]
+  },
+  {
+    "hanzi": "妹婿",
+    "pinyin": "mèi xù",
+    "english": [
+      "Husband of younger sister"
+    ],
+    "categories": [
+      "family"
+    ]
+  },
+  {
+    "hanzi": "姨夫",
+    "pinyin": "yí fū",
+    "english": [
+      "Aunt's husband"
+    ],
+    "categories": [
+      "family"
+    ]
+  },
+  {
+    "hanzi": "姻亲",
+    "pinyin": "yīn qīn",
+    "english": [
+      "In-laws"
+    ],
+    "categories": [
+      "family"
+    ]
+  },
+  {
+    "hanzi": "亲爱 的",
+    "pinyin": "qīn ài de",
+    "english": [
+      "Dear (term of endearment)"
+    ],
+    "categories": [
+      "family"
+    ]
+  },
+  {
+    "hanzi": "家庭活动",
+    "pinyin": "jiā tíng huó dòng",
+    "english": [
+      "Family activity"
+    ],
+    "categories": [
+      "family"
+    ]
+  },
+  {
+    "hanzi": "家庭聚会",
+    "pinyin": "jiā tíng jù huì",
+    "english": [
+      "Family gathering"
+    ],
+    "categories": [
+      "family"
+    ]
+  },
+  {
+    "hanzi": "合家团圆",
+    "pinyin": "hé jiā tuán yuán",
+    "english": [
+      "Family reuinion"
+    ],
+    "categories": [
+      "family"
     ]
   }
 ]

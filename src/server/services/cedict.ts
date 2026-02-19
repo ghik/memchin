@@ -1,24 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import type { CedictEntry, CharacterBreakdown } from '../../shared/types.js';
 import { numberedToToneMarked, stripTones } from './pinyin.js';
+
+export type { CedictEntry, CharacterBreakdown } from '../../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cedictPath = path.join(__dirname, '../../../sources/cedict_1_0_ts_utf-8_mdbg.txt');
-
-export interface CedictEntry {
-  traditional: string;
-  simplified: string;
-  pinyin: string; // With tone marks
-  pinyinNumbered: string; // Original numbered format from CEDICT
-  definitions: string[];
-}
-
-export interface CharacterBreakdown {
-  hanzi: string;
-  pinyin: string;
-  meaning: string;
-}
 
 // Map from simplified hanzi to entries (can have multiple readings)
 let cedictMap: Map<string, CedictEntry[]> | null = null;
@@ -92,20 +81,58 @@ export function lookupWord(hanzi: string): CedictEntry | null {
 }
 
 /**
- * Check if a definition is only a surname or variant reference
+ * Look up a word in CEDICT, filtering out non-translation entries and definitions.
+ * Returns entries with only useful definitions (actual meanings, not cross-references).
  */
-function isSurnameOrVariant(definition: string): boolean {
-  return /^surname\s/i.test(definition) ||
-    /^(old\s+)?variant\s+of\s/i.test(definition);
+export function lookupFiltered(hanzi: string): CedictEntry[] {
+  const map = loadCedict();
+  const entries = map.get(hanzi) || [];
+  const filtered = filterEntries(entries);
+  return filtered.map((entry) => ({
+    ...entry,
+    definitions: filterDefinitions(entry.definitions),
+  }));
 }
 
 /**
- * Filter out entries where ALL definitions are just surnames or variants
+ * Check if a definition is a cross-reference, variant note, or other non-translation.
+ * These are metadata about the character rather than actual meanings.
+ */
+function isNonTranslation(definition: string): boolean {
+  return /^surname\s/i.test(definition) ||
+    /^(old\s+)?variant\s+of\s/i.test(definition) ||
+    /^see\s+(also\s+)?[^\s]/i.test(definition) ||
+    /^erhua variant\s+of\s/i.test(definition) ||
+    /^also written\s/i.test(definition) ||
+    /^(Japanese|Korean) variant\s+of\s/i.test(definition) ||
+    /^(also|formerly)\s+written\s/i.test(definition) ||
+    /^same as\s/i.test(definition) ||
+    /^(old|ancient)\s+name\s+for\s/i.test(definition) ||
+    /^another name for\s/i.test(definition) ||
+    /^used in\s/i.test(definition) ||
+    /^(abbr|short)\.\s+for\s/i.test(definition) ||
+    /^abbreviation\s+(of|for)\s/i.test(definition) ||
+    /^CL:/i.test(definition) ||
+    /^Taiwan pr\.\s/i.test(definition) ||
+    /^also pr\.\s/i.test(definition);
+}
+
+/**
+ * Filter out entries where ALL definitions are non-translations.
  */
 function filterEntries(entries: CedictEntry[]): CedictEntry[] {
   return entries.filter((entry) =>
-    entry.definitions.some((def) => !isSurnameOrVariant(def))
+    entry.definitions.some((def) => !isNonTranslation(def))
   );
+}
+
+/**
+ * Filter individual definitions within an entry, removing non-translations.
+ * Returns the filtered definitions, or the originals if all would be removed.
+ */
+function filterDefinitions(definitions: string[]): string[] {
+  const useful = definitions.filter((d) => !isNonTranslation(d));
+  return useful.length > 0 ? useful : definitions;
 }
 
 /**
@@ -151,7 +178,7 @@ export function getCharacterBreakdown(hanzi: string, wordPinyin?: string): Chara
       result.push({
         hanzi: char,
         pinyin: entry.pinyin,
-        meaning: entry.definitions.filter((d) => !isSurnameOrVariant(d)).join(' / '),
+        meaning: filterDefinitions(entry.definitions).join(' / '),
       });
     }
   }
