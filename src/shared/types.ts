@@ -4,22 +4,26 @@ export interface Example {
   english: string;
 }
 
-export interface CharacterBreakdown {
+export interface CharacterInfo {
   hanzi: string;
   pinyin: string;
   meaning: string;
+  components: CharacterInfo[];
 }
 
-export interface Word {
+export interface WordCore {
   hanzi: string;
   pinyin: string;
   english: string[];
   hskLevel: number;
+}
+
+export interface Word extends WordCore {
   wordFrequencyRank?: number;
   hanziFrequencyRank?: number;
   examples: Example[];
   translatable: boolean;
-  breakdown?: CharacterBreakdown[];
+  breakdown?: CharacterInfo[];
   categories: string[];
   manual: boolean;
 }
@@ -49,6 +53,7 @@ export interface StartRequest {
   wordSelection: 'mixed' | 'new' | 'review' | 'random';
   categories: string[];
   characterMode: boolean;
+  hanziList?: string[]; // specific words to practice (overrides count/wordSelection/categories)
 }
 
 export interface StartResponse {
@@ -73,9 +78,14 @@ export interface AnswerResponse {
   synonym: boolean; // True if answer is a valid synonym but not the target word
 }
 
+export interface PracticeResult {
+  hanzi: string;
+  correctFirstTry: boolean;
+}
+
 export interface CompleteRequest {
   mode: PracticeMode;
-  results: Array<{ hanzi: string; correctFirstTry: boolean }>;
+  results: PracticeResult[];
   characterMode: boolean;
 }
 

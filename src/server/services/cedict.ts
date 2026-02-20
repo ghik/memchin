@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { CedictEntry, CharacterBreakdown } from '../../shared/types.js';
-import { numberedToToneMarked, stripTones } from './pinyin.js';
+import type { CedictEntry } from '../../shared/types.js';
+import { numberedToToneMarked } from './pinyin.js';
 
-export type { CedictEntry, CharacterBreakdown } from '../../shared/types.js';
+export type { CedictEntry } from '../../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cedictPath = path.join(__dirname, '../../../sources/cedict_1_0_ts_utf-8_mdbg.txt');
@@ -36,7 +36,11 @@ export function loadCedict(): Map<string, CedictEntry[]> {
     if (!match) continue;
 
     const [, traditional, simplified, pinyinNumbered, defStr] = match;
-    const definitions = defStr.split('/').filter((d) => d.trim() !== '');
+    const definitions = defStr
+      .split('/')
+      .flatMap((d) => d.split(';'))
+      .map((d) => d.trim())
+      .filter((d) => d !== '');
     const pinyin = numberedToToneMarked(pinyinNumbered).toLowerCase();
     const pinyinKey = pinyinNumbered.toLowerCase().replace(/u:/g, 'v');
 
@@ -99,7 +103,8 @@ export function lookupFiltered(hanzi: string): CedictEntry[] {
  * These are metadata about the character rather than actual meanings.
  */
 function isNonTranslation(definition: string): boolean {
-  return /^surname\s/i.test(definition) ||
+  return (
+    /^surname\s/i.test(definition) ||
     /^(old\s+)?variant\s+of\s/i.test(definition) ||
     /^see\s+(also\s+)?[^\s]/i.test(definition) ||
     /^erhua variant\s+of\s/i.test(definition) ||
@@ -114,74 +119,33 @@ function isNonTranslation(definition: string): boolean {
     /^abbreviation\s+(of|for)\s/i.test(definition) ||
     /^CL:/i.test(definition) ||
     /^Taiwan pr\.\s/i.test(definition) ||
-    /^also pr\.\s/i.test(definition);
+    /^also pr\.\s/i.test(definition)
+  );
 }
 
 /**
  * Filter out entries where ALL definitions are non-translations.
  */
-function filterEntries(entries: CedictEntry[]): CedictEntry[] {
-  return entries.filter((entry) =>
-    entry.definitions.some((def) => !isNonTranslation(def))
-  );
+export function filterEntries(entries: CedictEntry[]): CedictEntry[] {
+  return entries.filter((entry) => entry.definitions.some((def) => !isNonTranslation(def)));
+}
+
+/**
+ * Shorten verbose definitions (e.g. radical descriptions with Kangxi references).
+ */
+function shortenDefinition(def: string): string {
+  // "ice" radical in Chinese characters (Kangxi radical 15), occurring in ... → "ice" radical
+  // radical in Chinese characters (Kangxi radical 2) → radical
+  return def.replace(/(\bradical)\b.*$/i, '$1');
 }
 
 /**
  * Filter individual definitions within an entry, removing non-translations.
  * Returns the filtered definitions, or the originals if all would be removed.
  */
-function filterDefinitions(definitions: string[]): string[] {
+export function filterDefinitions(definitions: string[]): string[] {
   const useful = definitions.filter((d) => !isNonTranslation(d));
-  return useful.length > 0 ? useful : definitions;
+  const defs = useful.length > 0 ? useful : definitions;
+  return defs.map(shortenDefinition);
 }
 
-/**
- * Get character breakdown for a multi-character word
- * Uses the word's pinyin to select the correct CEDICT reading for each character.
- * Matching priority: exact pinyin match (with tones) > toneless match > all entries.
- */
-export function getCharacterBreakdown(hanzi: string, wordPinyin?: string): CharacterBreakdown[] {
-  const map = loadCedict();
-  const result: CharacterBreakdown[] = [];
-  const syllables = wordPinyin ? wordPinyin.split(/\s+/) : [];
-
-  const chars = [...hanzi];
-  for (let i = 0; i < chars.length; i++) {
-    const char = chars[i];
-    const entries = map.get(char);
-    const filtered = entries ? filterEntries(entries) : [];
-
-    if (filtered.length === 0) {
-      result.push({ hanzi: char, pinyin: '?', meaning: '(not found)' });
-      continue;
-    }
-
-    const charPinyin = syllables[i];
-    let matched: CedictEntry[] = filtered;
-
-    if (charPinyin) {
-      // Try exact match (with tones)
-      const exact = filtered.filter((e) => e.pinyin === charPinyin);
-      if (exact.length > 0) {
-        matched = exact;
-      } else {
-        // Fallback: match ignoring tones
-        const toneless = stripTones(charPinyin);
-        const approx = filtered.filter((e) => stripTones(e.pinyin) === toneless);
-        if (approx.length > 0) {
-          matched = approx;
-        }
-      }
-    }
-
-    for (const entry of matched) {
-      result.push({
-        hanzi: char,
-        pinyin: entry.pinyin,
-        meaning: filterDefinitions(entry.definitions).join(' / '),
-      });
-    }
-  }
-
-  return result;
-}

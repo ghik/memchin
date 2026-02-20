@@ -3,15 +3,19 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDb, getAllCategories } from './db.js';
+import { loadCedict } from './services/cedict.js';
+import { loadIds } from './services/ids.js';
 import wordsRouter from './routes/words.js';
 import practiceRouter from './routes/practice.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function main() {
-  // Initialize database
+  // Initialize database and data files
   await initDb();
-  console.log('Database initialized');
+  loadCedict();
+  loadIds();
+  console.log('Database and data files initialized');
 
   const app = express();
   const PORT = process.env.PORT || 3000;

@@ -85,7 +85,9 @@ async function migrateHanziPk(): Promise<void> {
     db.run('ALTER TABLE word_labels_new RENAME TO word_labels');
 
     // 4. Recreate indexes
-    db.run('CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible)');
+    db.run(
+      'CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible)'
+    );
     db.run('CREATE INDEX IF NOT EXISTS idx_words_rank ON words(rank)');
 
     db.run('COMMIT');

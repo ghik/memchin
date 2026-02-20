@@ -67,7 +67,12 @@ function depluralize(word: string): string {
   if (word.endsWith('ies') && word.length > 3) {
     return word.slice(0, -3) + 'y';
   }
-  if (word.endsWith('shes') || word.endsWith('ches') || word.endsWith('xes') || word.endsWith('zes')) {
+  if (
+    word.endsWith('shes') ||
+    word.endsWith('ches') ||
+    word.endsWith('xes') ||
+    word.endsWith('zes')
+  ) {
     return word.slice(0, -2);
   }
   if (word.endsWith('s') && !word.endsWith('ss')) {
@@ -87,7 +92,10 @@ function extractCategoryFromFilename(filename: string): string {
   // "Careers.html" -> "careers"
   // "Shenfenguanxi.html" -> "shenfenguanxi"
   let name = filename.replace(/\.html$/, '');
-  name = name.replace(/^HSK_/, '').replace(/_Vocabulary_List$/, '').replace(/_/g, ' ');
+  name = name
+    .replace(/^HSK_/, '')
+    .replace(/_Vocabulary_List$/, '')
+    .replace(/_/g, ' ');
   return name.toLowerCase();
 }
 
@@ -146,7 +154,11 @@ function addWord(
         const idx = existing.english.findIndex((e) => e.toLowerCase() === eng.toLowerCase());
         if (idx === -1) {
           existing.english.push(eng);
-        } else if (eng[0] >= 'a' && eng[0] <= 'z' && !(existing.english[idx][0] >= 'a' && existing.english[idx][0] <= 'z')) {
+        } else if (
+          eng[0] >= 'a' &&
+          eng[0] <= 'z' &&
+          !(existing.english[idx][0] >= 'a' && existing.english[idx][0] <= 'z')
+        ) {
           existing.english[idx] = eng;
         }
       }
@@ -310,7 +322,10 @@ function parseHanziFrequencyFile(htmlPath: string) {
     const commaGroups = splitEnglish(rawEnglish, /^,\s*/);
     const firstGroup = commaGroups[0] || '';
     // Split by / and ; to get individual translations
-    const translations = firstGroup.split(/[\/;]/).map((s) => s.trim()).filter((s) => s.length > 0);
+    const translations = firstGroup
+      .split(/[\/;]/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
 
     // Filter out "(surname)" entries and extract word-class categories
     const english: string[] = [];
@@ -412,18 +427,20 @@ function parseFamilyHtml(htmlPath: string, category: string) {
 
   // Parse tables
   $('table').each((_, table) => {
-    $(table).find('tr').each((_, tr) => {
-      const cells = $(tr).find('td');
-      if (cells.length < 3) return;
+    $(table)
+      .find('tr')
+      .each((_, tr) => {
+        const cells = $(tr).find('td');
+        if (cells.length < 3) return;
 
-      const hanzi = normalizeSpaces($(cells[0]).text().trim());
-      if (!/[\u4e00-\u9fff]/.test(hanzi)) return;
+        const hanzi = normalizeSpaces($(cells[0]).text().trim());
+        if (!/[\u4e00-\u9fff]/.test(hanzi)) return;
 
-      const pinyin = normalizeSpaces($(cells[1]).text().trim());
-      const english = splitEnglish(normalizeSpaces($(cells[2]).text().trim()), /^[,;]\s+/);
+        const pinyin = normalizeSpaces($(cells[1]).text().trim());
+        const english = splitEnglish(normalizeSpaces($(cells[2]).text().trim()), /^[,;]\s+/);
 
-      addWord(hanzi, pinyin, english, undefined, category);
-    });
+        addWord(hanzi, pinyin, english, undefined, category);
+      });
   });
 }
 
@@ -443,8 +460,10 @@ if (fs.existsSync(hanziFreqPath)) {
 }
 
 // Convert to array and sort by frequency rank
-const words = Array.from(wordMap.values()).sort((a, b) =>
-  (a.wordFrequencyRank ?? a.hanziFrequencyRank ?? 999999) - (b.wordFrequencyRank ?? b.hanziFrequencyRank ?? 999999)
+const words = Array.from(wordMap.values()).sort(
+  (a, b) =>
+    (a.wordFrequencyRank ?? a.hanziFrequencyRank ?? 999999) -
+    (b.wordFrequencyRank ?? b.hanziFrequencyRank ?? 999999)
 );
 
 fs.writeFileSync(outputPath, JSON.stringify(words, null, 2));
@@ -456,4 +475,6 @@ const withoutHsk = words.filter((w) => w.hskLevel === undefined).length;
 const withHanziRank = words.filter((w) => w.hanziFrequencyRank !== undefined).length;
 const withWordRank = words.filter((w) => w.wordFrequencyRank !== undefined).length;
 console.log(`  ${withHsk} with HSK level, ${withoutHsk} without`);
-console.log(`  ${withWordRank} with word frequency rank, ${withHanziRank} with hanzi frequency rank`);
+console.log(
+  `  ${withWordRank} with word frequency rank, ${withHanziRank} with hanzi frequency rank`
+);

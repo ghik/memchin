@@ -60,21 +60,26 @@ export function splitPinyin(pinyin: string): string {
       let len = match[1].length;
       // If syllable ends in 'n' (not 'ng') and next char starts a vowel,
       // the 'n' belongs to the next syllable as an initial
-      if (len > 1 && remaining[len - 1]?.toLowerCase() === 'n'
-        && remaining[len]?.toLowerCase() !== 'g'
-        && VOWEL_PATTERN.test(remaining.slice(len))) {
+      if (
+        len > 1 &&
+        remaining[len - 1]?.toLowerCase() === 'n' &&
+        remaining[len]?.toLowerCase() !== 'g' &&
+        VOWEL_PATTERN.test(remaining.slice(len))
+      ) {
         len--;
       }
       // If syllable ends in 'r' (er final) and next char starts a vowel,
       // the 'r' belongs to the next syllable as an initial
-      if (len > 1 && remaining[len - 1]?.toLowerCase() === 'r'
-        && VOWEL_PATTERN.test(remaining.slice(len))) {
+      if (
+        len > 1 &&
+        remaining[len - 1]?.toLowerCase() === 'r' &&
+        VOWEL_PATTERN.test(remaining.slice(len))
+      ) {
         len--;
       }
       // General backtrack: if remaining can't start a valid syllable
       // (e.g. lone consonant), the greedy match took too much
-      while (len > 1 && remaining.length > len
-        && !SYLLABLE_PATTERN.test(remaining.slice(len))) {
+      while (len > 1 && remaining.length > len && !SYLLABLE_PATTERN.test(remaining.slice(len))) {
         len--;
       }
       syllables.push(remaining.slice(0, len));
@@ -172,45 +177,46 @@ const TONE_MARKS: Record<string, string[]> = {
  * e.g. "zhong1" -> "zhōng", "lv4" -> "lǜ"
  */
 function syllableToToneMarked(syllable: string): string {
-  const match = syllable.match(/^([a-z:]+)([1-5])?$/);
+  const match = syllable.match(/^([a-zA-Z:]+)([1-5])?$/);
   if (!match) return syllable;
 
   let [, letters, toneStr] = match;
   const tone = toneStr ? parseInt(toneStr) : 5;
 
   // Replace ü representation
-  letters = letters.replace(/u:/g, 'v');
+  letters = letters.replace(/u:/g, 'v').replace(/U:/g, 'V');
 
   if (tone === 5) {
     // Neutral tone - just replace v with ü
-    return letters.replace(/v/g, 'ü');
+    return letters.replace(/v/g, 'ü').replace(/V/g, 'Ü');
   }
 
   // Find the vowel to add tone mark to (following standard rules)
   // 1. If there's an 'a' or 'e', put tone on it
   // 2. If there's 'ou', put tone on 'o'
   // 3. Otherwise, put tone on the last vowel
+  const lower = letters.toLowerCase();
   let toneIndex = -1;
 
-  if (letters.includes('a')) {
-    toneIndex = letters.indexOf('a');
-  } else if (letters.includes('e')) {
-    toneIndex = letters.indexOf('e');
-  } else if (letters.includes('ou')) {
-    toneIndex = letters.indexOf('o');
+  if (lower.includes('a')) {
+    toneIndex = lower.indexOf('a');
+  } else if (lower.includes('e')) {
+    toneIndex = lower.indexOf('e');
+  } else if (lower.includes('ou')) {
+    toneIndex = lower.indexOf('o');
   } else {
     // Find last vowel
-    for (let i = letters.length - 1; i >= 0; i--) {
-      if ('aeiouv'.includes(letters[i])) {
+    for (let i = lower.length - 1; i >= 0; i--) {
+      if ('aeiouv'.includes(lower[i])) {
         toneIndex = i;
         break;
       }
     }
   }
 
-  if (toneIndex === -1) return letters.replace(/v/g, 'ü');
+  if (toneIndex === -1) return letters.replace(/v/g, 'ü').replace(/V/g, 'Ü');
 
-  const vowel = letters[toneIndex];
+  const vowel = lower[toneIndex];
   const toneMarked = TONE_MARKS[vowel]?.[tone - 1] ?? vowel;
 
   let result = letters.slice(0, toneIndex) + toneMarked + letters.slice(toneIndex + 1);

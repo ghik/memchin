@@ -4,13 +4,21 @@ import type {
   CompleteResponse,
   PracticeMode,
   PracticeQuestion,
+  PracticeResult,
   StartResponse,
   Stats,
   Word,
   WordProgress,
 } from '../shared/types.js';
 
-export type { CedictEntry, PracticeMode, PracticeQuestion, Word, WordProgress } from '../shared/types.js';
+export type {
+  CedictEntry,
+  CharacterInfo,
+  PracticeMode,
+  PracticeQuestion,
+  Word,
+  WordProgress,
+} from '../shared/types.js';
 
 const API_BASE = '/api';
 
@@ -36,6 +44,15 @@ async function apiPost<T>(path: string, data: unknown): Promise<T> {
   return response.json();
 }
 
+async function apiDelete<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, { method: 'DELETE' });
+  if (!response.ok) {
+    const body = await response.json();
+    throw new Error(body.error || `DELETE ${path} failed`);
+  }
+  return response.json();
+}
+
 async function apiPut<T>(path: string, data: unknown): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: 'PUT',
@@ -49,17 +66,35 @@ async function apiPut<T>(path: string, data: unknown): Promise<T> {
   return response.json();
 }
 
-export function startPractice(count: number, mode: PracticeMode, wordSelection: string, categories: string[], characterMode: boolean): Promise<StartResponse> {
-  return apiPost('/practice/start', { count, mode, wordSelection, categories, characterMode });
+export function startPractice(
+  count: number,
+  mode: PracticeMode,
+  wordSelection: string,
+  categories: string[],
+  characterMode: boolean,
+  hanziList?: string[]
+): Promise<StartResponse> {
+  return apiPost('/practice/start', {
+    count,
+    mode,
+    wordSelection,
+    categories,
+    characterMode,
+    hanziList,
+  });
 }
 
-export function submitAnswer(mode: PracticeMode, hanzi: string, answer: string): Promise<AnswerResponse> {
+export function submitAnswer(
+  mode: PracticeMode,
+  hanzi: string,
+  answer: string
+): Promise<AnswerResponse> {
   return apiPost('/practice/answer', { mode, hanzi, answer });
 }
 
 export function completePractice(
   mode: PracticeMode,
-  results: Array<{ hanzi: string; correctFirstTry: boolean }>,
+  results: PracticeResult[],
   characterMode: boolean
 ): Promise<CompleteResponse> {
   return apiPost('/practice/complete', { mode, results, characterMode });
@@ -75,11 +110,30 @@ export function markPinyinSynonym(hanzi: string, synonymPinyin: string): Promise
   return apiPost('/practice/synonym', { hanzi, synonymPinyin });
 }
 
-export async function getDueCount(mode: PracticeMode, categories: string[], characterMode: boolean): Promise<number> {
+export async function getDueCount(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean
+): Promise<number> {
   const params = new URLSearchParams({ mode, characterMode: String(characterMode) });
   if (categories.length > 0) params.set('categories', categories.join(','));
   const data = await apiGet<{ count: number }>(`/practice/due-count?${params}`);
   return data.count;
+}
+
+export function previewNewWords(
+  mode: PracticeMode,
+  count: number,
+  categories: string[],
+  characterMode: boolean
+): Promise<Word[]> {
+  const params = new URLSearchParams({
+    mode,
+    count: String(count),
+    characterMode: String(characterMode),
+  });
+  if (categories.length > 0) params.set('categories', categories.join(','));
+  return apiGet(`/practice/preview?${params}`);
 }
 
 export function getCategories(): Promise<string[]> {
@@ -91,14 +145,30 @@ export async function getWordCount(): Promise<number> {
   return data.count;
 }
 
-export function updateWord(hanzi: string, pinyin: string, english: string[], categories: string[]): Promise<Word> {
+export function updateWord(
+  hanzi: string,
+  pinyin: string,
+  english: string[],
+  categories: string[]
+): Promise<Word> {
   return apiPut(`/words/${encodeURIComponent(hanzi)}`, { pinyin, english, categories });
 }
 
-export function lookupHanzi(hanzi: string): Promise<{ entries: CedictEntry[]; existing: Word | null }> {
+export function lookupHanzi(
+  hanzi: string
+): Promise<{ entries: CedictEntry[]; existing: Word | null }> {
   return apiGet(`/words/lookup/${encodeURIComponent(hanzi)}`);
 }
 
-export function addWord(hanzi: string, pinyin: string, english: string[], categories: string[]): Promise<Word> {
+export function addWord(
+  hanzi: string,
+  pinyin: string,
+  english: string[],
+  categories: string[]
+): Promise<Word> {
   return apiPost('/words', { hanzi, pinyin, english, categories });
+}
+
+export function resetWordProgress(hanzi: string): Promise<void> {
+  return apiDelete(`/words/${encodeURIComponent(hanzi)}/progress`);
 }

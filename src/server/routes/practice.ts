@@ -16,7 +16,6 @@ import {
   getLearnedWordsContaining,
   getNewWords,
   getProgress,
-
   getStats,
   getWordByHanzi,
   getWordsForPractice,
@@ -34,14 +33,14 @@ import {
   pinyinMatches,
   toNumberedPinyin,
 } from '../services/pinyin.js';
-import { getCharacterBreakdown } from '../services/cedict.js';
+import { decomposeWord } from '../services/ids.js';
 
 const router = Router();
 
 function enrichWord(word: Word): Word {
   return {
     ...word,
-    breakdown: getCharacterBreakdown(word.hanzi, word.pinyin),
+    breakdown: decomposeWord(word.hanzi, word.pinyin),
   };
 }
 
@@ -88,30 +87,38 @@ function createQuestion(word: Word, mode: PracticeMode, characterMode: boolean):
 }
 
 router.post('/start', (req, res) => {
-  const { count, mode, wordSelection, categories, characterMode } = req.body as StartRequest;
+  const { count, mode, wordSelection, categories, characterMode, hanziList } =
+    req.body as StartRequest;
 
-  if (!count || !mode) {
-    return res.status(400).json({ error: 'count and mode are required' });
-  }
-
-  if (!['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)) {
-    return res.status(400).json({ error: 'Invalid mode' });
+  if (
+    !mode ||
+    !['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)
+  ) {
+    return res.status(400).json({ error: 'Valid mode is required' });
   }
 
   let words: Word[];
-  switch (wordSelection) {
-    case 'new':
-      words = getNewWords(mode, count, categories, characterMode);
-      break;
-    case 'review':
-      words = getWordsForReview(mode, count, categories, characterMode, false);
-      break;
-    case 'random':
-      words = getWordsForReview(mode, count, categories, characterMode, true);
-      break;
-    default:
-      words = getWordsForPractice(mode, count, categories, characterMode);
-      break;
+
+  if (hanziList && hanziList.length > 0) {
+    words = hanziList.map((h) => getWordByHanzi(h)).filter((w): w is Word => w !== undefined);
+  } else {
+    if (!count) {
+      return res.status(400).json({ error: 'count is required' });
+    }
+    switch (wordSelection) {
+      case 'new':
+        words = getNewWords(mode, count, categories, characterMode);
+        break;
+      case 'review':
+        words = getWordsForReview(mode, count, categories, characterMode, false);
+        break;
+      case 'random':
+        words = getWordsForReview(mode, count, categories, characterMode, true);
+        break;
+      default:
+        words = getWordsForPractice(mode, count, categories, characterMode);
+        break;
+    }
   }
 
   if (words.length === 0) {
@@ -161,7 +168,8 @@ router.post('/answer', (req, res) => {
       synonym =
         !correct &&
         (isPinyinSynonym(word.hanzi, normalizedAnswer) ||
-          (word.hanzi.length > 1 && lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)) ||
+          (word.hanzi.length > 1 &&
+            lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)) ||
           isAmbiguousTranslation(word.english));
       break;
   }
@@ -222,12 +230,32 @@ router.post('/complete', (req, res) => {
   res.json(response);
 });
 
+router.get('/preview', (req, res) => {
+  const mode = req.query.mode as PracticeMode;
+  const count = parseInt(req.query.count as string) || 10;
+  const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
+  const characterMode = req.query.characterMode === 'true';
+
+  if (
+    !mode ||
+    !['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)
+  ) {
+    return res.status(400).json({ error: 'Valid mode is required' });
+  }
+
+  const words = getNewWords(mode, count, categories, characterMode).map(enrichWord);
+  res.json(words);
+});
+
 router.get('/due-count', (req, res) => {
   const mode = req.query.mode as PracticeMode;
   const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
   const characterMode = req.query.characterMode === 'true';
 
-  if (!mode || !['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)) {
+  if (
+    !mode ||
+    !['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)
+  ) {
     return res.status(400).json({ error: 'Valid mode is required' });
   }
 

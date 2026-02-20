@@ -103,7 +103,12 @@
           </label>
         </div>
 
-        <button id="start-btn" class="primary-btn">Start Practice</button>
+        <div class="start-actions">
+          <button id="start-btn" class="primary-btn">Start Practice</button>
+          <button id="preview-btn" class="secondary-btn">Preview new words</button>
+        </div>
+
+        <div id="preview-section" class="preview-section hidden"></div>
 
         <div id="stats" class="stats"></div>
       </div>
@@ -122,7 +127,10 @@
         </div>
 
         <div id="feedback" class="feedback hidden"></div>
-        <button id="next-btn" class="primary-btn hidden">Next</button>
+        <div class="practice-actions hidden" id="practice-actions">
+          <button id="next-btn" class="primary-btn">Next</button>
+          <button id="edit-word-btn" class="edit-word-btn">Edit word</button>
+        </div>
       </div>
 
       <div id="result-screen" class="screen">
@@ -165,7 +173,11 @@
               <div id="category-suggestions" class="category-suggestions hidden"></div>
             </div>
           </div>
-          <button id="add-word-btn" class="primary-btn">Add</button>
+          <div class="add-word-actions">
+            <button id="add-word-btn" class="primary-btn">Add</button>
+            <button id="cancel-edit-btn" class="secondary-btn hidden">Cancel</button>
+            <button id="reset-progress-btn" class="danger-btn hidden">Reset progress</button>
+          </div>
           <div id="add-word-status" class="add-word-status hidden"></div>
         </div>
       </div>

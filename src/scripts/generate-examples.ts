@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { Example } from '../shared/types.js';
+import type { Example, WordCore } from '../shared/types.js';
 
 const openai = new OpenAI();
 
@@ -10,9 +10,7 @@ export interface ExampleResponse {
 
 export const MAX_RETRIES = 10;
 
-export async function generateExamples(
-  words: { hanzi: string; pinyin: string; english: string[]; hskLevel: number }[]
-): Promise<Map<string, Example[]>> {
+export async function generateExamples(words: WordCore[]): Promise<Map<string, Example[]>> {
   const wordList = words
     .map((w) => `${w.hanzi} (${w.pinyin}) [HSK ${w.hskLevel}]: ${w.english.join(', ')}`)
     .join('\n');

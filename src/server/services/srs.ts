@@ -21,10 +21,18 @@ export function calculateNextEligible(bucket: number): string {
   // Add ±25% jitter so words from the same session don't all become due at the same time
   const jitter = delayMinutes * (0.75 + Math.random() * 0.5);
   const nextEligible = new Date(Date.now() + jitter * 60 * 1000);
-  return nextEligible.toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
+  return nextEligible
+    .toISOString()
+    .replace('T', ' ')
+    .replace(/\.\d+Z$/, '');
 }
 
-export function updateProgress(hanzi: string, mode: PracticeMode, correct: boolean, characterMode: boolean): void {
+export function updateProgress(
+  hanzi: string,
+  mode: PracticeMode,
+  correct: boolean,
+  characterMode: boolean
+): void {
   const currentProgress = getProgress(hanzi, mode);
   const currentBucket = currentProgress?.bucket ?? 0;
 

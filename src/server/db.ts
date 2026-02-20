@@ -42,8 +42,12 @@ export async function initDb(): Promise<void> {
   }
 
   // Migration: convert ISO timestamps (2024-01-15T10:30:00.000Z) to SQLite format (2024-01-15 10:30:00)
-  db.run(`UPDATE progress SET last_practiced = REPLACE(SUBSTR(last_practiced, 1, 19), 'T', ' ') WHERE last_practiced LIKE '%T%'`);
-  db.run(`UPDATE progress SET next_eligible = REPLACE(SUBSTR(next_eligible, 1, 19), 'T', ' ') WHERE next_eligible LIKE '%T%'`);
+  db.run(
+    `UPDATE progress SET last_practiced = REPLACE(SUBSTR(last_practiced, 1, 19), 'T', ' ') WHERE last_practiced LIKE '%T%'`
+  );
+  db.run(
+    `UPDATE progress SET next_eligible = REPLACE(SUBSTR(next_eligible, 1, 19), 'T', ' ') WHERE next_eligible LIKE '%T%'`
+  );
 
   saveDb();
 }
@@ -206,7 +210,10 @@ export function upsertProgress(
   nextEligible: string,
   characterMode: boolean
 ): void {
-  const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
+  const now = new Date()
+    .toISOString()
+    .replace('T', ' ')
+    .replace(/\.\d+Z$/, '');
   // character_mode_only tracks "learned in character mode only":
   // - normal practice: always clears the flag (0)
   // - character mode practice: sets flag on insert, preserves existing value on update
@@ -226,6 +233,11 @@ export function upsertProgress(
     `,
     [hanzi, mode, bucket, now, nextEligible, characterMode ? 1 : 0]
   );
+}
+
+export function deleteProgress(hanzi: string): void {
+  db.run('DELETE FROM progress WHERE hanzi = ?', [hanzi]);
+  saveDb();
 }
 
 // Word query helpers

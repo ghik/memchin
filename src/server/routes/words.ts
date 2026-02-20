@@ -2,12 +2,22 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Router } from 'express';
-import { getAllWords, getWordByHanzi, getWordCount, insertWords, updateWord, upsertProgress, saveDb, invalidateWordCache } from '../db.js';
+import {
+  getAllWords,
+  getWordByHanzi,
+  getWordCount,
+  insertWords,
+  updateWord,
+  upsertProgress,
+  saveDb,
+  invalidateWordCache,
+  deleteProgress,
+} from '../db.js';
 import { lookupFiltered } from '../services/cedict.js';
 import { numberedToToneMarked, splitPinyin } from '../services/pinyin.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
 import { generateSpeech } from '../services/tts.js';
-import type { PracticeMode } from '../../shared/types.js';
+import type { Example, PracticeMode } from '../../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const freqPath = path.join(__dirname, '../../../sources/internet-zh.num.txt');
@@ -53,7 +63,9 @@ router.post('/', async (req, res) => {
     const { hanzi, pinyin, english, categories } = req.body;
 
     if (!hanzi || !pinyin || !english || !Array.isArray(english) || english.length === 0) {
-      return res.status(400).json({ error: 'hanzi, pinyin, english (array), and categories are required' });
+      return res
+        .status(400)
+        .json({ error: 'hanzi, pinyin, english (array), and categories are required' });
     }
 
     // Check for duplicate
@@ -73,7 +85,7 @@ router.post('/', async (req, res) => {
     }
 
     // Generate examples
-    let examples: { hanzi: string; pinyin: string; english: string }[] = [];
+    let examples: Example[] = [];
     try {
       const exampleMap = await generateExamples([
         { hanzi, pinyin: normalizedPinyin, english, hskLevel: 0 },
@@ -107,15 +119,26 @@ router.post('/', async (req, res) => {
     ]);
 
     // Initialize progress to bucket 0 for all modes so word is immediately eligible
-    const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
-    const modes: PracticeMode[] = ['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'];
+    const now = new Date()
+      .toISOString()
+      .replace('T', ' ')
+      .replace(/\.\d+Z$/, '');
+    const modes: PracticeMode[] = [
+      'hanzi2pinyin',
+      'hanzi2english',
+      'english2hanzi',
+      'english2pinyin',
+    ];
     for (const mode of modes) {
       upsertProgress(hanzi, mode, 0, now, false);
     }
     saveDb();
 
     // Generate audio in the background
-    generateSpeech(hanzi, examples.map((ex) => ex.hanzi)).catch((error) => {
+    generateSpeech(
+      hanzi,
+      examples.map((ex) => ex.hanzi)
+    ).catch((error) => {
       console.error(`Failed to generate audio for "${hanzi}":`, error);
     });
 
@@ -136,7 +159,9 @@ router.put('/:hanzi', (req, res) => {
     const { pinyin, english, categories } = req.body;
 
     if (!pinyin || !english || !Array.isArray(english) || english.length === 0) {
-      return res.status(400).json({ error: 'pinyin, english (array), and categories are required' });
+      return res
+        .status(400)
+        .json({ error: 'pinyin, english (array), and categories are required' });
     }
 
     const existing = getWordByHanzi(hanzi);
@@ -161,6 +186,16 @@ router.put('/:hanzi', (req, res) => {
     console.error('Failed to update word:', error);
     res.status(500).json({ error: 'Failed to update word' });
   }
+});
+
+router.delete('/:hanzi/progress', (req, res) => {
+  const hanzi = decodeURIComponent(req.params.hanzi);
+  const existing = getWordByHanzi(hanzi);
+  if (!existing) {
+    return res.status(404).json({ error: `Word "${hanzi}" not found` });
+  }
+  deleteProgress(hanzi);
+  res.json({ ok: true });
 });
 
 router.get('/:hanzi', (req, res) => {

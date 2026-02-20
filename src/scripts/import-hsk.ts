@@ -107,7 +107,11 @@ async function importWords(start?: number, end?: number): Promise<void> {
   let entries: WordEntry[] = JSON.parse(fs.readFileSync(wordsPath, 'utf-8'));
 
   // Sort all words by frequency
-  entries.sort((a, b) => (a.wordFrequencyRank ?? a.hanziFrequencyRank ?? 999999) - (b.wordFrequencyRank ?? b.hanziFrequencyRank ?? 999999));
+  entries.sort(
+    (a, b) =>
+      (a.wordFrequencyRank ?? a.hanziFrequencyRank ?? 999999) -
+      (b.wordFrequencyRank ?? b.hanziFrequencyRank ?? 999999)
+  );
 
   console.log(`Total words in JSON: ${entries.length}`);
 
