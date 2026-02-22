@@ -191,6 +191,18 @@ export function getWordCount(): number {
 }
 
 // Progress operations
+export function getMaxBucket(hanzi: string): number | null {
+  const stmt = db.prepare('SELECT MAX(bucket) as maxBucket FROM progress WHERE hanzi = ?');
+  stmt.bind([hanzi]);
+  if (stmt.step()) {
+    const row = stmt.getAsObject();
+    stmt.free();
+    return row.maxBucket as number | null;
+  }
+  stmt.free();
+  return null;
+}
+
 export function getProgress(hanzi: string, mode: PracticeMode): Progress | null {
   const stmt = db.prepare('SELECT * FROM progress WHERE hanzi = ? AND mode = ?');
   stmt.bind([hanzi, mode]);

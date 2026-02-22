@@ -149,14 +149,20 @@ export function updateWord(
   hanzi: string,
   pinyin: string,
   english: string[],
-  categories: string[]
+  categories: string[],
+  resetBucket: boolean
 ): Promise<Word> {
-  return apiPut(`/words/${encodeURIComponent(hanzi)}`, { pinyin, english, categories });
+  return apiPut(`/words/${encodeURIComponent(hanzi)}`, {
+    pinyin,
+    english,
+    categories,
+    resetBucket,
+  });
 }
 
 export function lookupHanzi(
   hanzi: string
-): Promise<{ entries: CedictEntry[]; existing: Word | null }> {
+): Promise<{ entries: CedictEntry[]; existing: Word | null; maxBucket: number | null }> {
   return apiGet(`/words/lookup/${encodeURIComponent(hanzi)}`);
 }
 
@@ -164,9 +170,10 @@ export function addWord(
   hanzi: string,
   pinyin: string,
   english: string[],
-  categories: string[]
+  categories: string[],
+  resetBucket: boolean
 ): Promise<Word> {
-  return apiPost('/words', { hanzi, pinyin, english, categories });
+  return apiPost('/words', { hanzi, pinyin, english, categories, resetBucket });
 }
 
 export function resetWordProgress(hanzi: string): Promise<void> {

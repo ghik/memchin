@@ -85,6 +85,8 @@ function showView(view: 'practice' | 'add-word') {
     lastPracticeScreen.classList.add('active');
   } else if (view === 'add-word') {
     addWordScreen.classList.add('active');
+    ensureCurated();
+    renderChips(categoryChips, categoryValues, removeCategoryChip);
   }
 }
 
@@ -750,8 +752,10 @@ function editCurrentWord() {
   englishValues = [...word.english];
   renderChips(englishChips, englishValues, removeEnglishChip);
   categoryValues = [...word.categories];
+  ensureCurated();
   renderChips(categoryChips, categoryValues, removeCategoryChip);
   editingExistingWord = true;
+  resetBucketCb.checked = question.bucket === null;
   addWordBtn.textContent = 'Save';
   cedictEntries.classList.add('hidden');
   addWordStatus.classList.add('hidden');
@@ -1041,6 +1045,8 @@ const cedictEntries = document.getElementById('cedict-entries')!;
 const categorySuggestions = document.getElementById('category-suggestions')!;
 const addWordBtn = document.getElementById('add-word-btn') as HTMLButtonElement;
 const addWordStatus = document.getElementById('add-word-status')!;
+const resetBucketCb = document.getElementById('reset-bucket-cb') as HTMLInputElement;
+const resetBucketLabel = document.getElementById('reset-bucket-label')!;
 
 let englishValues: string[] = [];
 let categoryValues: string[] = [];
@@ -1048,6 +1054,12 @@ let allCategoriesList: string[] = [];
 let lookupTimer: ReturnType<typeof setTimeout> | null = null;
 let editingExistingWord = false;
 let returnToPractice = false;
+
+function ensureCurated() {
+  if (!categoryValues.includes('curated')) {
+    categoryValues.push('curated');
+  }
+}
 
 function renderChips(container: HTMLElement, values: string[], onRemove: (index: number) => void) {
   container.innerHTML = '';
@@ -1139,25 +1151,29 @@ addHanziInput.addEventListener('input', () => {
   if (!hanzi) {
     cedictEntries.classList.add('hidden');
     editingExistingWord = false;
+    resetBucketCb.checked = true;
     addWordBtn.textContent = 'Add';
     resetProgressBtn.classList.add('hidden');
     return;
   }
   lookupTimer = setTimeout(async () => {
     try {
-      const { entries, existing } = await lookupHanzi(hanzi);
+      const { entries, existing, maxBucket } = await lookupHanzi(hanzi);
 
       if (existing) {
         editingExistingWord = true;
+        resetBucketCb.checked = maxBucket === null;
         addWordBtn.textContent = 'Save';
         resetProgressBtn.classList.remove('hidden');
         addPinyinInput.value = existing.pinyin;
         englishValues = [...existing.english];
         renderChips(englishChips, englishValues, removeEnglishChip);
         categoryValues = [...existing.categories];
+        ensureCurated();
         renderChips(categoryChips, categoryValues, removeCategoryChip);
       } else {
         editingExistingWord = false;
+        resetBucketCb.checked = true;
         addWordBtn.textContent = 'Add';
         resetProgressBtn.classList.add('hidden');
       }
@@ -1220,7 +1236,13 @@ addWordBtn.addEventListener('click', async () => {
     addWordBtn.textContent = editingExistingWord ? 'Saving...' : 'Adding...';
 
     if (editingExistingWord) {
-      const updated = await updateWord(hanzi, pinyin, englishValues, categoryValues);
+      const updated = await updateWord(
+        hanzi,
+        pinyin,
+        englishValues,
+        categoryValues,
+        resetBucketCb.checked
+      );
       showAddWordStatus(`Updated "${hanzi}" successfully!`, 'success');
 
       // Update word data in practice questions so display stays current
@@ -1241,7 +1263,7 @@ addWordBtn.addEventListener('click', async () => {
         }
       }
     } else {
-      await addWord(hanzi, pinyin, englishValues, categoryValues);
+      await addWord(hanzi, pinyin, englishValues, categoryValues, resetBucketCb.checked);
       showAddWordStatus(`Added "${hanzi}" successfully!`, 'success');
     }
 

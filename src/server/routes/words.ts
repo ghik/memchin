@@ -12,6 +12,7 @@ import {
   saveDb,
   invalidateWordCache,
   deleteProgress,
+  getMaxBucket,
 } from '../db.js';
 import { lookupFiltered } from '../services/cedict.js';
 import { numberedToToneMarked, splitPinyin } from '../services/pinyin.js';
@@ -20,6 +21,20 @@ import { generateSpeech } from '../services/tts.js';
 import type { Example, PracticeMode } from '../../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const ALL_MODES: PracticeMode[] = [
+  'hanzi2pinyin',
+  'hanzi2english',
+  'english2hanzi',
+  'english2pinyin',
+];
+
+function resetToBucket0(hanzi: string) {
+  const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
+  for (const mode of ALL_MODES) {
+    upsertProgress(hanzi, mode, 0, now, false);
+  }
+}
 const freqPath = path.join(__dirname, '../../../sources/internet-zh.num.txt');
 
 let freqMap: Map<string, number> | null = null;
@@ -55,12 +70,13 @@ router.get('/lookup/:hanzi', (req, res) => {
   const hanzi = decodeURIComponent(req.params.hanzi);
   const entries = lookupFiltered(hanzi);
   const existing = getWordByHanzi(hanzi) ?? null;
-  res.json({ entries, existing });
+  const maxBucket = existing ? getMaxBucket(hanzi) : 0;
+  res.json({ entries, existing, maxBucket });
 });
 
 router.post('/', async (req, res) => {
   try {
-    const { hanzi, pinyin, english, categories } = req.body;
+    const { hanzi, pinyin, english, categories, resetBucket } = req.body;
 
     if (!hanzi || !pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
@@ -118,19 +134,8 @@ router.post('/', async (req, res) => {
       },
     ]);
 
-    // Initialize progress to bucket 0 for all modes so word is immediately eligible
-    const now = new Date()
-      .toISOString()
-      .replace('T', ' ')
-      .replace(/\.\d+Z$/, '');
-    const modes: PracticeMode[] = [
-      'hanzi2pinyin',
-      'hanzi2english',
-      'english2hanzi',
-      'english2pinyin',
-    ];
-    for (const mode of modes) {
-      upsertProgress(hanzi, mode, 0, now, false);
+    if (resetBucket) {
+      resetToBucket0(hanzi);
     }
     saveDb();
 
@@ -156,7 +161,7 @@ router.post('/', async (req, res) => {
 router.put('/:hanzi', (req, res) => {
   try {
     const hanzi = decodeURIComponent(req.params.hanzi);
-    const { pinyin, english, categories } = req.body;
+    const { pinyin, english, categories, resetBucket } = req.body;
 
     if (!pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
@@ -179,6 +184,9 @@ router.put('/:hanzi', (req, res) => {
     }
 
     updateWord(hanzi, normalizedPinyin, english, categories || []);
+    if (resetBucket) {
+      resetToBucket0(hanzi);
+    }
 
     const word = getWordByHanzi(hanzi);
     res.json(word);

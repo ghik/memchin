@@ -996,6 +996,7 @@ label.checkbox-label {
 .add-word-actions {
   display: flex;
   gap: 10px;
+  margin-top: 12px;
 }
 
 .add-word-actions .primary-btn {
