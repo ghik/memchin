@@ -366,6 +366,7 @@ function playAudio(hanzi: string, auto: boolean = false) {
   audio.play().catch((err) => console.warn('Audio playback failed:', err));
 }
 
+
 // Make hanzi clickable for audio
 function clickableHanzi(hanzi: string, className: string): string {
   return `<span class="${className} clickable-hanzi" data-hanzi="${hanzi}">${hanzi}</span>`;
@@ -636,6 +637,7 @@ function handleSkip() {
   feedbackDiv.classList.add('incorrect');
   feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
 
+  // Play error sound then word pronunciation (auto)
   // Play word pronunciation (auto)
   playAudio(question.word.hanzi, true);
 
@@ -1149,6 +1151,14 @@ addHanziInput.addEventListener('input', () => {
   if (lookupTimer) clearTimeout(lookupTimer);
   const hanzi = addHanziInput.value.trim();
   if (!hanzi) {
+    addPinyinInput.value = '';
+    addEnglishInput.value = '';
+    addCategoriesInput.value = '';
+    englishValues = [];
+    categoryValues = [];
+    ensureCurated();
+    renderChips(englishChips, englishValues, removeEnglishChip);
+    renderChips(categoryChips, categoryValues, removeCategoryChip);
     cedictEntries.classList.add('hidden');
     editingExistingWord = false;
     resetBucketCb.checked = true;
@@ -1176,6 +1186,14 @@ addHanziInput.addEventListener('input', () => {
         resetBucketCb.checked = true;
         addWordBtn.textContent = 'Add';
         resetProgressBtn.classList.add('hidden');
+        addPinyinInput.value = '';
+        addEnglishInput.value = '';
+        addCategoriesInput.value = '';
+        englishValues = [];
+        categoryValues = [];
+        ensureCurated();
+        renderChips(englishChips, englishValues, removeEnglishChip);
+        renderChips(categoryChips, categoryValues, removeCategoryChip);
       }
 
       if (entries.length === 0) {
@@ -1280,16 +1298,15 @@ addWordBtn.addEventListener('click', async () => {
     cedictEntries.classList.add('hidden');
     resetProgressBtn.classList.add('hidden');
 
+    // Reload stats and categories
+    loadStats();
+
     // Return to practice if editing from practice screen
     if (returnToPractice) {
       returnToPractice = false;
       cancelEditBtn.classList.add('hidden');
       showView('practice');
-      return;
     }
-
-    // Reload stats
-    loadStats();
   } catch (error) {
     showAddWordStatus(error instanceof Error ? error.message : 'Failed to save word', 'error');
   } finally {

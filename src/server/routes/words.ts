@@ -13,6 +13,7 @@ import {
   invalidateWordCache,
   deleteProgress,
   getMaxBucket,
+  updateWordExamples,
 } from '../db.js';
 import { lookupFiltered } from '../services/cedict.js';
 import { numberedToToneMarked, splitPinyin } from '../services/pinyin.js';
@@ -100,17 +101,6 @@ router.post('/', async (req, res) => {
       normalizedPinyin = splitPinyin(pinyin);
     }
 
-    // Generate examples
-    let examples: Example[] = [];
-    try {
-      const exampleMap = await generateExamples([
-        { hanzi, pinyin: normalizedPinyin, english, hskLevel: 0 },
-      ]);
-      examples = exampleMap.get(hanzi) || [];
-    } catch (error) {
-      console.error(`Failed to generate examples for "${hanzi}":`, error);
-    }
-
     // Look up frequency rank
     const freq = loadFrequencyData();
     const wordFrequencyRank = freq.get(hanzi);
@@ -127,7 +117,7 @@ router.post('/', async (req, res) => {
         hskLevel: 0,
         wordFrequencyRank,
         hanziFrequencyRank,
-        examples,
+        examples: [],
         translatable: true,
         categories: categories || [],
         manual: true,
@@ -139,15 +129,17 @@ router.post('/', async (req, res) => {
     }
     saveDb();
 
-    // Generate audio in the background
-    generateSpeech(
+    // Generate examples and audio
+    const exampleMap = await generateExamples([
+      { hanzi, pinyin: normalizedPinyin, english, hskLevel: 0 },
+    ]);
+    const examples = exampleMap.get(hanzi) || [];
+    updateWordExamples(hanzi, examples);
+    await generateSpeech(
       hanzi,
       examples.map((ex) => ex.hanzi)
-    ).catch((error) => {
-      console.error(`Failed to generate audio for "${hanzi}":`, error);
-    });
+    );
 
-    // Invalidate word cache
     invalidateWordCache();
 
     const word = getWordByHanzi(hanzi);

@@ -7,7 +7,7 @@ import { numberedToToneMarked } from './pinyin.js';
 export type { CedictEntry } from '../../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const cedictPath = path.join(__dirname, '../../../sources/cedict_1_0_ts_utf-8_mdbg.txt');
+const cedictPath = path.join(__dirname, '../../../sources/cedict_by_freq.txt');
 
 // Map from simplified hanzi to entries (can have multiple readings)
 let cedictMap: Map<string, CedictEntry[]> | null = null;

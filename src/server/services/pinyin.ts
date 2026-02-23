@@ -68,6 +68,19 @@ export function splitPinyin(pinyin: string): string {
       ) {
         len--;
       }
+      // If syllable ends in 'ng' and remaining starts with a vowel,
+      // check if 'g' should be the initial of the next syllable instead
+      // e.g. "fànguǎn" → "fàn guǎn" not "fàng uǎn"
+      if (
+        len > 2 &&
+        remaining[len - 2]?.toLowerCase() === 'n' &&
+        remaining[len - 1]?.toLowerCase() === 'g' &&
+        remaining.length > len &&
+        VOWEL_PATTERN.test(remaining.slice(len)) &&
+        SYLLABLE_PATTERN.test(remaining.slice(len - 1))
+      ) {
+        len--;
+      }
       // If syllable ends in 'r' (er final) and next char starts a vowel,
       // the 'r' belongs to the next syllable as an initial
       if (

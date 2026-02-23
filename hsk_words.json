@@ -14701,6 +14701,18 @@
     "hanziFrequencyRank": 255
   },
   {
+    "hanzi": "丝",
+    "pinyin": "sī",
+    "english": [
+      "Silk"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ],
+    "wordFrequencyRank": 1291
+  },
+  {
     "hanzi": "够",
     "pinyin": "gòu",
     "english": [
@@ -20643,6 +20655,18 @@
       "hsk5"
     ],
     "wordFrequencyRank": 1918
+  },
+  {
+    "hanzi": "鞋",
+    "pinyin": "xié",
+    "english": [
+      "Shoes"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ],
+    "wordFrequencyRank": 1919
   },
   {
     "hanzi": "故",
@@ -29246,6 +29270,18 @@
     "wordFrequencyRank": 3152
   },
   {
+    "hanzi": "口袋",
+    "pinyin": "kòu dài",
+    "english": [
+      "Pocket"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 3154
+  },
+  {
     "hanzi": "星期一",
     "pinyin": "xīng qī yī",
     "english": [
@@ -32267,7 +32303,8 @@
     "categories": [
       "noun",
       "hsk3",
-      "clothing"
+      "clothing",
+      "basic clothing"
     ],
     "wordFrequencyRank": 3743
   },
@@ -32737,7 +32774,8 @@
     "categories": [
       "noun",
       "hsk3",
-      "clothing"
+      "clothing",
+      "accessory"
     ],
     "wordFrequencyRank": 3827
   },
@@ -36063,13 +36101,16 @@
     "pinyin": "chènshān",
     "english": [
       "dress shirt",
-      "Shirt"
+      "Shirt",
+      "Dressy shirt",
+      "Blouse"
     ],
     "hskLevel": 3,
     "categories": [
       "noun",
       "hsk3",
-      "clothing"
+      "clothing",
+      "basic clothing"
     ],
     "wordFrequencyRank": 4620
   },
@@ -36848,7 +36889,8 @@
     "categories": [
       "noun",
       "hsk3",
-      "clothing"
+      "clothing",
+      "footwear"
     ],
     "wordFrequencyRank": 4888
   },
@@ -37858,7 +37900,8 @@
     "categories": [
       "noun",
       "hsk3",
-      "clothing"
+      "clothing",
+      "basic clothing"
     ],
     "wordFrequencyRank": 5215
   },
@@ -39369,7 +39412,8 @@
       "Underwear"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "basic clothing"
     ],
     "wordFrequencyRank": 5821
   },
@@ -39466,12 +39510,15 @@
     "hanzi": "手表",
     "pinyin": "shǒubiǎo",
     "english": [
-      "wristwatch"
+      "wristwatch",
+      "Watch"
     ],
     "hskLevel": 2,
     "categories": [
       "noun",
-      "hsk2"
+      "hsk2",
+      "clothing",
+      "accessory"
     ],
     "wordFrequencyRank": 5847
   },
@@ -39915,6 +39962,18 @@
     "wordFrequencyRank": 6003
   },
   {
+    "hanzi": "棉",
+    "pinyin": "mián",
+    "english": [
+      "Cotton"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ],
+    "wordFrequencyRank": 6011
+  },
+  {
     "hanzi": "规",
     "pinyin": "guī",
     "english": [
@@ -40048,7 +40107,8 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "accessory"
     ],
     "wordFrequencyRank": 6070
   },
@@ -40489,7 +40549,8 @@
     "categories": [
       "noun",
       "hsk4",
-      "clothing"
+      "clothing",
+      "footwear"
     ],
     "wordFrequencyRank": 6248
   },
@@ -40814,7 +40875,8 @@
       "Suit"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "formal clothing"
     ],
     "wordFrequencyRank": 6351
   },
@@ -41562,7 +41624,8 @@
       "Coat"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "winter clothing"
     ],
     "wordFrequencyRank": 6763
   },
@@ -42303,6 +42366,18 @@
     "hanziFrequencyRank": 911
   },
   {
+    "hanzi": "毛衣",
+    "pinyin": "máo yī",
+    "english": [
+      "Sweater"
+    ],
+    "categories": [
+      "clothing",
+      "winter clothing"
+    ],
+    "wordFrequencyRank": 7138
+  },
+  {
     "hanzi": "域",
     "pinyin": "yù",
     "english": [
@@ -43028,6 +43103,18 @@
     "wordFrequencyRank": 7638
   },
   {
+    "hanzi": "领带",
+    "pinyin": "lǐng dài / lǐng jié",
+    "english": [
+      "Tie"
+    ],
+    "categories": [
+      "clothing",
+      "formal clothing"
+    ],
+    "wordFrequencyRank": 7655
+  },
+  {
     "hanzi": "羊肉",
     "pinyin": "yángròu",
     "english": [
@@ -43063,7 +43150,8 @@
       "Sandals"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "footwear"
     ],
     "wordFrequencyRank": 7661
   },
@@ -43653,7 +43741,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "clothing"
+      "clothing",
+      "basic clothing"
     ],
     "wordFrequencyRank": 8177
   },
@@ -43718,6 +43807,18 @@
       "body"
     ],
     "wordFrequencyRank": 8212
+  },
+  {
+    "hanzi": "首饰",
+    "pinyin": "shǒu shì",
+    "english": [
+      "Jewelry"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 8213
   },
   {
     "hanzi": "奥地利",
@@ -43868,7 +43969,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "clothing"
+      "clothing",
+      "winter clothing"
     ],
     "wordFrequencyRank": 8280
   },
@@ -45152,7 +45254,9 @@
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "clothing",
+      "accessory"
     ],
     "wordFrequencyRank": 9300
   },
@@ -45448,7 +45552,8 @@
       "Pajamas"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "basic clothing"
     ],
     "wordFrequencyRank": 9642
   },
@@ -45499,7 +45604,8 @@
     "categories": [
       "noun",
       "hsk5",
-      "clothing"
+      "clothing",
+      "winter clothing"
     ],
     "wordFrequencyRank": 9761
   },
@@ -45691,10 +45797,12 @@
     "hanzi": "背心",
     "pinyin": "bèixīn",
     "english": [
-      "Tank top"
+      "Tank top",
+      "Vest"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "winter clothing"
     ],
     "wordFrequencyRank": 9925
   },
@@ -46657,6 +46765,18 @@
     "wordFrequencyRank": 11082
   },
   {
+    "hanzi": "短裤",
+    "pinyin": "duǎn kù",
+    "english": [
+      "Shorts"
+    ],
+    "categories": [
+      "clothing",
+      "basic clothing"
+    ],
+    "wordFrequencyRank": 11092
+  },
+  {
     "hanzi": "当心",
     "pinyin": "dāngxīn",
     "english": [
@@ -46762,7 +46882,8 @@
       "Boots"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "footwear"
     ],
     "wordFrequencyRank": 11230
   },
@@ -47014,6 +47135,18 @@
       "verb"
     ],
     "wordFrequencyRank": 11613
+  },
+  {
+    "hanzi": "高跟鞋",
+    "pinyin": "gāo gēn xié",
+    "english": [
+      "High heels"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ],
+    "wordFrequencyRank": 11663
   },
   {
     "hanzi": "滑雪",
@@ -47535,6 +47668,18 @@
     "hanziFrequencyRank": 770
   },
   {
+    "hanzi": "手帕",
+    "pinyin": "shǒu pà",
+    "english": [
+      "Handkerchief"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 12546
+  },
+  {
     "hanzi": "恼火",
     "pinyin": "nǎohuǒ",
     "english": [
@@ -47717,6 +47862,18 @@
     "wordFrequencyRank": 12885
   },
   {
+    "hanzi": "雨伞",
+    "pinyin": "yǔ sǎn",
+    "english": [
+      "Umbrella"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 12905
+  },
+  {
     "hanzi": "冷饮",
     "pinyin": "lěngyǐn",
     "english": [
@@ -47834,6 +47991,18 @@
       "country"
     ],
     "wordFrequencyRank": 13141
+  },
+  {
+    "hanzi": "腰带",
+    "pinyin": "yāo dài",
+    "english": [
+      "Belt"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 13164
   },
   {
     "hanzi": "油门",
@@ -48005,6 +48174,18 @@
     "wordFrequencyRank": 13638
   },
   {
+    "hanzi": "绒",
+    "pinyin": "róng",
+    "english": [
+      "Velvet"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ],
+    "wordFrequencyRank": 13661
+  },
+  {
     "hanzi": "琵琶",
     "pinyin": "pípa",
     "english": [
@@ -48136,6 +48317,19 @@
     "wordFrequencyRank": 13886
   },
   {
+    "hanzi": "旗袍",
+    "pinyin": "qí páo",
+    "english": [
+      "Cheongsam",
+      "Qipao"
+    ],
+    "categories": [
+      "clothing",
+      "formal clothing"
+    ],
+    "wordFrequencyRank": 13891
+  },
+  {
     "hanzi": "药店",
     "pinyin": "yào diàn",
     "english": [
@@ -48239,6 +48433,18 @@
       "hsk5"
     ],
     "wordFrequencyRank": 14077
+  },
+  {
+    "hanzi": "羊毛",
+    "pinyin": "yáng máo",
+    "english": [
+      "Wool"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ],
+    "wordFrequencyRank": 14084
   },
   {
     "hanzi": "想方设法",
@@ -48520,6 +48726,18 @@
     "wordFrequencyRank": 14546
   },
   {
+    "hanzi": "雨衣",
+    "pinyin": "yǔ yī",
+    "english": [
+      "Raincoat"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 14563
+  },
+  {
     "hanzi": "多亏",
     "pinyin": "duōkuī",
     "english": [
@@ -48610,12 +48828,15 @@
     "hanzi": "耳环",
     "pinyin": "ěrhuán",
     "english": [
-      "earring"
+      "earring",
+      "Earrings"
     ],
     "hskLevel": 5,
     "categories": [
       "noun",
-      "hsk5"
+      "hsk5",
+      "clothing",
+      "accessory"
     ],
     "wordFrequencyRank": 14741
   },
@@ -48711,7 +48932,8 @@
       "Dress"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "basic clothing"
     ],
     "wordFrequencyRank": 14885
   },
@@ -48726,6 +48948,18 @@
       "a2"
     ],
     "wordFrequencyRank": 14909
+  },
+  {
+    "hanzi": "扣子",
+    "pinyin": "kòu zi",
+    "english": [
+      "Button"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 14968
   },
   {
     "hanzi": "督",
@@ -49144,6 +49378,18 @@
     "wordFrequencyRank": 15993
   },
   {
+    "hanzi": "婚纱",
+    "pinyin": "hūn shā",
+    "english": [
+      "Wedding dress"
+    ],
+    "categories": [
+      "clothing",
+      "formal clothing"
+    ],
+    "wordFrequencyRank": 16002
+  },
+  {
     "hanzi": "脉搏",
     "pinyin": "màibó",
     "english": [
@@ -49202,6 +49448,18 @@
       "descriptive word"
     ],
     "wordFrequencyRank": 16134
+  },
+  {
+    "hanzi": "凉鞋",
+    "pinyin": "liáng xié",
+    "english": [
+      "Sandals"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ],
+    "wordFrequencyRank": 16148
   },
   {
     "hanzi": "凉快",
@@ -49303,6 +49561,18 @@
       "hsk5"
     ],
     "wordFrequencyRank": 16394
+  },
+  {
+    "hanzi": "风衣",
+    "pinyin": "fēng yī",
+    "english": [
+      "Windbreaker"
+    ],
+    "categories": [
+      "clothing",
+      "winter clothing"
+    ],
+    "wordFrequencyRank": 16429
   },
   {
     "hanzi": "浴缸",
@@ -50106,6 +50376,30 @@
     "wordFrequencyRank": 18960
   },
   {
+    "hanzi": "拉链",
+    "pinyin": "lā liàn",
+    "english": [
+      "Zipper"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 19019
+  },
+  {
+    "hanzi": "皮革",
+    "pinyin": "pí gé",
+    "english": [
+      "Leather"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ],
+    "wordFrequencyRank": 19064
+  },
+  {
     "hanzi": "全力以赴",
     "pinyin": "quánlìyǐfù",
     "english": [
@@ -50175,7 +50469,8 @@
       "Sneakers"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "footwear"
     ],
     "wordFrequencyRank": 19378
   },
@@ -50431,10 +50726,12 @@
     "hanzi": "夹克",
     "pinyin": "jiákè",
     "english": [
-      "Windbreaker"
+      "Windbreaker",
+      "Jacket"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "winter clothing"
     ],
     "wordFrequencyRank": 20343
   },
@@ -50626,6 +50923,18 @@
       "nature and weather"
     ],
     "wordFrequencyRank": 21150
+  },
+  {
+    "hanzi": "鞋带",
+    "pinyin": "xié dài",
+    "english": [
+      "Shoelaces"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ],
+    "wordFrequencyRank": 21207
   },
   {
     "hanzi": "吞吞吐吐",
@@ -50831,6 +51140,18 @@
       "food & eating"
     ],
     "wordFrequencyRank": 21968
+  },
+  {
+    "hanzi": "帆布",
+    "pinyin": "fān bù",
+    "english": [
+      "Canvas"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ],
+    "wordFrequencyRank": 21983
   },
   {
     "hanzi": "天窗",
@@ -51157,6 +51478,18 @@
       "shopping"
     ],
     "wordFrequencyRank": 22925
+  },
+  {
+    "hanzi": "手镯",
+    "pinyin": "shǒu zhuó",
+    "english": [
+      "Bracelet"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 23026
   },
   {
     "hanzi": "侃侃而谈",
@@ -51830,6 +52163,18 @@
     "wordFrequencyRank": 28453
   },
   {
+    "hanzi": "比基尼",
+    "pinyin": "bǐ jī ní",
+    "english": [
+      "Bikini"
+    ],
+    "categories": [
+      "clothing",
+      "basic clothing"
+    ],
+    "wordFrequencyRank": 28534
+  },
+  {
     "hanzi": "打雷",
     "pinyin": "dǎléi",
     "english": [
@@ -51853,6 +52198,18 @@
       "hsk5"
     ],
     "wordFrequencyRank": 28583
+  },
+  {
+    "hanzi": "尼龙",
+    "pinyin": "ní lóng",
+    "english": [
+      "Nylon"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ],
+    "wordFrequencyRank": 28638
   },
   {
     "hanzi": "打喷嚏",
@@ -51996,6 +52353,18 @@
       "country"
     ],
     "wordFrequencyRank": 29391
+  },
+  {
+    "hanzi": "太阳镜",
+    "pinyin": "tài yáng jìng",
+    "english": [
+      "Sunglasses"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ],
+    "wordFrequencyRank": 29429
   },
   {
     "hanzi": "手风琴",
@@ -52314,6 +52683,18 @@
       "sport"
     ],
     "wordFrequencyRank": 32088
+  },
+  {
+    "hanzi": "毛皮",
+    "pinyin": "máo pí",
+    "english": [
+      "Fur"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ],
+    "wordFrequencyRank": 32254
   },
   {
     "hanzi": "尺码",
@@ -52785,6 +53166,18 @@
     "wordFrequencyRank": 38588
   },
   {
+    "hanzi": "亚麻",
+    "pinyin": "yà má",
+    "english": [
+      "Linen"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ],
+    "wordFrequencyRank": 38616
+  },
+  {
     "hanzi": "季军",
     "pinyin": "jìjūn",
     "english": [
@@ -53051,6 +53444,18 @@
     "wordFrequencyRank": 44394
   },
   {
+    "hanzi": "运动衫",
+    "pinyin": "yùn dòng shān",
+    "english": [
+      "Sweatshirt"
+    ],
+    "categories": [
+      "clothing",
+      "winter clothing"
+    ],
+    "wordFrequencyRank": 44453
+  },
+  {
     "hanzi": "黄牌",
     "pinyin": "huángpái",
     "english": [
@@ -53129,6 +53534,18 @@
       "color"
     ],
     "wordFrequencyRank": 47609
+  },
+  {
+    "hanzi": "燕尾服",
+    "pinyin": "yàn wěi fú",
+    "english": [
+      "Tuxedo"
+    ],
+    "categories": [
+      "clothing",
+      "formal clothing"
+    ],
+    "wordFrequencyRank": 47663
   },
   {
     "hanzi": "亮色",
@@ -54291,7 +54708,8 @@
       "T-shirt"
     ],
     "categories": [
-      "clothing"
+      "clothing",
+      "basic clothing"
     ]
   },
   {
@@ -55630,6 +56048,193 @@
     ],
     "categories": [
       "family"
+    ]
+  },
+  {
+    "hanzi": "泳衣",
+    "pinyin": "yǒng yī",
+    "english": [
+      "Bathing suit"
+    ],
+    "categories": [
+      "clothing",
+      "basic clothing"
+    ]
+  },
+  {
+    "hanzi": "泳裤",
+    "pinyin": "yǒng kù",
+    "english": [
+      "Swim trunks"
+    ],
+    "categories": [
+      "clothing",
+      "basic clothing"
+    ]
+  },
+  {
+    "hanzi": "卫衣",
+    "pinyin": "wèi yī",
+    "english": [
+      "Hoodie"
+    ],
+    "categories": [
+      "clothing",
+      "winter clothing"
+    ]
+  },
+  {
+    "hanzi": "连指手套",
+    "pinyin": "lián zhǐ shǒu tào",
+    "english": [
+      "Mittens"
+    ],
+    "categories": [
+      "clothing",
+      "winter clothing"
+    ]
+  },
+  {
+    "hanzi": "耳罩",
+    "pinyin": "ěr zhào / ěr tào",
+    "english": [
+      "Earmuffs"
+    ],
+    "categories": [
+      "clothing",
+      "winter clothing"
+    ]
+  },
+  {
+    "hanzi": "领巾",
+    "pinyin": "lǐng jīn",
+    "english": [
+      "Cravat"
+    ],
+    "categories": [
+      "clothing",
+      "formal clothing"
+    ]
+  },
+  {
+    "hanzi": "舞会礼服",
+    "pinyin": "wǔ huì lǐ fú",
+    "english": [
+      "Ballgown"
+    ],
+    "categories": [
+      "clothing",
+      "formal clothing"
+    ]
+  },
+  {
+    "hanzi": "牛仔布",
+    "pinyin": "niú zǎi bù",
+    "english": [
+      "Denim"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ]
+  },
+  {
+    "hanzi": "聚酯纤维",
+    "pinyin": "jù zhǐ xiān wéi",
+    "english": [
+      "Polyester"
+    ],
+    "categories": [
+      "clothing",
+      "clothing material"
+    ]
+  },
+  {
+    "hanzi": "长袜",
+    "pinyin": "cháng wà",
+    "english": [
+      "Stockings"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ]
+  },
+  {
+    "hanzi": "人字拖",
+    "pinyin": "rén zì tuō",
+    "english": [
+      "Flip-flops"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ]
+  },
+  {
+    "hanzi": "雨靴",
+    "pinyin": "yǔ xuē",
+    "english": [
+      "Rain boots"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ]
+  },
+  {
+    "hanzi": "鹿皮鞋",
+    "pinyin": "lù pí xié",
+    "english": [
+      "Moccasins"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ]
+  },
+  {
+    "hanzi": "帆布鞋",
+    "pinyin": "fān bù xié",
+    "english": [
+      "Canvas shoes"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ]
+  },
+  {
+    "hanzi": "木屐",
+    "pinyin": "mù jī",
+    "english": [
+      "Clogs"
+    ],
+    "categories": [
+      "clothing",
+      "footwear"
+    ]
+  },
+  {
+    "hanzi": "胸针",
+    "pinyin": "xiōng zhēn",
+    "english": [
+      "Brooch"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
+    ]
+  },
+  {
+    "hanzi": "袖扣",
+    "pinyin": "xiù kòu",
+    "english": [
+      "Cufflinks"
+    ],
+    "categories": [
+      "clothing",
+      "accessory"
     ]
   }
 ]

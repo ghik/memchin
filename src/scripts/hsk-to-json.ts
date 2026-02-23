@@ -13,6 +13,7 @@ const freqPath = path.join(sourcesDir, 'internet-zh.num.txt');
 const hanziFreqPath = path.join(sourcesDir, 'hanzi_frequency.html');
 const bodyPath = path.join(sourcesDir, 'body.txt');
 const familyPath = path.join(sourcesDir, 'family.html');
+const clothingPath = path.join(sourcesDir, 'clothing.html');
 const outputPath = path.join(__dirname, '../../hsk_words.json');
 
 function loadFrequencyData(): Map<string, number> {
@@ -448,6 +449,57 @@ if (fs.existsSync(familyPath)) {
   const sizeBefore = wordMap.size;
   console.log('Parsing family.html...');
   parseFamilyHtml(familyPath, 'family');
+  console.log(`  +${wordMap.size - sizeBefore} new words (${wordMap.size} total)`);
+}
+
+// Parse clothing.html — tables with 3 columns (Chinese, Pinyin, English) grouped by h2 sections
+function parseClothingHtml(htmlPath: string) {
+  const html = fs.readFileSync(htmlPath, 'utf-8');
+  const $ = cheerio.load(html);
+
+  // Section mapping from h2 headings to category names
+  const sectionCategories: Record<string, string> = {
+    'The Basics': 'basic clothing',
+    'Winter Clothing': 'winter clothing',
+    'Formal & Traditional Clothing': 'formal clothing',
+    'Clothing Materials': 'clothing material',
+    'Footwear': 'footwear',
+    'Accessories & Other': 'accessory',
+  };
+
+  $('h2').each((_, h2) => {
+    const headingText = $(h2).text().trim();
+    const sectionCategory = sectionCategories[headingText];
+    if (!sectionCategory) return;
+
+    $(h2)
+      .nextUntil('h2')
+      .filter('table')
+      .find('tbody tr')
+      .each((_, tr) => {
+        const cells = $(tr).find('td');
+        if (cells.length < 3) return;
+
+        const hanzi = normalizeSpaces($(cells[0]).text().trim());
+        if (!/[\u4e00-\u9fff]/.test(hanzi)) return;
+
+        const pinyin = normalizeSpaces($(cells[1]).text().trim());
+        const english = splitEnglish(normalizeSpaces($(cells[2]).text().trim()), /^[,;]\s+/);
+
+        addWord(hanzi, pinyin, english, undefined, 'clothing');
+        // Add section-specific category
+        const entry = wordMap.get(hanzi.split('/')[0].trim());
+        if (entry && !entry.categories.includes(sectionCategory)) {
+          entry.categories.push(sectionCategory);
+        }
+      });
+  });
+}
+
+if (fs.existsSync(clothingPath)) {
+  const sizeBefore = wordMap.size;
+  console.log('Parsing clothing.html...');
+  parseClothingHtml(clothingPath);
   console.log(`  +${wordMap.size - sizeBefore} new words (${wordMap.size} total)`);
 }
 
