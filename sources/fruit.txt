@@ -1,0 +1,142 @@
+Apple	Play
+苹果
+píng guǒ
+Apricot	Play
+杏
+xìng
+Avocado	Play
+牛油果
+niú yóu guǒ
+Banana	Play
+香蕉
+xiāng jiāo
+Blackberry	Play
+黑莓
+hēi méi
+Blackcurrant	Play
+黑树莓
+hēi shù méi
+Blueberry	Play
+蓝莓
+lán méi
+Cherry	Play
+樱桃
+yīng táo
+Coconut	Play
+椰子
+yē zi
+Cranberry	Play
+蔓越莓
+màn yuè méi
+Date	Play
+枣
+zǎo
+Dragonfruit	Play
+火龙果
+huǒ lóng guǒ
+Durian	Play
+榴莲
+liú lián
+Goji Berry	Play
+枸杞
+gǒu qǐ
+Grape	Play
+葡萄
+pú táo
+Grapefruit	Play
+柚子
+yòu zi
+Guava	Play
+番石榴
+fān shí liu
+Jackfruit	Play
+菠萝蜜
+bō luó mì
+Jujube	Play
+枣
+zǎo
+Kiwifruit	Play
+猕猴桃
+mí hóu táo
+Kumquat	Play
+金橘
+jīn jú
+Lemon	Play
+柠檬
+níng méng
+Lime	Play
+酸橙
+suān chéng
+Loquat	Play
+枇杷
+pí pá
+Longan	Play
+龙眼
+lóng yǎn
+Lychee	Play
+荔枝
+lì zhī
+Mango	Play
+芒果
+máng guǒ
+Mangosteen	Play
+山竹
+shān zhú
+Melon	Play
+瓜
+guā
+Cantaloupe	Play
+哈密瓜
+hā mì guā
+Watermelon	Play
+西瓜
+xī guā
+Mulberry	Play
+桑葚
+sāng shèn
+Nectarine	油桃]	yóu táo
+Orange	Play
+橙
+chéng
+Tangerine	Play
+柑橘
+gān jú
+Papaya	Play
+番木瓜
+gān mù guā
+Passion fruit	Play
+百香果
+bǎi xiāng guǒ
+Peach	Play
+桃子
+táo zi
+Pear	Play
+梨
+lí
+Persimmon	Play
+柿子
+shì zi
+Plantain	Play
+芭蕉
+bā jiāo
+Plum	Play
+李子
+lǐ zǐ
+Prune	Play
+西梅
+xī méi
+Pineapple	Play
+菠萝
+bō luó
+Pomegranate	Play
+石榴
+shí liu
+Raspberry	Play
+树莓
+shù méi
+Rambutan	Play
+红毛丹
+hóng máo dān
+Strawberry	Play
+草莓
+cǎo méi
