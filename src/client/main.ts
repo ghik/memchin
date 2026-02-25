@@ -1044,6 +1044,8 @@ const addCategoriesInput = document.getElementById('add-categories') as HTMLInpu
 const englishChips = document.getElementById('english-chips')!;
 const categoryChips = document.getElementById('category-chips')!;
 const cedictEntries = document.getElementById('cedict-entries')!;
+const wordInfoDiv = document.getElementById('word-info')!;
+const wordBreakdown = document.getElementById('word-breakdown')!;
 const categorySuggestions = document.getElementById('category-suggestions')!;
 const addWordBtn = document.getElementById('add-word-btn') as HTMLButtonElement;
 const addWordStatus = document.getElementById('add-word-status')!;
@@ -1160,6 +1162,8 @@ addHanziInput.addEventListener('input', () => {
     renderChips(englishChips, englishValues, removeEnglishChip);
     renderChips(categoryChips, categoryValues, removeCategoryChip);
     cedictEntries.classList.add('hidden');
+    wordInfoDiv.classList.add('hidden');
+    wordBreakdown.classList.add('hidden');
     editingExistingWord = false;
     resetBucketCb.checked = true;
     addWordBtn.textContent = 'Add';
@@ -1168,7 +1172,7 @@ addHanziInput.addEventListener('input', () => {
   }
   lookupTimer = setTimeout(async () => {
     try {
-      const { entries, existing, maxBucket } = await lookupHanzi(hanzi);
+      const { entries, existing, maxBucket, breakdown } = await lookupHanzi(hanzi);
 
       if (existing) {
         editingExistingWord = true;
@@ -1181,6 +1185,14 @@ addHanziInput.addEventListener('input', () => {
         categoryValues = [...existing.categories];
         ensureCurated();
         renderChips(categoryChips, categoryValues, removeCategoryChip);
+
+        const infoParts: string[] = [];
+        if (existing.wordFrequencyRank != null) {
+          infoParts.push(`Rank: ${existing.wordFrequencyRank}`);
+        }
+        infoParts.push(`Bucket: ${maxBucket ?? 'new'}`);
+        wordInfoDiv.textContent = infoParts.join(' · ');
+        wordInfoDiv.classList.remove('hidden');
       } else {
         editingExistingWord = false;
         resetBucketCb.checked = true;
@@ -1194,6 +1206,16 @@ addHanziInput.addEventListener('input', () => {
         ensureCurated();
         renderChips(englishChips, englishValues, removeEnglishChip);
         renderChips(categoryChips, categoryValues, removeCategoryChip);
+        wordInfoDiv.classList.add('hidden');
+      }
+
+      // Show character breakdown
+      const breakdownHtml = formatBreakdown(breakdown);
+      if (breakdownHtml) {
+        wordBreakdown.innerHTML = breakdownHtml;
+        wordBreakdown.classList.remove('hidden');
+      } else {
+        wordBreakdown.classList.add('hidden');
       }
 
       if (entries.length === 0) {
@@ -1296,6 +1318,8 @@ addWordBtn.addEventListener('click', async () => {
     renderChips(englishChips, englishValues, removeEnglishChip);
     renderChips(categoryChips, categoryValues, removeCategoryChip);
     cedictEntries.classList.add('hidden');
+    wordInfoDiv.classList.add('hidden');
+    wordBreakdown.classList.add('hidden');
     resetProgressBtn.classList.add('hidden');
 
     // Reload stats and categories

@@ -108,7 +108,18 @@ function decomposeChar(char: string, pinyinHint?: string): CharacterInfo {
  *   each recursively decomposed into IDS sub-components
  * - Single character: recursively splits into IDS sub-components
  */
+const CJK_REGEX = /[\u4e00-\u9fff\u3400-\u4dbf]/;
+
 export function decomposeWord(hanzi: string, wordPinyin?: string): CharacterInfo[] {
   const syllables = wordPinyin ? wordPinyin.split(/\s+/) : [];
-  return [...hanzi].map((char, i) => decomposeChar(char, syllables[i]));
+  const chars = [...hanzi];
+  const result: CharacterInfo[] = [];
+  let syllableIdx = 0;
+  for (const char of chars) {
+    if (CJK_REGEX.test(char)) {
+      result.push(decomposeChar(char, syllables[syllableIdx]));
+    }
+    syllableIdx++;
+  }
+  return result;
 }

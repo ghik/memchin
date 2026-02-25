@@ -892,6 +892,12 @@ label.checkbox-label {
   border-color: #4a90d9;
 }
 
+.word-info {
+  margin-top: 4px;
+  font-size: 0.85em;
+  color: #666;
+}
+
 .cedict-entries {
   margin-top: 6px;
   border: 1px solid #e0e0e0;

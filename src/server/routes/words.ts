@@ -19,6 +19,7 @@ import { lookupFiltered } from '../services/cedict.js';
 import { numberedToToneMarked, splitPinyin } from '../services/pinyin.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
 import { generateSpeech } from '../services/tts.js';
+import { decomposeWord } from '../services/ids.js';
 import type { Example, PracticeMode } from '../../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -72,7 +73,8 @@ router.get('/lookup/:hanzi', (req, res) => {
   const entries = lookupFiltered(hanzi);
   const existing = getWordByHanzi(hanzi) ?? null;
   const maxBucket = existing ? getMaxBucket(hanzi) : 0;
-  res.json({ entries, existing, maxBucket });
+  const breakdown = decomposeWord(hanzi, existing?.pinyin);
+  res.json({ entries, existing, maxBucket, breakdown });
 });
 
 router.post('/', async (req, res) => {
