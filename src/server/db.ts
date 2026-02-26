@@ -287,11 +287,15 @@ function getWordFilters(
     );
   }
 
+  if (!characterMode) {
+    wordParts.push(
+      'AND NOT EXISTS (SELECT 1 FROM progress p_cm WHERE p_cm.hanzi = w.hanzi AND p_cm.character_mode_only = 1)'
+    );
+  }
+
   const wordFilter = wordParts.join(' ');
-  const progressFilter = characterMode ? '' : 'AND p.character_mode_only = 0';
-  const newWordCondition = characterMode
-    ? 'p.id IS NULL'
-    : '(p.id IS NULL OR p.character_mode_only = 1)';
+  const progressFilter = '';
+  const newWordCondition = 'p.id IS NULL';
 
   return { rankColumn, wordFilter, progressFilter, newWordCondition };
 }

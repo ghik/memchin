@@ -759,8 +759,8 @@ function editCurrentWord() {
   editingExistingWord = true;
   resetBucketCb.checked = question.bucket === null;
   addWordBtn.textContent = 'Save';
-  cedictEntries.classList.add('hidden');
   addWordStatus.classList.add('hidden');
+  performHanziLookup(word.hanzi);
 
   returnToPractice = true;
   cancelEditBtn.classList.remove('hidden');
@@ -1148,6 +1148,79 @@ addCategoriesInput.addEventListener('blur', () => {
   setTimeout(() => categorySuggestions.classList.add('hidden'), 150);
 });
 
+async function performHanziLookup(hanzi: string) {
+  try {
+    const { entries, existing, maxBucket, breakdown } = await lookupHanzi(hanzi);
+
+    if (existing) {
+      editingExistingWord = true;
+      resetBucketCb.checked = maxBucket === null;
+      addWordBtn.textContent = 'Save';
+      resetProgressBtn.classList.remove('hidden');
+      addPinyinInput.value = existing.pinyin;
+      englishValues = [...existing.english];
+      renderChips(englishChips, englishValues, removeEnglishChip);
+      categoryValues = [...existing.categories];
+      ensureCurated();
+      renderChips(categoryChips, categoryValues, removeCategoryChip);
+
+      const infoParts: string[] = [];
+      if (existing.wordFrequencyRank != null) {
+        infoParts.push(`Rank: ${existing.wordFrequencyRank}`);
+      }
+      infoParts.push(`Bucket: ${maxBucket ?? 'new'}`);
+      wordInfoDiv.textContent = infoParts.join(' · ');
+      wordInfoDiv.classList.remove('hidden');
+    } else {
+      editingExistingWord = false;
+      resetBucketCb.checked = true;
+      addWordBtn.textContent = 'Add';
+      resetProgressBtn.classList.add('hidden');
+      addPinyinInput.value = '';
+      addEnglishInput.value = '';
+      addCategoriesInput.value = '';
+      englishValues = [];
+      categoryValues = [];
+      ensureCurated();
+      renderChips(englishChips, englishValues, removeEnglishChip);
+      renderChips(categoryChips, categoryValues, removeCategoryChip);
+      wordInfoDiv.classList.add('hidden');
+    }
+
+    // Show character breakdown
+    const breakdownHtml = formatBreakdown(breakdown);
+    if (breakdownHtml) {
+      wordBreakdown.innerHTML = breakdownHtml;
+      wordBreakdown.classList.remove('hidden');
+    } else {
+      wordBreakdown.classList.add('hidden');
+    }
+
+    if (entries.length === 0) {
+      cedictEntries.classList.add('hidden');
+      return;
+    }
+    renderCedictEntries(entries);
+    cedictEntries.classList.remove('hidden');
+
+    // Auto-fill from CEDICT only for new words
+    if (!existing) {
+      if (entries.length === 1) {
+        addPinyinInput.value = entries[0].pinyin;
+        englishValues = [...entries[0].definitions];
+        renderChips(englishChips, englishValues, removeEnglishChip);
+      } else {
+        const allSamePinyin = entries.every((e) => e.pinyin === entries[0].pinyin);
+        if (allSamePinyin) {
+          addPinyinInput.value = entries[0].pinyin;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Lookup failed:', error);
+  }
+}
+
 // Debounced CEDICT lookup + existing word check
 addHanziInput.addEventListener('input', () => {
   if (lookupTimer) clearTimeout(lookupTimer);
@@ -1170,78 +1243,7 @@ addHanziInput.addEventListener('input', () => {
     resetProgressBtn.classList.add('hidden');
     return;
   }
-  lookupTimer = setTimeout(async () => {
-    try {
-      const { entries, existing, maxBucket, breakdown } = await lookupHanzi(hanzi);
-
-      if (existing) {
-        editingExistingWord = true;
-        resetBucketCb.checked = maxBucket === null;
-        addWordBtn.textContent = 'Save';
-        resetProgressBtn.classList.remove('hidden');
-        addPinyinInput.value = existing.pinyin;
-        englishValues = [...existing.english];
-        renderChips(englishChips, englishValues, removeEnglishChip);
-        categoryValues = [...existing.categories];
-        ensureCurated();
-        renderChips(categoryChips, categoryValues, removeCategoryChip);
-
-        const infoParts: string[] = [];
-        if (existing.wordFrequencyRank != null) {
-          infoParts.push(`Rank: ${existing.wordFrequencyRank}`);
-        }
-        infoParts.push(`Bucket: ${maxBucket ?? 'new'}`);
-        wordInfoDiv.textContent = infoParts.join(' · ');
-        wordInfoDiv.classList.remove('hidden');
-      } else {
-        editingExistingWord = false;
-        resetBucketCb.checked = true;
-        addWordBtn.textContent = 'Add';
-        resetProgressBtn.classList.add('hidden');
-        addPinyinInput.value = '';
-        addEnglishInput.value = '';
-        addCategoriesInput.value = '';
-        englishValues = [];
-        categoryValues = [];
-        ensureCurated();
-        renderChips(englishChips, englishValues, removeEnglishChip);
-        renderChips(categoryChips, categoryValues, removeCategoryChip);
-        wordInfoDiv.classList.add('hidden');
-      }
-
-      // Show character breakdown
-      const breakdownHtml = formatBreakdown(breakdown);
-      if (breakdownHtml) {
-        wordBreakdown.innerHTML = breakdownHtml;
-        wordBreakdown.classList.remove('hidden');
-      } else {
-        wordBreakdown.classList.add('hidden');
-      }
-
-      if (entries.length === 0) {
-        cedictEntries.classList.add('hidden');
-        return;
-      }
-      renderCedictEntries(entries);
-      cedictEntries.classList.remove('hidden');
-
-      // Auto-fill from CEDICT only for new words
-      if (!existing) {
-        if (entries.length === 1) {
-          addPinyinInput.value = entries[0].pinyin;
-          englishValues = [...entries[0].definitions];
-          renderChips(englishChips, englishValues, removeEnglishChip);
-        } else {
-          const allSamePinyin = entries.every((e) => e.pinyin === entries[0].pinyin);
-          if (allSamePinyin) {
-            addPinyinInput.value = entries[0].pinyin;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Lookup failed:', error);
-    }
-  }, 300);
+  lookupTimer = setTimeout(() => performHanziLookup(hanzi), 300);
 });
 
 function renderCedictEntries(entries: CedictEntry[]) {
