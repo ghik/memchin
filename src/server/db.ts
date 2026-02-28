@@ -49,6 +49,10 @@ export async function initDb(): Promise<void> {
     `UPDATE progress SET next_eligible = REPLACE(SUBSTR(next_eligible, 1, 19), 'T', ' ') WHERE next_eligible LIKE '%T%'`
   );
 
+  // Indexes for character mode queries
+  db.run(`CREATE INDEX IF NOT EXISTS idx_words_hanzi_rank ON words(hanzi_rank)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_progress_hanzi_charmode ON progress(hanzi, character_mode_only)`);
+
   saveDb();
 }
 
@@ -283,7 +287,7 @@ function getWordFilters(
 
   if (characterMode) {
     wordParts.push(
-      'AND EXISTS (SELECT 1 FROM words w2 JOIN progress p2 ON w2.hanzi = p2.hanzi WHERE INSTR(w2.hanzi, w.hanzi) > 0)'
+      'AND EXISTS (SELECT 1 FROM progress p2 WHERE INSTR(p2.hanzi, w.hanzi) > 0)'
     );
   }
 
@@ -319,15 +323,8 @@ function queryRows<T>(sql: string, params: any[], mapRow: (row: any) => T): T[] 
   return result;
 }
 
-function logQuery(sql: string, params: any[], resultCount: number): void {
-  const compact = sql.replace(/\s+/g, ' ').trim();
-  console.log(`[query] ${compact} | params=${JSON.stringify(params)} | rows=${resultCount}`);
-}
-
 function queryWords(sql: string, params: any[]): Word[] {
-  const result = queryRows(sql, params, rowToWord);
-  logQuery(sql, params, result.length);
-  return result;
+  return queryRows(sql, params, rowToWord);
 }
 
 function queryReviewWords(

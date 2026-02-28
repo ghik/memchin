@@ -143,6 +143,10 @@ async function importWords(start?: number, end?: number): Promise<void> {
     const haveExamples = new Map<string, Example[]>();
 
     for (const entry of batch) {
+      if (!entry.wordFrequencyRank) {
+        // Skip example generation for words without word frequency rank (hanzi-rank-only entries)
+        continue;
+      }
       const existing = existingWords.get(entry.hanzi);
       if (existing && existing.examples && existing.examples.length > 0) {
         haveExamples.set(entry.hanzi, existing.examples);

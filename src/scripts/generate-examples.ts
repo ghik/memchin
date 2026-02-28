@@ -48,8 +48,6 @@ ${wordList}`;
       throw new Error('Empty response from OpenAI');
     }
 
-    console.log(`LLM output:\n${content}\n`);
-
     // Extract JSON from response (handle markdown code blocks)
     let jsonText = content.trim();
     if (jsonText.startsWith('```')) {

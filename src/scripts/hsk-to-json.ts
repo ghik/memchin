@@ -300,7 +300,7 @@ function parseHanziFrequencyFile(htmlPath: string) {
 
   let count = 0;
   for (const line of lines) {
-    if (count >= 1000) break;
+    if (count >= 3000) break;
     const cols = line.split('\t');
     if (cols.length < 6) continue;
 
@@ -463,7 +463,7 @@ function parseClothingHtml(htmlPath: string) {
     'Winter Clothing': 'winter clothing',
     'Formal & Traditional Clothing': 'formal clothing',
     'Clothing Materials': 'clothing material',
-    'Footwear': 'footwear',
+    Footwear: 'footwear',
     'Accessories & Other': 'accessory',
   };
 

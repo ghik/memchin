@@ -785,7 +785,7 @@ cancelEditBtn.addEventListener('click', () => {
 
 resetProgressBtn.addEventListener('click', async () => {
   const hanzi = addHanziInput.value.trim();
-  if (!hanzi || !confirm(`Reset all progress for "${hanzi}"?`)) return;
+  if (!hanzi) return;
 
   try {
     await resetWordProgress(hanzi);
