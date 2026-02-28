@@ -156,6 +156,49 @@ let incorrectThisRound: PracticeQuestion[] = [];
 let roundNumber = 1;
 let submitBlocked = false;
 let newWords: Set<string> = new Set(); // words that were new (bucket null) and shown answer on first round
+let characterMode = false; // whether current session uses character mode
+
+// Session persistence
+function saveSession() {
+  sessionStorage.setItem('practiceSession', JSON.stringify({
+    currentMode,
+    characterMode,
+    questions,
+    allQuestions,
+    currentIndex,
+    results: [...results.entries()],
+    newWords: [...newWords],
+    incorrectThisRound,
+    roundNumber,
+  }));
+}
+
+function clearSession() {
+  sessionStorage.removeItem('practiceSession');
+}
+
+function restoreSession(): boolean {
+  const raw = sessionStorage.getItem('practiceSession');
+  if (!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    currentMode = data.currentMode;
+    characterMode = data.characterMode ?? false;
+    questions = data.questions;
+    allQuestions = data.allQuestions;
+    currentIndex = data.currentIndex;
+    results = new Map(data.results);
+    newWords = new Set(data.newWords);
+    incorrectThisRound = data.incorrectThisRound;
+    roundNumber = data.roundNumber;
+    showScreen(practiceScreen);
+    showQuestion();
+    return true;
+  } catch {
+    clearSession();
+    return false;
+  }
+}
 
 // Utility functions
 function showScreen(screen: HTMLElement) {
@@ -337,6 +380,7 @@ async function handleStart(hanziList?: string[]) {
       characterModeCheckbox.checked,
       hanziList
     );
+    characterMode = characterModeCheckbox.checked;
     questions = shuffle(response.questions);
     allQuestions = [...questions];
     currentIndex = 0;
@@ -351,6 +395,7 @@ async function handleStart(hanziList?: string[]) {
 
     showScreen(practiceScreen);
     showQuestion();
+    saveSession();
   } catch (error) {
     alert(error instanceof Error ? error.message : 'Failed to start practice');
   } finally {
@@ -618,6 +663,7 @@ async function handleSubmit() {
     skipBtn.classList.add('hidden');
     practiceActions.classList.remove('hidden');
     answerInput.disabled = true;
+    saveSession();
   } catch (error) {
     alert(error instanceof Error ? error.message : 'Failed to submit answer');
   } finally {
@@ -645,6 +691,7 @@ function handleSkip() {
   skipBtn.classList.add('hidden');
   practiceActions.classList.remove('hidden');
   answerInput.disabled = true;
+  saveSession();
 }
 
 // Handle next question
@@ -660,17 +707,20 @@ function handleNext() {
       roundNumber++;
       currentIndex = 0;
       showQuestion();
+      saveSession();
     } else {
       // All done
       finishPractice();
     }
   } else {
     showQuestion();
+    saveSession();
   }
 }
 
 // Finish practice session
 async function finishPractice() {
+  clearSession();
   try {
     const resultArray = Array.from(results.entries()).map(([hanzi, round]) => ({
       hanzi,
@@ -680,7 +730,7 @@ async function finishPractice() {
     const response = await completePractice(
       currentMode,
       resultArray,
-      characterModeCheckbox.checked
+      characterMode
     );
     const progressMap = new Map(response.progress.map((p) => [p.hanzi, p]));
 
@@ -770,11 +820,17 @@ function editCurrentWord() {
 }
 
 // Event listeners
+const quitBtn = document.getElementById('quit-btn')!;
+
 startBtn.addEventListener('click', () => handleStart());
 submitBtn.addEventListener('click', handleSubmit);
 skipBtn.addEventListener('click', handleSkip);
 nextBtn.addEventListener('click', handleNext);
 restartBtn.addEventListener('click', handleRestart);
+quitBtn.addEventListener('click', () => {
+  clearSession();
+  handleRestart();
+});
 editWordBtn.addEventListener('click', editCurrentWord);
 cancelEditBtn.addEventListener('click', () => {
   returnToPractice = false;
@@ -800,10 +856,10 @@ resetProgressBtn.addEventListener('click', async () => {
       results.delete(removeHanzi);
       newWords.delete(removeHanzi);
 
-      // Adjust currentIndex if needed (we're about to go back and hit Next)
-      if (currentIndex >= questions.length && questions.length > 0) {
-        currentIndex = questions.length - 1;
-      }
+      // After filtering, the next word shifted into currentIndex.
+      // Decrement so that handleNext() lands on it after incrementing.
+      currentIndex--;
+      if (currentIndex < -1) currentIndex = -1;
 
       returnToPractice = false;
       cancelEditBtn.classList.add('hidden');
@@ -1349,4 +1405,7 @@ function showAddWordStatus(message: string, type: 'success' | 'error') {
 }
 
 // Initialize
+if (!restoreSession()) {
+  showScreen(startScreen);
+}
 loadStats();

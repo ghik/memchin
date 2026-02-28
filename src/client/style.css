@@ -361,6 +361,20 @@ label.checkbox-label {
   font-size: 14px;
 }
 
+.quit-btn {
+  display: block;
+  margin: 30px auto 0;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.quit-btn:hover {
+  color: #e74c3c;
+}
+
 .prompt {
   text-align: center;
   font-size: 48px;
