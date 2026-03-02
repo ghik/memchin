@@ -107,8 +107,8 @@ export function getStats(categories: string[], characterMode: boolean): Promise<
   return apiGet(`/practice/stats?${params}`);
 }
 
-export function markPinyinSynonym(hanzi: string, synonymPinyin: string): Promise<void> {
-  return apiPost('/practice/synonym', { hanzi, synonymPinyin });
+export function addHanziSynonym(hanzi: string, synonymHanzi: string): Promise<void> {
+  return apiPost('/practice/hanzi-synonym', { hanzi, synonymHanzi });
 }
 
 export async function getDueCount(

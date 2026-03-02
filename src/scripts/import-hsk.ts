@@ -73,6 +73,14 @@ async function importWords(start?: number, end?: number): Promise<void> {
     );
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hanzi_synonyms (
+      hanzi1 TEXT NOT NULL,
+      hanzi2 TEXT NOT NULL,
+      UNIQUE(hanzi1, hanzi2)
+    );
+  `);
+
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_rank ON words(rank);`);
 

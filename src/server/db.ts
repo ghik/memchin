@@ -49,6 +49,15 @@ export async function initDb(): Promise<void> {
     `UPDATE progress SET next_eligible = REPLACE(SUBSTR(next_eligible, 1, 19), 'T', ' ') WHERE next_eligible LIKE '%T%'`
   );
 
+  // Migration: create hanzi_synonyms table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hanzi_synonyms (
+      hanzi1 TEXT NOT NULL,
+      hanzi2 TEXT NOT NULL,
+      UNIQUE(hanzi1, hanzi2)
+    );
+  `);
+
   // Indexes for character mode queries
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_hanzi_rank ON words(hanzi_rank)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_hanzi_charmode ON progress(hanzi, character_mode_only)`);
@@ -476,21 +485,30 @@ export function getAllCategories(): string[] {
   );
 }
 
-// Pinyin synonym operations
-export function addPinyinSynonym(hanzi: string, synonymPinyin: string): void {
-  db.run(`INSERT OR IGNORE INTO pinyin_synonyms (hanzi, synonym_pinyin) VALUES (?, ?)`, [
-    hanzi,
-    synonymPinyin,
-  ]);
+// Hanzi synonym operations (pairs stored normalized: hanzi1 < hanzi2)
+export function addHanziSynonym(a: string, b: string): void {
+  const [hanzi1, hanzi2] = a < b ? [a, b] : [b, a];
+  db.run(`INSERT OR IGNORE INTO hanzi_synonyms (hanzi1, hanzi2) VALUES (?, ?)`, [hanzi1, hanzi2]);
   saveDb();
 }
 
-export function isPinyinSynonym(hanzi: string, pinyin: string): boolean {
-  const stmt = db.prepare(`SELECT 1 FROM pinyin_synonyms WHERE hanzi = ? AND synonym_pinyin = ?`);
-  stmt.bind([hanzi, pinyin]);
+export function isHanziSynonym(a: string, b: string): boolean {
+  const [hanzi1, hanzi2] = a < b ? [a, b] : [b, a];
+  const stmt = db.prepare(`SELECT 1 FROM hanzi_synonyms WHERE hanzi1 = ? AND hanzi2 = ?`);
+  stmt.bind([hanzi1, hanzi2]);
   const found = stmt.step();
   stmt.free();
   return found;
+}
+
+export function getHanziSynonymHanzis(hanzi: string): string[] {
+  return queryRows(
+    `SELECT hanzi2 AS synonym FROM hanzi_synonyms WHERE hanzi1 = ?
+     UNION
+     SELECT hanzi1 AS synonym FROM hanzi_synonyms WHERE hanzi2 = ?`,
+    [hanzi, hanzi],
+    (row) => row.synonym as string
+  );
 }
 
 function rowToWord(row: any): Word {

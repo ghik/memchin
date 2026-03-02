@@ -11,8 +11,9 @@ import type {
   Word,
 } from '../../shared/types.js';
 import {
-  addPinyinSynonym,
+  addHanziSynonym,
   getDueCount,
+  getHanziSynonymHanzis,
   getLearnedWordsContaining,
   getNewWords,
   getProgress,
@@ -21,7 +22,7 @@ import {
   getWordsForPractice,
   getWordsForReview,
   isAmbiguousTranslation,
-  isPinyinSynonym,
+  isHanziSynonym,
   saveDb,
 } from '../db.js';
 import { updateProgress } from '../services/srs.js';
@@ -147,31 +148,43 @@ router.post('/answer', (req, res) => {
       const na = normalizePinyin(answer);
       const ne = normalizePinyin(word.pinyin);
       synonym =
-        !correct &&
-        (isPinyinSynonym(word.hanzi, na) ||
-          (word.hanzi.length > 1 && lastNeutralToneMismatch(na, ne)));
+        !correct && word.hanzi.length > 1 && lastNeutralToneMismatch(na, ne);
       break;
     }
     case 'hanzi2english':
       correct = englishMatches(answer, word.english);
       break;
-    case 'english2hanzi':
+    case 'english2hanzi': {
       const isExactMatch = hanziMatches(answer, word.hanzi);
-      const isSynonym = !isExactMatch && isAmbiguousTranslation(word.english);
       correct = isExactMatch;
-      synonym = isSynonym;
+      synonym =
+        !correct &&
+        (isAmbiguousTranslation(word.english) || isHanziSynonym(answer, word.hanzi));
       break;
-    case 'english2pinyin':
+    }
+    case 'english2pinyin': {
       const normalizedAnswer = normalizePinyin(answer);
       const normalizedExpected = normalizePinyin(word.pinyin);
       correct = normalizedAnswer === normalizedExpected;
-      synonym =
-        !correct &&
-        (isPinyinSynonym(word.hanzi, normalizedAnswer) ||
-          (word.hanzi.length > 1 &&
-            lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)) ||
-          isAmbiguousTranslation(word.english));
+      if (!correct) {
+        if (
+          (word.hanzi.length > 1 && lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)) ||
+          isAmbiguousTranslation(word.english)
+        ) {
+          synonym = true;
+        } else {
+          const synonymHanzis = getHanziSynonymHanzis(word.hanzi);
+          for (const sh of synonymHanzis) {
+            const synWord = getWordByHanzi(sh);
+            if (synWord && normalizePinyin(synWord.pinyin) === normalizedAnswer) {
+              synonym = true;
+              break;
+            }
+          }
+        }
+      }
       break;
+    }
   }
 
   const response: AnswerResponse = {
@@ -187,11 +200,11 @@ router.post('/answer', (req, res) => {
   res.json(response);
 });
 
-router.post('/synonym', (req, res) => {
-  const { hanzi, synonymPinyin } = req.body as { hanzi: string; synonymPinyin: string };
+router.post('/hanzi-synonym', (req, res) => {
+  const { hanzi, synonymHanzi } = req.body as { hanzi: string; synonymHanzi: string };
 
-  if (!hanzi || !synonymPinyin) {
-    return res.status(400).json({ error: 'hanzi and synonymPinyin are required' });
+  if (!hanzi || !synonymHanzi) {
+    return res.status(400).json({ error: 'hanzi and synonymHanzi are required' });
   }
 
   const word = getWordByHanzi(hanzi);
@@ -199,8 +212,12 @@ router.post('/synonym', (req, res) => {
     return res.status(404).json({ error: 'Word not found' });
   }
 
-  const normalized = toNumberedPinyin(synonymPinyin);
-  addPinyinSynonym(hanzi, normalized);
+  const synWord = getWordByHanzi(synonymHanzi);
+  if (!synWord) {
+    return res.status(404).json({ error: 'Synonym word not found' });
+  }
+
+  addHanziSynonym(hanzi, synonymHanzi);
   res.json({ ok: true });
 });
 

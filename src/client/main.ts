@@ -8,6 +8,7 @@ import type {
 } from './services.js';
 import type { Example, Stats } from '../shared/types.js';
 import {
+  addHanziSynonym,
   addWord,
   completePractice,
   getCategories,
@@ -15,7 +16,6 @@ import {
   getStats,
   getWordCount,
   lookupHanzi,
-  markPinyinSynonym,
   previewNewWords,
   resetWordProgress,
   startPractice,
@@ -612,46 +612,59 @@ async function handleSubmit() {
     if (response.correct) {
       feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>`;
     } else {
-      const isPinyinMode = currentMode === 'english2pinyin' || currentMode === 'hanzi2pinyin';
-      const synonymBtn = isPinyinMode
+      const showSynonymBtn = currentMode === 'english2hanzi' || currentMode === 'english2pinyin';
+      const synonymBtn = showSynonymBtn
         ? `<button class="synonym-btn" id="synonym-btn">Synonym</button>`
         : '';
       feedbackDiv.innerHTML = `✗ Incorrect${synonymBtn}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
 
-      if (isPinyinMode) {
-        document.getElementById('synonym-btn')!.addEventListener('click', async () => {
-          try {
-            await markPinyinSynonym(question.word.hanzi, answer);
-            // Undo incorrect tracking
-            incorrectThisRound = incorrectThisRound.filter((q) => q !== question);
-            results.delete(question.word.hanzi);
-            // Show synonym message and let user retry
-            feedbackDiv.classList.remove('incorrect');
-            feedbackDiv.classList.add('synonym');
-            feedbackDiv.innerHTML = `✓ "${answer}" saved as synonym. Try again!`;
-            answerInput.value = '';
-            answerInput.disabled = false;
-            answerInput.focus();
-            submitBtn.classList.remove('hidden');
-            skipBtn.classList.remove('hidden');
-            practiceActions.classList.add('hidden');
+      if (showSynonymBtn) {
+        const originalFeedbackHtml = feedbackDiv.innerHTML;
+        document.getElementById('synonym-btn')!.addEventListener('click', () => {
+          // Show inline UI: text input + Confirm + Cancel
+          feedbackDiv.innerHTML = `<div class="synonym-input-row"><input type="text" id="synonym-hanzi-input" placeholder="Synonym hanzi" class="synonym-hanzi-input"><button id="synonym-confirm-btn" class="primary-btn">Confirm</button><button id="synonym-cancel-btn" class="secondary-btn">Cancel</button></div>`;
+          const synonymInput = document.getElementById('synonym-hanzi-input') as HTMLInputElement;
+          synonymInput.focus();
 
-            submitBlocked = true;
-            const unblock = () => {
-              submitBlocked = false;
-            };
-            const timer = setTimeout(unblock, 1000);
-            answerInput.addEventListener(
-              'input',
-              () => {
-                clearTimeout(timer);
-                unblock();
-              },
-              { once: true }
-            );
-          } catch (error) {
-            console.error('Failed to mark synonym:', error);
-          }
+          document.getElementById('synonym-confirm-btn')!.addEventListener('click', async () => {
+            const synonymHanzi = synonymInput.value.trim();
+            if (!synonymHanzi) return;
+            try {
+              await addHanziSynonym(question.word.hanzi, synonymHanzi);
+              // Undo incorrect tracking
+              incorrectThisRound = incorrectThisRound.filter((q) => q !== question);
+              results.delete(question.word.hanzi);
+              // Show synonym message and let user retry
+              feedbackDiv.classList.remove('incorrect');
+              feedbackDiv.classList.add('synonym');
+              feedbackDiv.innerHTML = `✓ Synonym saved. Try again!`;
+              answerInput.value = '';
+              answerInput.disabled = false;
+              answerInput.focus();
+              submitBtn.classList.remove('hidden');
+              skipBtn.classList.remove('hidden');
+              practiceActions.classList.add('hidden');
+
+              submitBlocked = true;
+              const unblock = () => { submitBlocked = false; };
+              const timer = setTimeout(unblock, 1000);
+              answerInput.addEventListener('input', () => { clearTimeout(timer); unblock(); }, { once: true });
+            } catch (error) {
+              console.error('Failed to save synonym:', error);
+              feedbackDiv.innerHTML = `<span class="error">Failed to save synonym</span>`;
+            }
+          });
+
+          synonymInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              document.getElementById('synonym-confirm-btn')!.click();
+            }
+          });
+
+          document.getElementById('synonym-cancel-btn')!.addEventListener('click', () => {
+            feedbackDiv.innerHTML = originalFeedbackHtml;
+          });
         });
       }
     }
