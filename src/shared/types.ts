@@ -6,6 +6,7 @@ export interface Example {
 
 export interface CharacterInfo {
   hanzi: string;
+  traditional?: string;
   pinyin: string;
   meaning: string;
   components: CharacterInfo[];

@@ -337,6 +337,7 @@ function lookupChar(char: string, pinyinHint?: string): CharacterInfo {
   }
   return {
     hanzi: char,
+    traditional: entry.traditional !== char ? entry.traditional : undefined,
     pinyin: entry.pinyin,
     meaning: filterDefinitions(entry.definitions).join(' / '),
     components: [],
