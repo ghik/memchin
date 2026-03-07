@@ -505,8 +505,10 @@ function formatTreeNodes(nodes: CharacterInfo[], isRoot: boolean): string {
   return nodes
     .map((node) => {
       const hanziClass = isRoot ? 'tree-hanzi-root' : 'tree-hanzi';
-      const traditionalSpan = node.traditional ? ` <span class="tree-traditional">[${node.traditional}]</span>` : '';
-      const label = `<span class="${hanziClass}">${node.hanzi}</span>${traditionalSpan} <span class="tree-pinyin">${node.pinyin}</span> <span class="tree-meaning">${node.meaning}</span>`;
+      const hanziSpan = node.traditional
+        ? `<span class="${hanziClass} tree-has-traditional">${node.hanzi}<span class="tree-traditional">${node.traditional}</span></span>`
+        : `<span class="${hanziClass}">${node.hanzi}</span>`;
+      const label = `${hanziSpan} <span class="tree-pinyin">${node.pinyin}</span> <span class="tree-meaning">${node.meaning}</span>`;
       if (node.components.length > 0) {
         return `<li class="tree-node"><details><summary>${label}</summary><ul class="tree-children">${formatTreeNodes(node.components, false)}</ul></details></li>`;
       }

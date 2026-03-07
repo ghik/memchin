@@ -606,6 +606,36 @@ label.checkbox-label {
   color: #555;
 }
 
+.tree-has-traditional {
+  position: relative;
+  cursor: default;
+  text-decoration: underline dotted #aaa;
+  text-underline-offset: 3px;
+}
+
+.tree-traditional {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  font-weight: 250;
+  color: #333;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 4px 10px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.tree-has-traditional:hover .tree-traditional {
+  display: block;
+}
+
 .tree-pinyin {
   color: #0066cc;
   margin-right: 4px;
