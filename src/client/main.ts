@@ -464,10 +464,11 @@ function showQuestion() {
   } else {
     // hanzi->X modes: show clickable hanzi prompt
     const clickablePrompt = clickableHanzi(word.hanzi, 'prompt-hanzi');
+    const hanziRow = `<div class="hanzi-row"><div class="cursive-line cursive-handwritten">${word.hanzi}</div><div class="hanzi-standard">${clickablePrompt}</div><div class="cursive-line cursive-caoshu">${word.hanzi}</div></div>`;
     if (word.examples.length > 0) {
-      promptDiv.innerHTML = `${clickablePrompt}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
+      promptDiv.innerHTML = `${hanziRow}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
     } else {
-      promptDiv.innerHTML = clickablePrompt;
+      promptDiv.innerHTML = hanziRow;
     }
   }
   promptDiv.className =
