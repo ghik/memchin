@@ -402,16 +402,9 @@ label.checkbox-label {
 .hanzi-standard {
 }
 
-.cursive-line {
+.hanzi-handwritten {
+  font-family: 'Kaiti SC', 'Kaiti TC', 'KaiTi', 'STKaiti', serif;
   color: #20A;
-}
-
-.cursive-handwritten {
-  font-family: 'Ma Shan Zheng', cursive;
-}
-
-.cursive-caoshu {
-  font-family: 'Liu Jian Mao Cao', cursive;
 }
 
 .answer-section {

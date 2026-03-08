@@ -3,6 +3,7 @@ import type {
   CedictEntry,
   CharacterInfo,
   CompleteResponse,
+  LookupResponse,
   PracticeMode,
   PracticeQuestion,
   PracticeResult,
@@ -163,7 +164,7 @@ export function updateWord(
 
 export function lookupHanzi(
   hanzi: string
-): Promise<{ entries: CedictEntry[]; existing: Word | null; maxBucket: number | null; breakdown: CharacterInfo[] }> {
+): Promise<LookupResponse> {
   return apiGet(`/words/lookup/${encodeURIComponent(hanzi)}`);
 }
 

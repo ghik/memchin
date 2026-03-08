@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { Router } from 'express';
 import {
   getAllWords,
+  getMaxBucket,
   getWordByHanzi,
   getWordCount,
   insertWords,
@@ -12,7 +13,7 @@ import {
   saveDb,
   invalidateWordCache,
   deleteProgress,
-  getMaxBucket,
+  setResetAt,
   updateWordExamples,
 } from '../db.js';
 import { lookupFiltered } from '../services/cedict.js';
@@ -32,9 +33,14 @@ const ALL_MODES: PracticeMode[] = [
 ];
 
 function resetToBucket0(hanzi: string) {
-  const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
-  for (const mode of ALL_MODES) {
-    upsertProgress(hanzi, mode, 0, now, false);
+  const hasProgress = getMaxBucket(hanzi) !== null;
+  if (hasProgress) {
+    const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
+    for (const mode of ALL_MODES) {
+      upsertProgress(hanzi, mode, 0, now, false);
+    }
+  } else {
+    setResetAt(hanzi);
   }
 }
 const freqPath = path.join(__dirname, '../../../sources/internet-zh.num.txt');
@@ -74,7 +80,10 @@ router.get('/lookup/:hanzi', (req, res) => {
   const existing = getWordByHanzi(hanzi) ?? null;
   const maxBucket = existing ? getMaxBucket(hanzi) : 0;
   const breakdown = decomposeWord(hanzi, existing?.pinyin);
-  res.json({ entries, existing, maxBucket, breakdown });
+  const freq = loadFrequencyData();
+  const wordRank = freq.get(hanzi) ?? null;
+  const charRank = [...hanzi].length === 1 ? wordRank : null;
+  res.json({ entries, existing, maxBucket, breakdown, wordRank, charRank });
 });
 
 router.post('/', async (req, res) => {

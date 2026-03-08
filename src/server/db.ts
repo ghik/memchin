@@ -58,6 +58,13 @@ export async function initDb(): Promise<void> {
     );
   `);
 
+  // Migration: add reset_at column to words
+  try {
+    db.run(`ALTER TABLE words ADD COLUMN reset_at TEXT`);
+  } catch {
+    // Column already exists
+  }
+
   // Indexes for character mode queries
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_hanzi_rank ON words(hanzi_rank)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_hanzi_charmode ON progress(hanzi, character_mode_only)`);
@@ -258,11 +265,21 @@ export function upsertProgress(
     `,
     [hanzi, mode, bucket, now, nextEligible, characterMode ? 1 : 0]
   );
+  clearResetAt(hanzi);
 }
 
 export function deleteProgress(hanzi: string): void {
   db.run('DELETE FROM progress WHERE hanzi = ?', [hanzi]);
   saveDb();
+}
+
+export function setResetAt(hanzi: string): void {
+  const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
+  db.run('UPDATE words SET reset_at = ? WHERE hanzi = ?', [now, hanzi]);
+}
+
+export function clearResetAt(hanzi: string): void {
+  db.run('UPDATE words SET reset_at = NULL WHERE hanzi = ?', [hanzi]);
 }
 
 // Word query helpers
@@ -368,7 +385,7 @@ function queryNewWords(
     `
       SELECT w.* FROM words w LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
       WHERE ${f.newWordCondition} ${f.wordFilter}
-      ORDER BY ${f.rankColumn} ASC LIMIT ?
+      ORDER BY w.reset_at IS NULL ASC, w.reset_at DESC, ${f.rankColumn} ASC LIMIT ?
   `,
     [mode, ...categories, count]
   );

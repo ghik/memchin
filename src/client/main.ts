@@ -464,7 +464,7 @@ function showQuestion() {
   } else {
     // hanzi->X modes: show clickable hanzi prompt
     const clickablePrompt = clickableHanzi(word.hanzi, 'prompt-hanzi');
-    const hanziRow = `<div class="hanzi-row"><div class="cursive-line cursive-handwritten">${word.hanzi}</div><div class="hanzi-standard">${clickablePrompt}</div><div class="cursive-line cursive-caoshu">${word.hanzi}</div></div>`;
+    const hanziRow = `<div class="hanzi-row"><div class="hanzi-standard">${clickablePrompt}</div><div class="hanzi-handwritten">${word.hanzi}</div></div>`;
     if (word.examples.length > 0) {
       promptDiv.innerHTML = `${hanziRow}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
     } else {
@@ -1223,7 +1223,7 @@ addCategoriesInput.addEventListener('blur', () => {
 
 async function performHanziLookup(hanzi: string) {
   try {
-    const { entries, existing, maxBucket, breakdown } = await lookupHanzi(hanzi);
+    const { entries, existing, maxBucket, breakdown, wordRank, charRank } = await lookupHanzi(hanzi);
 
     if (existing) {
       editingExistingWord = true;
@@ -1238,9 +1238,8 @@ async function performHanziLookup(hanzi: string) {
       renderChips(categoryChips, categoryValues, removeCategoryChip);
 
       const infoParts: string[] = [];
-      if (existing.wordFrequencyRank != null) {
-        infoParts.push(`Rank: ${existing.wordFrequencyRank}`);
-      }
+      if (wordRank != null) infoParts.push(`word #${wordRank}`);
+      if (charRank != null) infoParts.push(`char #${charRank}`);
       infoParts.push(`Bucket: ${maxBucket ?? 'new'}`);
       wordInfoDiv.textContent = infoParts.join(' · ');
       wordInfoDiv.classList.remove('hidden');
@@ -1257,7 +1256,15 @@ async function performHanziLookup(hanzi: string) {
       ensureCurated();
       renderChips(englishChips, englishValues, removeEnglishChip);
       renderChips(categoryChips, categoryValues, removeCategoryChip);
-      wordInfoDiv.classList.add('hidden');
+      const rankParts: string[] = [];
+      if (wordRank != null) rankParts.push(`word #${wordRank}`);
+      if (charRank != null) rankParts.push(`char #${charRank}`);
+      if (rankParts.length > 0) {
+        wordInfoDiv.textContent = rankParts.join(' · ');
+        wordInfoDiv.classList.remove('hidden');
+      } else {
+        wordInfoDiv.classList.add('hidden');
+      }
     }
 
     // Show character breakdown

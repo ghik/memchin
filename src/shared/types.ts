@@ -111,6 +111,15 @@ export interface Stats {
   buckets: number[]; // count of words in each bucket (index = bucket number)
 }
 
+export interface LookupResponse {
+  entries: CedictEntry[];
+  existing: Word | null;
+  maxBucket: number | null;
+  breakdown: CharacterInfo[];
+  wordRank: number | null;
+  charRank: number | null;
+}
+
 export interface CedictEntry {
   traditional: string;
   simplified: string;
