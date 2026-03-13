@@ -848,6 +848,10 @@ quitBtn.addEventListener('click', () => {
   clearSession();
   handleRestart();
 });
+const finishBtn = document.getElementById('finish-btn')!;
+finishBtn.addEventListener('click', () => {
+  finishPractice();
+});
 editWordBtn.addEventListener('click', editCurrentWord);
 cancelEditBtn.addEventListener('click', () => {
   returnToPractice = false;
