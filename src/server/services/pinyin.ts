@@ -1,42 +1,4 @@
-// Mapping from tone-marked vowels to numbered format
-
-// prettier-ignore
-const TONE_TO_NUMBER: Record<string, [string, number]> = {
-  'ā': ['a', 1], 'á': ['a', 2], 'ǎ': ['a', 3], 'à': ['a', 4],
-  'ē': ['e', 1], 'é': ['e', 2], 'ě': ['e', 3], 'è': ['e', 4],
-  'ī': ['i', 1], 'í': ['i', 2], 'ǐ': ['i', 3], 'ì': ['i', 4],
-  'ō': ['o', 1], 'ó': ['o', 2], 'ǒ': ['o', 3], 'ò': ['o', 4],
-  'ū': ['u', 1], 'ú': ['u', 2], 'ǔ': ['u', 3], 'ù': ['u', 4],
-  'ǖ': ['v', 1], 'ǘ': ['v', 2], 'ǚ': ['v', 3], 'ǜ': ['v', 4],
-};
-
-// Vowel character classes for regex
-const A = '[aāáǎà]';
-const E = '[eēéěè]';
-const I = '[iīíǐì]';
-const O = '[oōóǒò]';
-const U = '[uūúǔù]';
-const V = '[üǖǘǚǜv]'; // ü can be written as v
-
-// All possible pinyin finals (vowel combinations)
-// prettier-ignore
-const FINALS = [
-  // Complex finals first (longer matches)
-  `${I}${A}ng`, `${I}${A}${O}`, `${I}${A}n`, `${I}${O}ng`, `${U}${A}ng`, `${U}${A}${I}`, `${U}${A}n`,
-  `${I}${A}`, `${I}${E}`, `${I}${U}`, `${I}ng`, `${I}n`,
-  `${U}${A}`, `${U}${O}`, `${U}${E}`, `${U}${I}`, `${U}n`, `${U}ng`,  // ue for jue/que/xue/yue
-  `${V}${E}`, `${V}${A}n`, `${V}n`,
-  `${A}ng`, `${A}${I}`, `${A}${O}`, `${A}n`,
-  `${E}ng`, `${E}${I}`, `${E}n`, `${E}r`,
-  `${O}ng`, `${O}${U}`,
-  `${A}`, `${E}`, `${I}`, `${O}`, `${U}`, `${V}`,
-].join('|');
-
-// Initial consonants (zh, ch, sh must come before z, c, s)
-const INITIALS = '(?:zh|ch|sh|[bpmfdtnlgkhjqxrzcsyw])';
-
-// Complete syllable pattern (match at start of string)
-const SYLLABLE_PATTERN = new RegExp(`^(${INITIALS}?(?:${FINALS}))`, 'i');
+import { TONE_TO_NUMBER, FINALS, INITIALS, SYLLABLE_PATTERN } from '../../shared/pinyin.js';
 
 /**
  * Split pinyin string into separate syllables

@@ -7,6 +7,7 @@ import type {
   Word,
 } from './services.js';
 import type { Example, Stats } from '../shared/types.js';
+import { validatePinyin } from '../shared/pinyin.js';
 import {
   addHanziSynonym,
   addWord,
@@ -569,6 +570,14 @@ async function handleSubmit() {
   if (!answer) return;
 
   const question = questions[currentIndex];
+
+  // Validate pinyin input for pinyin-answer modes
+  if ((currentMode === 'hanzi2pinyin' || currentMode === 'english2pinyin') && !validatePinyin(answer)) {
+    feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
+    feedbackDiv.classList.add('incorrect');
+    feedbackDiv.innerHTML = 'Not valid pinyin. Use tone marks (zhōng) or tone numbers (zhong1).';
+    return;
+  }
 
   try {
     submitBtn.disabled = true;
@@ -1352,6 +1361,14 @@ addWordBtn.addEventListener('click', async () => {
   if (!hanzi || !pinyin || englishValues.length === 0) {
     showAddWordStatus(
       'Please fill in hanzi, pinyin, and at least one English translation',
+      'error'
+    );
+    return;
+  }
+
+  if (!validatePinyin(pinyin)) {
+    showAddWordStatus(
+      'Invalid pinyin. Use tone marks (zhōng) or tone numbers (zhong1).',
       'error'
     );
     return;
