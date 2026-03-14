@@ -29,7 +29,7 @@ export interface Word extends WordCore {
   manual: boolean;
 }
 
-export type PracticeMode = 'hanzi2pinyin' | 'hanzi2english' | 'english2hanzi' | 'english2pinyin';
+export type PracticeMode = 'hanzi2pinyin' | 'english2hanzi' | 'english2pinyin';
 
 export interface Progress {
   id: number;

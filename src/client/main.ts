@@ -237,7 +237,6 @@ function updateDueBtn() {
 
 const MODE_LABELS: Record<PracticeMode, string> = {
   hanzi2pinyin: 'Hanzi → Pinyin',
-  hanzi2english: 'Hanzi → English',
   english2hanzi: 'English → Hanzi',
   english2pinyin: 'English → Pinyin',
 };
@@ -329,7 +328,6 @@ async function loadStats() {
 
 function renderStats(stats: Stats[]) {
   const html = stats
-    .filter((s) => s.mode !== 'hanzi2english')
     .map((s) => {
       const bucketBar = s.buckets
         .map((count, i) => `<span class="bucket-count" title="Bucket ${i}">${count}</span>`)

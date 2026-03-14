@@ -65,6 +65,18 @@ export async function initDb(): Promise<void> {
     // Column already exists
   }
 
+  // Migration: remove hanzi2english progress rows
+  db.run(`DELETE FROM progress WHERE mode = 'hanzi2english'`);
+
+  // Migration: backfill missing modes for existing progress
+  db.run(`
+    INSERT OR IGNORE INTO progress (hanzi, mode, bucket, last_practiced, next_eligible, character_mode_only)
+    SELECT DISTINCT p.hanzi, m.mode, 0, p.last_practiced, p.next_eligible, p.character_mode_only
+    FROM progress p
+    CROSS JOIN (SELECT 'hanzi2pinyin' AS mode UNION ALL SELECT 'english2hanzi' UNION ALL SELECT 'english2pinyin') m
+    WHERE NOT EXISTS (SELECT 1 FROM progress p2 WHERE p2.hanzi = p.hanzi AND p2.mode = m.mode)
+  `);
+
   // Indexes for character mode queries
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_hanzi_rank ON words(hanzi_rank)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_hanzi_charmode ON progress(hanzi, character_mode_only)`);
@@ -298,7 +310,7 @@ function getWordFilters(
 ): WordFilters {
   const wordParts: string[] = [];
 
-  if (mode === 'hanzi2english' || mode === 'english2hanzi' || mode === 'english2pinyin') {
+  if (mode === 'english2hanzi' || mode === 'english2pinyin') {
     wordParts.push('AND w.translatable = 1');
   }
 

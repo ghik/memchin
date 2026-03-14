@@ -27,7 +27,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ALL_MODES: PracticeMode[] = [
   'hanzi2pinyin',
-  'hanzi2english',
   'english2hanzi',
   'english2pinyin',
 ];

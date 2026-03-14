@@ -27,7 +27,6 @@ import {
 } from '../db.js';
 import { updateProgress } from '../services/srs.js';
 import {
-  englishMatches,
   hanziMatches,
   lastNeutralToneMismatch,
   normalizePinyin,
@@ -60,14 +59,6 @@ function createQuestion(word: Word, mode: PracticeMode, characterMode: boolean):
         bucket,
         containingWords,
       };
-    case 'hanzi2english':
-      return {
-        word: wordWithBreakdown,
-        prompt: word.hanzi,
-        acceptedAnswers: word.english,
-        bucket,
-        containingWords,
-      };
     case 'english2hanzi':
       return {
         word: wordWithBreakdown,
@@ -93,7 +84,7 @@ router.post('/start', (req, res) => {
 
   if (
     !mode ||
-    !['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)
+    !['hanzi2pinyin', 'english2hanzi', 'english2pinyin'].includes(mode)
   ) {
     return res.status(400).json({ error: 'Valid mode is required' });
   }
@@ -151,9 +142,6 @@ router.post('/answer', (req, res) => {
         !correct && word.hanzi.length > 1 && lastNeutralToneMismatch(na, ne);
       break;
     }
-    case 'hanzi2english':
-      correct = englishMatches(answer, word.english);
-      break;
     case 'english2hanzi': {
       const isExactMatch = hanziMatches(answer, word.hanzi);
       correct = isExactMatch;
@@ -255,7 +243,7 @@ router.get('/preview', (req, res) => {
 
   if (
     !mode ||
-    !['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)
+    !['hanzi2pinyin', 'english2hanzi', 'english2pinyin'].includes(mode)
   ) {
     return res.status(400).json({ error: 'Valid mode is required' });
   }
@@ -271,7 +259,7 @@ router.get('/due-count', (req, res) => {
 
   if (
     !mode ||
-    !['hanzi2pinyin', 'hanzi2english', 'english2hanzi', 'english2pinyin'].includes(mode)
+    !['hanzi2pinyin', 'english2hanzi', 'english2pinyin'].includes(mode)
   ) {
     return res.status(400).json({ error: 'Valid mode is required' });
   }
@@ -285,7 +273,6 @@ router.get('/stats', (req, res) => {
   const characterMode = req.query.characterMode === 'true';
   const modes: PracticeMode[] = [
     'hanzi2pinyin',
-    'hanzi2english',
     'english2hanzi',
     'english2pinyin',
   ];
