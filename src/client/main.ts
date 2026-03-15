@@ -669,6 +669,7 @@ async function handleSubmit() {
           synonymInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
+              e.stopPropagation();
               document.getElementById('synonym-confirm-btn')!.click();
             }
           });

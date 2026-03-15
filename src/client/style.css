@@ -476,6 +476,29 @@ label.checkbox-label {
   background: #ffe69c;
 }
 
+.synonym-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.synonym-input-row .primary-btn {
+  width: auto;
+}
+
+.synonym-hanzi-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+}
+
+.synonym-hanzi-input:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
+
 .feedback .correct-answer {
   margin-top: 10px;
   font-weight: 500;
