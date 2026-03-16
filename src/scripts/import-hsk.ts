@@ -84,27 +84,6 @@ async function importWords(start?: number, end?: number): Promise<void> {
   db.run(`CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible);`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_rank ON words(rank);`);
 
-  // Add categories column to existing words table if missing
-  try {
-    db.run(`ALTER TABLE words ADD COLUMN categories TEXT NOT NULL DEFAULT '[]'`);
-  } catch {
-    // Column already exists
-  }
-
-  // Add hanzi_rank column to existing words table if missing
-  try {
-    db.run(`ALTER TABLE words ADD COLUMN hanzi_rank INTEGER`);
-  } catch {
-    // Column already exists
-  }
-
-  // Add manual column to existing words table if missing
-  try {
-    db.run(`ALTER TABLE words ADD COLUMN manual INTEGER NOT NULL DEFAULT 0`);
-  } catch {
-    // Column already exists
-  }
-
   saveDb();
 
   // Get existing words to reuse examples

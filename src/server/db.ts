@@ -27,28 +27,6 @@ export async function initDb(): Promise<void> {
     db = new SQL.Database();
   }
 
-  // Migration: add manual column if missing
-  try {
-    db.run(`ALTER TABLE words ADD COLUMN manual INTEGER NOT NULL DEFAULT 0`);
-  } catch {
-    // Column already exists
-  }
-
-  // Migration: add character_mode_only column to progress
-  try {
-    db.run(`ALTER TABLE progress ADD COLUMN character_mode_only INTEGER NOT NULL DEFAULT 0`);
-  } catch {
-    // Column already exists
-  }
-
-  // Migration: convert ISO timestamps (2024-01-15T10:30:00.000Z) to SQLite format (2024-01-15 10:30:00)
-  db.run(
-    `UPDATE progress SET last_practiced = REPLACE(SUBSTR(last_practiced, 1, 19), 'T', ' ') WHERE last_practiced LIKE '%T%'`
-  );
-  db.run(
-    `UPDATE progress SET next_eligible = REPLACE(SUBSTR(next_eligible, 1, 19), 'T', ' ') WHERE next_eligible LIKE '%T%'`
-  );
-
   // Migration: create hanzi_synonyms table
   db.run(`
     CREATE TABLE IF NOT EXISTS hanzi_synonyms (
@@ -58,28 +36,11 @@ export async function initDb(): Promise<void> {
     );
   `);
 
-  // Migration: add reset_at column to words
-  try {
-    db.run(`ALTER TABLE words ADD COLUMN reset_at TEXT`);
-  } catch {
-    // Column already exists
-  }
-
-  // Migration: remove hanzi2english progress rows
-  db.run(`DELETE FROM progress WHERE mode = 'hanzi2english'`);
-
-  // Migration: backfill missing modes for existing progress
-  db.run(`
-    INSERT OR IGNORE INTO progress (hanzi, mode, bucket, last_practiced, next_eligible, character_mode_only)
-    SELECT DISTINCT p.hanzi, m.mode, 0, p.last_practiced, p.next_eligible, p.character_mode_only
-    FROM progress p
-    CROSS JOIN (SELECT 'hanzi2pinyin' AS mode UNION ALL SELECT 'english2hanzi' UNION ALL SELECT 'english2pinyin') m
-    WHERE NOT EXISTS (SELECT 1 FROM progress p2 WHERE p2.hanzi = p.hanzi AND p2.mode = m.mode)
-  `);
-
   // Indexes for character mode queries
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_hanzi_rank ON words(hanzi_rank)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_progress_hanzi_charmode ON progress(hanzi, character_mode_only)`);
+  db.run(
+    `CREATE INDEX IF NOT EXISTS idx_progress_hanzi_charmode ON progress(hanzi, character_mode_only)`
+  );
 
   saveDb();
 }
@@ -286,7 +247,10 @@ export function deleteProgress(hanzi: string): void {
 }
 
 export function setResetAt(hanzi: string): void {
-  const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
+  const now = new Date()
+    .toISOString()
+    .replace('T', ' ')
+    .replace(/\.\d+Z$/, '');
   db.run('UPDATE words SET reset_at = ? WHERE hanzi = ?', [now, hanzi]);
 }
 
@@ -324,9 +288,7 @@ function getWordFilters(
   wordParts.push(`AND ${rankColumn} IS NOT NULL`);
 
   if (characterMode) {
-    wordParts.push(
-      'AND EXISTS (SELECT 1 FROM progress p2 WHERE INSTR(p2.hanzi, w.hanzi) > 0)'
-    );
+    wordParts.push('AND EXISTS (SELECT 1 FROM progress p2 WHERE INSTR(p2.hanzi, w.hanzi) > 0)');
   }
 
   if (!characterMode) {
@@ -397,7 +359,7 @@ function queryNewWords(
     `
       SELECT w.* FROM words w LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
       WHERE ${f.newWordCondition} ${f.wordFilter}
-      ORDER BY w.reset_at IS NULL ASC, w.reset_at DESC, ${f.rankColumn} ASC LIMIT ?
+      ORDER BY w.reset_at IS NULL ASC, w.reset_at ASC, ${f.rankColumn} ASC LIMIT ?
   `,
     [mode, ...categories, count]
   );
@@ -563,5 +525,19 @@ function rowToProgress(row: any): Progress {
     bucket: row.bucket,
     lastPracticed: row.last_practiced,
     nextEligible: row.next_eligible,
+    correctCount: row.correct_count,
+    incorrectCount: row.incorrect_count,
   };
+}
+
+export function incrementAnswerCounts(
+  hanzi: string,
+  mode: PracticeMode,
+  correct: number,
+  incorrect: number
+): void {
+  db.run(
+    `UPDATE progress SET correct_count = correct_count + ?, incorrect_count = incorrect_count + ? WHERE hanzi = ? AND mode = ?`,
+    [correct, incorrect, hanzi, mode]
+  );
 }

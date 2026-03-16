@@ -21,6 +21,7 @@ import {
   getWordByHanzi,
   getWordsForPractice,
   getWordsForReview,
+  incrementAnswerCounts,
   isAmbiguousTranslation,
   isHanziSynonym,
   saveDb,
@@ -216,6 +217,7 @@ router.post('/complete', (req, res) => {
 
   for (const result of results) {
     updateProgress(result.hanzi, mode, result.correctFirstTry, characterMode ?? false);
+    incrementAnswerCounts(result.hanzi, mode, 1, result.incorrectCount);
     if (result.correctFirstTry) {
       newWordsLearned++;
     }

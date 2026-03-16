@@ -747,10 +747,14 @@ function handleNext() {
 async function finishPractice() {
   clearSession();
   try {
-    const resultArray = Array.from(results.entries()).map(([hanzi, round]) => ({
-      hanzi,
-      correctFirstTry: newWords.has(hanzi) ? round === 2 : round === 1,
-    }));
+    const resultArray = Array.from(results.entries()).map(([hanzi, round]) => {
+      const isNew = newWords.has(hanzi);
+      return {
+        hanzi,
+        correctFirstTry: isNew ? round === 2 : round === 1,
+        incorrectCount: isNew ? round - 2 : round - 1,
+      };
+    });
 
     const response = await completePractice(
       currentMode,

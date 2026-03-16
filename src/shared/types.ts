@@ -38,6 +38,8 @@ export interface Progress {
   bucket: number;
   lastPracticed: string | null;
   nextEligible: string | null;
+  correctCount: number;
+  incorrectCount: number;
 }
 
 export interface PracticeQuestion {
@@ -82,6 +84,7 @@ export interface AnswerResponse {
 export interface PracticeResult {
   hanzi: string;
   correctFirstTry: boolean;
+  incorrectCount: number;
 }
 
 export interface CompleteRequest {

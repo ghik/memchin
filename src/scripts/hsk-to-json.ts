@@ -300,7 +300,7 @@ function parseHanziFrequencyFile(htmlPath: string) {
 
   let count = 0;
   for (const line of lines) {
-    if (count >= 3000) break;
+    if (count >= 5000) break;
     const cols = line.split('\t');
     if (cols.length < 6) continue;
 
