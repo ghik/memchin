@@ -290,6 +290,14 @@ function parseCommonWordsFile(htmlPath: string) {
 }
 
 // Parse hanzi_frequency.html for character-level frequency data
+interface HanziCharInfo {
+  pinyin: string;
+  english: string[];
+  rank: number;
+}
+
+const hanziCharData = new Map<string, HanziCharInfo>();
+
 function parseHanziFrequencyFile(htmlPath: string) {
   const buf = fs.readFileSync(htmlPath);
   const html = new TextDecoder('gbk').decode(buf);
@@ -298,9 +306,7 @@ function parseHanziFrequencyFile(htmlPath: string) {
   const preText = $('pre').text();
   const lines = preText.split('\n');
 
-  let count = 0;
   for (const line of lines) {
-    if (count >= 5000) break;
     const cols = line.split('\t');
     if (cols.length < 6) continue;
 
@@ -330,14 +336,11 @@ function parseHanziFrequencyFile(htmlPath: string) {
 
     // Filter out "(surname)" entries and extract word-class categories
     const english: string[] = [];
-    const categories: string[] = [];
     for (const t of translations) {
       if (t === '(surname)') continue;
       // Check for leading word-class indicator like "(n) ", "(v) ", "(adj) "
       const wcMatch = t.match(/^\((\w+)\)\s+(.+)$/);
       if (wcMatch) {
-        const wc = wcMatch[1].toLowerCase();
-        if (!categories.includes(wc)) categories.push(wc);
         english.push(wcMatch[2]);
       } else {
         english.push(t);
@@ -346,20 +349,23 @@ function parseHanziFrequencyFile(htmlPath: string) {
 
     if (english.length === 0) continue;
 
-    const existing = wordMap.get(hanzi);
-    if (existing) {
-      // Already in word list - just set hanzi frequency rank
-      existing.hanziFrequencyRank = rank;
-    } else {
-      // New character entry
-      addWord(hanzi, pinyin, english, undefined, '');
-      const entry = wordMap.get(hanzi);
-      if (entry) {
-        entry.hanziFrequencyRank = rank;
+    hanziCharData.set(hanzi, { pinyin, english, rank });
+
+    // Only add top 5000 characters to wordMap directly
+    if (rank <= 5000) {
+      const existing = wordMap.get(hanzi);
+      if (existing) {
+        // Already in word list - just set hanzi frequency rank
+        existing.hanziFrequencyRank = rank;
+      } else {
+        // New character entry
+        addWord(hanzi, pinyin, english, undefined, '');
+        const entry = wordMap.get(hanzi);
+        if (entry) {
+          entry.hanziFrequencyRank = rank;
+        }
       }
     }
-
-    count++;
   }
 }
 
@@ -509,6 +515,34 @@ if (fs.existsSync(hanziFreqPath)) {
   console.log('Parsing hanzi_frequency.html...');
   parseHanziFrequencyFile(hanziFreqPath);
   console.log(`  +${wordMap.size - sizeBefore} new characters (${wordMap.size} total)`);
+}
+
+// Add missing characters from multi-char words via CEDICT
+{
+  const missingChars = new Set<string>();
+  for (const entry of wordMap.values()) {
+    if ([...entry.hanzi].length <= 1) continue;
+    for (const ch of entry.hanzi) {
+      if (/[\u4e00-\u9fff]/.test(ch) && !wordMap.has(ch)) {
+        missingChars.add(ch);
+      }
+    }
+  }
+
+  let added = 0;
+  for (const ch of missingChars) {
+    const charInfo = hanziCharData.get(ch);
+    if (!charInfo) continue;
+    wordMap.set(ch, {
+      hanzi: ch,
+      pinyin: charInfo.pinyin,
+      english: charInfo.english,
+      categories: [],
+      hanziFrequencyRank: charInfo.rank,
+    });
+    added++;
+  }
+  console.log(`\nAdded ${added} missing characters from multi-char words`);
 }
 
 // Convert to array and sort by frequency rank
