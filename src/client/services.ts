@@ -7,6 +7,7 @@ import type {
   PracticeMode,
   PracticeQuestion,
   PracticeResult,
+  SpeechAssessResponse,
   StartResponse,
   Stats,
   Word,
@@ -180,4 +181,16 @@ export function addWord(
 
 export function resetWordProgress(hanzi: string): Promise<void> {
   return apiDelete(`/words/${encodeURIComponent(hanzi)}/progress`);
+}
+
+export async function assessSpeech(audio: ArrayBuffer, hanzi: string): Promise<SpeechAssessResponse> {
+  const response = await fetch(
+    `${API_BASE}/practice/speech-assess?hanzi=${encodeURIComponent(hanzi)}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: audio }
+  );
+  if (!response.ok) {
+    const body = await response.json();
+    throw new Error(body.error || 'Speech assessment failed');
+  }
+  return response.json();
 }

@@ -436,6 +436,33 @@ label.checkbox-label {
   padding: 12px 24px;
 }
 
+.answer-section input.recording {
+  border-color: #dc3545;
+  background: #fff5f5;
+  animation: recording-pulse 1.5s ease-in-out infinite;
+}
+
+.answer-section input.has-audio {
+  border-color: #28a745;
+  background: #f0fff0;
+}
+
+.answer-section input.assessing {
+  border-color: #ffc107;
+  background: #fffdf0;
+  animation: assessing-pulse 1s ease-in-out infinite;
+}
+
+@keyframes assessing-pulse {
+  0%, 100% { border-color: #ffc107; }
+  50% { border-color: #ffe082; }
+}
+
+@keyframes recording-pulse {
+  0%, 100% { border-color: #dc3545; }
+  50% { border-color: #f5a0a0; }
+}
+
 .feedback {
   padding: 15px;
   border-radius: 8px;

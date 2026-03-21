@@ -130,3 +130,9 @@ export interface CedictEntry {
   pinyinNumbered: string; // Original numbered format from CEDICT
   definitions: string[];
 }
+
+
+export interface SpeechAssessResponse {
+  accuracyScore: number;
+  synonym?: string; // if the best match was a synonym, which one
+}

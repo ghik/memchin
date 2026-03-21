@@ -11,6 +11,7 @@ import { validatePinyin } from '../shared/pinyin.js';
 import {
   addHanziSynonym,
   addWord,
+  assessSpeech,
   completePractice,
   getCategories,
   getDueCount,
@@ -165,6 +166,79 @@ let roundNumber = 1;
 let submitBlocked = false;
 let newWords: Set<string> = new Set(); // words that were new (bucket null) and shown answer on first round
 let characterMode = false; // whether current session uses character mode
+
+// Speech recording state
+let mediaStream: MediaStream | null = null;
+let audioContext: AudioContext | null = null;
+let scriptProcessor: ScriptProcessorNode | null = null;
+let recordedSamples: Float32Array[] = [];
+let isRecording = false;
+let recordingTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function encodePcm16(samples: Float32Array[]): ArrayBuffer {
+  let totalLength = 0;
+  for (const chunk of samples) totalLength += chunk.length;
+
+  const pcmData = new Int16Array(totalLength);
+  let offset = 0;
+  for (const chunk of samples) {
+    for (let i = 0; i < chunk.length; i++) {
+      const s = Math.max(-1, Math.min(1, chunk[i]));
+      pcmData[offset++] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+  }
+
+  return pcmData.buffer;
+}
+
+function finishRecording() {
+  if (!isRecording) return;
+  if (recordingTimeout) {
+    clearTimeout(recordingTimeout);
+    recordingTimeout = null;
+  }
+  answerInput.classList.remove('recording');
+  stopRecording().then((wav) => {
+    pendingAudioData = wav;
+    answerInput.classList.add('has-audio');
+  });
+}
+
+async function startRecording() {
+  mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  audioContext = new AudioContext({ sampleRate: 16000 });
+  const source = audioContext.createMediaStreamSource(mediaStream);
+  scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+  recordedSamples = [];
+
+  scriptProcessor.onaudioprocess = (e) => {
+    const data = e.inputBuffer.getChannelData(0);
+    recordedSamples.push(new Float32Array(data));
+  };
+
+  source.connect(scriptProcessor);
+  scriptProcessor.connect(audioContext.destination);
+  isRecording = true;
+  recordingTimeout = setTimeout(finishRecording, 5000);
+}
+
+async function stopRecording(): Promise<ArrayBuffer> {
+  isRecording = false;
+  scriptProcessor?.disconnect();
+  scriptProcessor = null;
+  mediaStream?.getTracks().forEach((t) => t.stop());
+  mediaStream = null;
+
+  audioContext?.close();
+  audioContext = null;
+
+  return encodePcm16(recordedSamples);
+}
+
+function isPinyinMode(): boolean {
+  return currentMode === 'hanzi2pinyin' || currentMode === 'english2pinyin';
+}
+
 
 // Session persistence
 function saveSession() {
@@ -483,6 +557,9 @@ function showQuestion() {
       : 'prompt';
 
   answerInput.value = '';
+  pendingAudioData = null;
+  speechAttemptCount = 0;
+  answerInput.classList.remove('has-audio', 'recording', 'assessing');
 
   if (question.bucket === null && !newWords.has(word.hanzi)) {
     // New word — show answer immediately for learning, will be quizzed next round
@@ -569,6 +646,115 @@ function formatFullAnswer(question: PracticeQuestion): string {
   return result;
 }
 
+// Show incorrect feedback with optional synonym button
+function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
+  const showSynonymBtn = currentMode === 'english2hanzi' || currentMode === 'english2pinyin';
+  const synonymBtn = showSynonymBtn
+    ? `<button class="synonym-btn" id="synonym-btn">Synonym</button>`
+    : '';
+  const acceptBtn = `<button class="synonym-btn" id="accept-btn">Try again</button>`;
+  const label = prefix ?? '✗ Incorrect';
+  feedbackDiv.innerHTML = `${label}${synonymBtn}${acceptBtn}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+
+  document.getElementById('accept-btn')!.addEventListener('click', () => {
+    incorrectThisRound = incorrectThisRound.filter((q) => q !== question);
+    results.delete(question.word.hanzi);
+    feedbackDiv.classList.remove('incorrect');
+    feedbackDiv.classList.add('synonym');
+    feedbackDiv.innerHTML = `Try again!`;
+    answerInput.value = '';
+    answerInput.disabled = false;
+    answerInput.focus();
+    submitBtn.classList.remove('hidden');
+    skipBtn.classList.remove('hidden');
+    practiceActions.classList.add('hidden');
+
+    submitBlocked = true;
+    const unblock = () => { submitBlocked = false; };
+    const timer = setTimeout(unblock, 1000);
+    answerInput.addEventListener('input', () => { clearTimeout(timer); unblock(); }, { once: true });
+    saveSession();
+  });
+
+  if (showSynonymBtn) {
+    const originalFeedbackHtml = feedbackDiv.innerHTML;
+    document.getElementById('synonym-btn')!.addEventListener('click', () => {
+      feedbackDiv.innerHTML = `<div class="synonym-input-row"><input type="text" id="synonym-hanzi-input" placeholder="Synonym hanzi" class="synonym-hanzi-input"><button id="synonym-confirm-btn" class="primary-btn">Confirm</button><button id="synonym-cancel-btn" class="secondary-btn">Cancel</button></div>`;
+      const synonymInput = document.getElementById('synonym-hanzi-input') as HTMLInputElement;
+      synonymInput.focus();
+
+      document.getElementById('synonym-confirm-btn')!.addEventListener('click', async () => {
+        const synonymHanzi = synonymInput.value.trim();
+        if (!synonymHanzi) return;
+        try {
+          await addHanziSynonym(question.word.hanzi, synonymHanzi);
+          incorrectThisRound = incorrectThisRound.filter((q) => q !== question);
+          results.delete(question.word.hanzi);
+          feedbackDiv.classList.remove('incorrect');
+          feedbackDiv.classList.add('synonym');
+          feedbackDiv.innerHTML = `✓ Synonym saved. Try again!`;
+          answerInput.value = '';
+          answerInput.disabled = false;
+          answerInput.focus();
+          submitBtn.classList.remove('hidden');
+          skipBtn.classList.remove('hidden');
+          practiceActions.classList.add('hidden');
+
+          submitBlocked = true;
+          const unblock = () => { submitBlocked = false; };
+          const timer = setTimeout(unblock, 1000);
+          answerInput.addEventListener('input', () => { clearTimeout(timer); unblock(); }, { once: true });
+        } catch (error) {
+          console.error('Failed to save synonym:', error);
+          feedbackDiv.innerHTML = `<span class="error">Failed to save synonym</span>`;
+        }
+      });
+
+      synonymInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          document.getElementById('synonym-confirm-btn')!.click();
+        }
+      });
+
+      document.getElementById('synonym-cancel-btn')!.addEventListener('click', () => {
+        feedbackDiv.innerHTML = originalFeedbackHtml;
+      });
+    });
+  }
+}
+
+// Show "try again" feedback (synonym or low accuracy)
+function showTryAgain(message: string) {
+  feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
+  feedbackDiv.classList.add('synonym');
+  feedbackDiv.innerHTML = message;
+}
+
+// Show final feedback (correct, incorrect, or skip) with common post-feedback actions
+function showFinalFeedback(question: PracticeQuestion, type: 'correct' | 'incorrect' | 'skip', label?: string) {
+  feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
+
+  if (type === 'correct') {
+    feedbackDiv.classList.add('correct');
+    feedbackDiv.innerHTML = `${label ?? '✓ Correct!'}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+  } else if (type === 'incorrect') {
+    feedbackDiv.classList.add('incorrect');
+    showIncorrectFeedback(question, label);
+  } else {
+    feedbackDiv.classList.add('incorrect');
+    feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+  }
+
+  playAudio(question.word.hanzi, true);
+  submitBtn.classList.add('hidden');
+  skipBtn.classList.add('hidden');
+  practiceActions.classList.remove('hidden');
+  answerInput.disabled = true;
+  saveSession();
+}
+
 // Handle answer submission
 async function handleSubmit() {
   const answer = answerInput.value.trim();
@@ -588,114 +774,26 @@ async function handleSubmit() {
     submitBtn.disabled = true;
     const response = await submitAnswer(currentMode, question.word.hanzi, answer);
 
-    // Handle synonym case - valid word but not the target
     if (response.synonym) {
-      feedbackDiv.classList.remove('hidden', 'correct', 'incorrect');
-      feedbackDiv.classList.add('synonym');
-      feedbackDiv.innerHTML = `✓ "${answer}" is correct, but not the word I'm looking for. Try again!`;
+      showTryAgain(`✓ "${answer}" is correct, but not the word I'm looking for. Try again!`);
       answerInput.focus();
       submitBtn.disabled = false;
 
-      // Block Enter until user types something or 1 second elapses
       submitBlocked = true;
-      const unblock = () => {
-        submitBlocked = false;
-      };
+      const unblock = () => { submitBlocked = false; };
       const timer = setTimeout(unblock, 1000);
-      answerInput.addEventListener(
-        'input',
-        () => {
-          clearTimeout(timer);
-          unblock();
-        },
-        { once: true }
-      );
-
+      answerInput.addEventListener('input', () => { clearTimeout(timer); unblock(); }, { once: true });
       return;
     }
 
-    // Track round when answered correctly
     if (response.correct && !results.has(question.word.hanzi)) {
       results.set(question.word.hanzi, roundNumber);
     }
-    // Track for iteration retry (always, if wrong)
     if (!response.correct) {
       incorrectThisRound.push(question);
     }
 
-    // Show feedback
-    feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
-    feedbackDiv.classList.add(response.correct ? 'correct' : 'incorrect');
-
-    if (response.correct) {
-      feedbackDiv.innerHTML = `✓ Correct!<div class="correct-answer">${formatFullAnswer(question)}</div>`;
-    } else {
-      const showSynonymBtn = currentMode === 'english2hanzi' || currentMode === 'english2pinyin';
-      const synonymBtn = showSynonymBtn
-        ? `<button class="synonym-btn" id="synonym-btn">Synonym</button>`
-        : '';
-      feedbackDiv.innerHTML = `✗ Incorrect${synonymBtn}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
-
-      if (showSynonymBtn) {
-        const originalFeedbackHtml = feedbackDiv.innerHTML;
-        document.getElementById('synonym-btn')!.addEventListener('click', () => {
-          // Show inline UI: text input + Confirm + Cancel
-          feedbackDiv.innerHTML = `<div class="synonym-input-row"><input type="text" id="synonym-hanzi-input" placeholder="Synonym hanzi" class="synonym-hanzi-input"><button id="synonym-confirm-btn" class="primary-btn">Confirm</button><button id="synonym-cancel-btn" class="secondary-btn">Cancel</button></div>`;
-          const synonymInput = document.getElementById('synonym-hanzi-input') as HTMLInputElement;
-          synonymInput.focus();
-
-          document.getElementById('synonym-confirm-btn')!.addEventListener('click', async () => {
-            const synonymHanzi = synonymInput.value.trim();
-            if (!synonymHanzi) return;
-            try {
-              await addHanziSynonym(question.word.hanzi, synonymHanzi);
-              // Undo incorrect tracking
-              incorrectThisRound = incorrectThisRound.filter((q) => q !== question);
-              results.delete(question.word.hanzi);
-              // Show synonym message and let user retry
-              feedbackDiv.classList.remove('incorrect');
-              feedbackDiv.classList.add('synonym');
-              feedbackDiv.innerHTML = `✓ Synonym saved. Try again!`;
-              answerInput.value = '';
-              answerInput.disabled = false;
-              answerInput.focus();
-              submitBtn.classList.remove('hidden');
-              skipBtn.classList.remove('hidden');
-              practiceActions.classList.add('hidden');
-
-              submitBlocked = true;
-              const unblock = () => { submitBlocked = false; };
-              const timer = setTimeout(unblock, 1000);
-              answerInput.addEventListener('input', () => { clearTimeout(timer); unblock(); }, { once: true });
-            } catch (error) {
-              console.error('Failed to save synonym:', error);
-              feedbackDiv.innerHTML = `<span class="error">Failed to save synonym</span>`;
-            }
-          });
-
-          synonymInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              e.stopPropagation();
-              document.getElementById('synonym-confirm-btn')!.click();
-            }
-          });
-
-          document.getElementById('synonym-cancel-btn')!.addEventListener('click', () => {
-            feedbackDiv.innerHTML = originalFeedbackHtml;
-          });
-        });
-      }
-    }
-
-    // Play word pronunciation (auto)
-    playAudio(question.word.hanzi, true);
-
-    submitBtn.classList.add('hidden');
-    skipBtn.classList.add('hidden');
-    practiceActions.classList.remove('hidden');
-    answerInput.disabled = true;
-    saveSession();
+    showFinalFeedback(question, response.correct ? 'correct' : 'incorrect');
   } catch (error) {
     alert(error instanceof Error ? error.message : 'Failed to submit answer');
   } finally {
@@ -706,24 +804,8 @@ async function handleSubmit() {
 // Handle "I don't know" button
 function handleSkip() {
   const question = questions[currentIndex];
-
-  // Track for iteration retry
   incorrectThisRound.push(question);
-
-  // Show the correct answer
-  feedbackDiv.classList.remove('hidden', 'correct', 'incorrect');
-  feedbackDiv.classList.add('incorrect');
-  feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
-
-  // Play error sound then word pronunciation (auto)
-  // Play word pronunciation (auto)
-  playAudio(question.word.hanzi, true);
-
-  submitBtn.classList.add('hidden');
-  skipBtn.classList.add('hidden');
-  practiceActions.classList.remove('hidden');
-  answerInput.disabled = true;
-  saveSession();
+  showFinalFeedback(question, 'skip');
 }
 
 // Handle next question
@@ -872,6 +954,83 @@ finishBtn.addEventListener('click', () => {
   finishPractice();
 });
 editWordBtn.addEventListener('click', editCurrentWord);
+
+let pendingAudioData: ArrayBuffer | null = null;
+let speechAssessing = false;
+let speechAttemptCount = 0;
+
+async function submitPendingAudio() {
+  if (!pendingAudioData) return;
+  const wavData = pendingAudioData;
+  pendingAudioData = null;
+  answerInput.classList.remove('has-audio');
+  answerInput.classList.add('assessing');
+  speechAssessing = true;
+  const question = questions[currentIndex];
+
+  try {
+    speechAttemptCount++;
+    const result = await assessSpeech(wavData, question.word.hanzi);
+    const score = result.accuracyScore;
+    const failThreshold = speechAttemptCount === 1 ? 0 : 30;
+
+    if (result.synonym && score >= 50) {
+      showTryAgain(`✓ "${result.synonym}" is correct, but not the word I'm looking for. Try again!`);
+    } else if (score >= 50) {
+      if (!results.has(question.word.hanzi)) {
+        results.set(question.word.hanzi, roundNumber);
+      }
+      showFinalFeedback(question, 'correct', `✓ Correct! (accuracy: ${Math.round(score)}%)`);
+    } else if (score >= failThreshold) {
+      showTryAgain(`Accuracy: ${Math.round(score)}% — try again!`);
+    } else {
+      incorrectThisRound.push(question);
+      showFinalFeedback(question, 'incorrect', `✗ Accuracy: ${Math.round(score)}%`);
+    }
+  } catch (error) {
+    feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
+    feedbackDiv.classList.add('incorrect');
+    feedbackDiv.innerHTML = `Speech assessment failed: ${error instanceof Error ? error.message : 'unknown error'}`;
+  } finally {
+    answerInput.classList.remove('assessing');
+    speechAssessing = false;
+  }
+}
+
+function canStartRecording(): boolean {
+  return (
+    isPinyinMode() &&
+    practiceScreen.classList.contains('active') &&
+    !submitBtn.classList.contains('hidden') &&
+    answerInput.value.trim() === '' &&
+    !isRecording &&
+    !speechAssessing
+  );
+}
+
+// Hold spacebar to record, release to buffer audio, hold again to re-record
+answerInput.addEventListener('keydown', (e) => {
+  if (e.key === ' ' && (canStartRecording() || isRecording)) {
+    e.preventDefault();
+    if (!isRecording) {
+      pendingAudioData = null;
+      answerInput.classList.remove('has-audio');
+      startRecording()
+        .then(() => {
+          answerInput.classList.add('recording');
+        })
+        .catch((err) => console.error('Microphone access failed:', err));
+    }
+  }
+});
+
+answerInput.addEventListener('keyup', (e) => {
+  if (e.key === ' ' && isRecording) {
+    e.preventDefault();
+    finishRecording();
+  }
+});
+
 cancelEditBtn.addEventListener('click', () => {
   returnToPractice = false;
   cancelEditBtn.classList.add('hidden');
@@ -921,8 +1080,12 @@ resetProgressBtn.addEventListener('click', async () => {
 answerInput.addEventListener('keydown', (e) => {
   // Ignore Enter during IME composition (e.g. pinyin input)
   if (e.isComposing) return;
+  if (isRecording) return;
   if (e.key === 'Enter' && !submitBtn.classList.contains('hidden') && !submitBlocked) {
-    if (answerInput.value.trim() === '') {
+    if (pendingAudioData) {
+      e.stopPropagation();
+      submitPendingAudio();
+    } else if (answerInput.value.trim() === '') {
       handleSkip();
     } else {
       handleSubmit();

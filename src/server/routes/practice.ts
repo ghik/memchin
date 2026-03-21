@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import type {
   AnswerRequest,
   AnswerResponse,
@@ -35,6 +35,7 @@ import {
   toNumberedPinyin,
 } from '../services/pinyin.js';
 import { decomposeWord } from '../services/ids.js';
+import { assessPronunciation, isSpeechAssessAvailable } from '../services/speech-assess.js';
 
 const router = Router();
 
@@ -283,6 +284,45 @@ router.get('/stats', (req, res) => {
     ...getStats(mode, categories, characterMode),
   }));
   res.json(stats);
+});
+
+router.post('/speech-assess', express.raw({ type: 'application/octet-stream', limit: '20mb' }), async (req, res) => {
+  if (!isSpeechAssessAvailable()) {
+    return res.status(501).json({ error: 'Speech assessment not configured' });
+  }
+
+  const hanzi = req.query.hanzi as string;
+  const pcmBuffer = req.body as Buffer;
+  if (!hanzi || !pcmBuffer?.length) {
+    return res.status(400).json({ error: 'hanzi query param and audio body are required' });
+  }
+
+  try {
+    const synonymHanzis = getHanziSynonymHanzis(hanzi);
+
+    const [result, ...synResults] = await Promise.all([
+      assessPronunciation(pcmBuffer, hanzi),
+      ...synonymHanzis.map((syn) => assessPronunciation(pcmBuffer, syn)),
+    ]);
+
+    // Check if a synonym scored higher
+    let bestSyn: { accuracyScore: number; synonym: string } | null = null;
+    for (let i = 0; i < synResults.length; i++) {
+      if (synResults[i].accuracyScore > result.accuracyScore &&
+          (!bestSyn || synResults[i].accuracyScore > bestSyn.accuracyScore)) {
+        bestSyn = { accuracyScore: synResults[i].accuracyScore, synonym: synonymHanzis[i] };
+      }
+    }
+
+    if (bestSyn && result.accuracyScore < 50) {
+      res.json(bestSyn);
+    } else {
+      res.json(result);
+    }
+  } catch (error) {
+    console.error('Speech assessment failed:', error);
+    res.status(500).json({ error: 'Speech assessment failed' });
+  }
 });
 
 export default router;
