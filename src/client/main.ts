@@ -138,11 +138,18 @@ if (savedWordSelection) {
   ) as HTMLInputElement | null;
   if (radio) radio.checked = true;
 }
+function updatePreviewBtnVisibility() {
+  const selection = (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
+  previewBtn.classList.toggle('hidden', selection !== 'new');
+}
+
 document.querySelectorAll('input[name="word-selection"]').forEach((radio) => {
   radio.addEventListener('change', () => {
     localStorage.setItem('wordSelection', (radio as HTMLInputElement).value);
+    updatePreviewBtnVisibility();
   });
 });
+updatePreviewBtnVisibility();
 
 // State
 let latestStats: Stats[] = [];
