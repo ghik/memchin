@@ -353,6 +353,23 @@ label.checkbox-label {
   color: #555;
 }
 
+.due-mode-btn {
+  margin-left: 8px;
+  padding: 2px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.due-mode-btn:hover {
+  background: #ffe69c;
+}
+
 /* Practice Screen */
 .progress-bar {
   text-align: center;

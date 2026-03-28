@@ -413,8 +413,11 @@ function renderStats(stats: Stats[]) {
       const bucketBar = s.buckets
         .map((count, i) => `<span class="bucket-count" title="Bucket ${i}">${count}</span>`)
         .join('');
+      const dueModeBtn = s.dueForReview > 0
+        ? `<button class="due-mode-btn" data-mode="${s.mode}" data-count="${s.dueForReview}">${s.dueForReview} due</button>`
+        : '';
       return `
-      <p><strong>${MODE_LABELS[s.mode] ?? s.mode}:</strong> ${s.learned}/${s.totalWords} learned, ${s.mastered} mastered, ${s.dueForReview} due</p>
+      <p><strong>${MODE_LABELS[s.mode] ?? s.mode}:</strong> ${s.learned}/${s.totalWords} learned, ${s.mastered} mastered${dueModeBtn}</p>
       <div class="bucket-bar">${bucketBar}</div>
     `;
     })
@@ -423,6 +426,35 @@ function renderStats(stats: Stats[]) {
   statsDiv.innerHTML = html;
   latestStats = stats;
   updateDueBtn();
+
+  statsDiv.querySelectorAll('.due-mode-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      const count = parseInt((btn as HTMLElement).dataset.count!);
+
+      try {
+        const response = await startPractice(
+          count, mode, 'review', getSelectedCategories(), characterModeCheckbox.checked
+        );
+        currentMode = mode;
+        characterMode = characterModeCheckbox.checked;
+        questions = shuffle(response.questions);
+        allQuestions = [...questions];
+        currentIndex = 0;
+        results.clear();
+        incorrectThisRound = [];
+        roundNumber = 1;
+        newWords.clear();
+
+        showScreen(practiceScreen);
+        showQuestion();
+        saveSession();
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'Failed to start practice');
+      }
+    });
+  });
 }
 
 async function reloadStats() {

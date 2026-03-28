@@ -137,6 +137,42 @@ router.post('/', async (req, res) => {
     if (resetBucket) {
       resetToBucket0(hanzi);
     }
+
+    // Auto-add individual characters for multi-character words
+    const chars = [...hanzi];
+    if (chars.length > 1) {
+      const charsToAdd = [];
+      for (const char of chars) {
+        if (getWordByHanzi(char)) {
+          continue;
+        }
+        const entries = lookupFiltered(char);
+        if (entries.length === 0) {
+          continue;
+        }
+        const entry = entries[0];
+        const charFreq = freq.get(char);
+        charsToAdd.push({
+          hanzi: char,
+          pinyin: entry.pinyin,
+          english: entries.flatMap((e) => e.definitions),
+          hskLevel: 0,
+          wordFrequencyRank: charFreq,
+          hanziFrequencyRank: charFreq,
+          examples: [] as Example[],
+          translatable: true,
+          categories: [] as string[],
+          manual: true,
+        });
+      }
+      if (charsToAdd.length > 0) {
+        insertWords(charsToAdd);
+        for (const w of charsToAdd) {
+          resetToBucket0(w.hanzi);
+        }
+      }
+    }
+
     saveDb();
 
     // Generate examples and audio
