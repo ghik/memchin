@@ -106,7 +106,7 @@ function setCharMode(mode: PracticeMode, on: boolean) {
   savedCharMode[mode] = on;
   localStorage.setItem('charModes', JSON.stringify(savedCharMode));
 }
-const ALL_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2hanzi', 'english2pinyin'];
+const ALL_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2pinyin', 'english2hanzi'];
 function getCharModesList(): PracticeMode[] {
   return ALL_MODES.filter((m) => getCharMode(m));
 }
@@ -370,6 +370,7 @@ async function loadStats() {
 }
 
 function renderStats(stats: Stats[]) {
+  stats = [...stats].sort((a, b) => ALL_MODES.indexOf(a.mode) - ALL_MODES.indexOf(b.mode));
   const html = stats
     .map((s) => {
       const BUCKET_LABELS = ['now', '5m', '30m', '4h', '1d', '3d', '7d', '14d', '30d'];
