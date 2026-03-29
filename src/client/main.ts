@@ -14,7 +14,6 @@ import {
   assessSpeech,
   completePractice,
   getCategories,
-  getDueCount,
   getStats,
   getWordCount,
   lookupHanzi,
@@ -32,8 +31,6 @@ const resultScreen = document.getElementById('result-screen')!;
 const addWordScreen = document.getElementById('add-word-screen')!;
 
 const wordCountInput = document.getElementById('word-count') as HTMLInputElement;
-const startBtn = document.getElementById('start-btn') as HTMLButtonElement;
-const previewBtn = document.getElementById('preview-btn') as HTMLButtonElement;
 const previewSection = document.getElementById('preview-section')!;
 const statsDiv = document.getElementById('stats')!;
 
@@ -62,7 +59,6 @@ const selectedCategoriesDiv = document.getElementById('selected-categories')!;
 const categoryDropdown = categoryToggle.parentElement!;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
 const characterModeCheckbox = document.getElementById('character-mode') as HTMLInputElement;
-const dueBtn = document.getElementById('due-btn') as HTMLButtonElement;
 
 // Sidebar nav
 const navItems = document.querySelectorAll('.nav-item');
@@ -118,20 +114,6 @@ if (savedWordCount) wordCountInput.value = savedWordCount;
 wordCountInput.addEventListener('change', () => {
   localStorage.setItem('wordCount', wordCountInput.value);
 });
-const savedMode = localStorage.getItem('mode');
-if (savedMode) {
-  const radio = document.querySelector(
-    `input[name="mode"][value="${savedMode}"]`
-  ) as HTMLInputElement | null;
-  if (radio) radio.checked = true;
-}
-document.querySelectorAll('input[name="mode"]').forEach((radio) => {
-  radio.addEventListener('change', () => {
-    currentMode = (radio as HTMLInputElement).value as PracticeMode;
-    localStorage.setItem('mode', currentMode);
-    updateDueBtn();
-  });
-});
 const savedWordSelection = localStorage.getItem('wordSelection');
 if (savedWordSelection) {
   const radio = document.querySelector(
@@ -139,24 +121,18 @@ if (savedWordSelection) {
   ) as HTMLInputElement | null;
   if (radio) radio.checked = true;
 }
-function updatePreviewBtnVisibility() {
-  const selection = (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
-  previewBtn.classList.toggle('hidden', selection !== 'new');
-}
 
 document.querySelectorAll('input[name="word-selection"]').forEach((radio) => {
   radio.addEventListener('change', () => {
     localStorage.setItem('wordSelection', (radio as HTMLInputElement).value);
-    updatePreviewBtnVisibility();
+    renderStats(latestStats);
   });
 });
-updatePreviewBtnVisibility();
 
 // State
 let latestStats: Stats[] = [];
 let currentMode: PracticeMode =
-  ((document.querySelector('input[name="mode"]:checked') as HTMLInputElement)
-    ?.value as PracticeMode) || 'hanzi2pinyin';
+  (localStorage.getItem('mode') as PracticeMode) || 'hanzi2pinyin';
 let questions: PracticeQuestion[] = [];
 let currentIndex = 0;
 let results: Map<string, number> = new Map(); // hanzi -> round answered correctly (1 = first try)
@@ -309,13 +285,6 @@ function shuffle<T>(array: T[]): T[] {
   return result;
 }
 
-function updateDueBtn() {
-  const stat = latestStats.find((s) => s.mode === currentMode);
-  const due = stat?.dueForReview ?? 0;
-  dueBtn.textContent = 'all due';
-  dueBtn.dataset.count = String(due);
-}
-
 const MODE_LABELS: Record<PracticeMode, string> = {
   hanzi2pinyin: 'Hanzi → Pinyin',
   english2hanzi: 'English → Hanzi',
@@ -396,7 +365,6 @@ async function loadStats() {
     if (wordCount === 0) {
       statsDiv.innerHTML =
         '<p>No words in database. Run <code>npm run import-hsk</code> first.</p>';
-      startBtn.disabled = true;
       return;
     }
 
@@ -407,37 +375,66 @@ async function loadStats() {
   }
 }
 
+function getWordSelection(): string {
+  return (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
+}
+
 function renderStats(stats: Stats[]) {
+  const wordSelection = getWordSelection();
+  const showPreview = wordSelection === 'new';
+
   const html = stats
     .map((s) => {
       const bucketBar = s.buckets
         .map((count, i) => `<span class="bucket-count" title="Bucket ${i}">${count}</span>`)
         .join('');
-      const dueModeBtn = s.dueForReview > 0
+      const dueBtn = s.dueForReview > 0
         ? `<button class="due-mode-btn" data-mode="${s.mode}" data-count="${s.dueForReview}">${s.dueForReview} due</button>`
         : '';
+      const previewBtn = showPreview
+        ? `<button class="mode-preview-btn" data-mode="${s.mode}">Preview</button>`
+        : '';
       return `
-      <p><strong>${MODE_LABELS[s.mode] ?? s.mode}:</strong> ${s.learned}/${s.totalWords} learned, ${s.mastered} mastered${dueModeBtn}</p>
-      <div class="bucket-bar">${bucketBar}</div>
+      <div class="mode-card" data-mode="${s.mode}">
+        <div class="mode-card-header">
+          <strong>${MODE_LABELS[s.mode] ?? s.mode}</strong>
+          <span class="mode-card-stats">${s.learned}/${s.totalWords} learned, ${s.mastered} mastered</span>
+        </div>
+        <div class="bucket-bar">${bucketBar}</div>
+        <div class="mode-card-actions">
+          <button class="mode-start-btn primary-btn" data-mode="${s.mode}">Start</button>
+          ${dueBtn}${previewBtn}
+        </div>
+      </div>
     `;
     })
     .join('');
 
   statsDiv.innerHTML = html;
   latestStats = stats;
-  updateDueBtn();
 
+  // Start buttons
+  statsDiv.querySelectorAll('.mode-start-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      currentMode = mode;
+      localStorage.setItem('mode', mode);
+      handleStart();
+    });
+  });
+
+  // Due buttons
   statsDiv.querySelectorAll('.due-mode-btn').forEach((btn) => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
+    btn.addEventListener('click', async () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
       const count = parseInt((btn as HTMLElement).dataset.count!);
+      currentMode = mode;
+      localStorage.setItem('mode', mode);
 
       try {
         const response = await startPractice(
           count, mode, 'review', getSelectedCategories(), characterModeCheckbox.checked
         );
-        currentMode = mode;
         characterMode = characterModeCheckbox.checked;
         questions = shuffle(response.questions);
         allQuestions = [...questions];
@@ -453,6 +450,17 @@ function renderStats(stats: Stats[]) {
       } catch (error) {
         alert(error instanceof Error ? error.message : 'Failed to start practice');
       }
+    });
+  });
+
+  // Preview buttons
+  statsDiv.querySelectorAll('.mode-preview-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      currentMode = mode;
+      localStorage.setItem('mode', mode);
+      previewSelected.clear();
+      loadPreviewPage(0);
     });
   });
 }
@@ -473,17 +481,10 @@ function getSelectedCategories(): string[] {
 // Start practice
 async function handleStart(hanziList?: string[]) {
   const count = parseInt(wordCountInput.value) || 10;
-  currentMode = (document.querySelector('input[name="mode"]:checked') as HTMLInputElement)
-    .value as PracticeMode;
 
   try {
-    startBtn.disabled = true;
-    startBtn.textContent = 'Loading...';
-
     const selectedCategories = getSelectedCategories();
-    const wordSelection = (
-      document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement
-    ).value;
+    const wordSelection = getWordSelection();
     const response = await startPractice(
       count,
       currentMode,
@@ -510,9 +511,6 @@ async function handleStart(hanziList?: string[]) {
     saveSession();
   } catch (error) {
     alert(error instanceof Error ? error.message : 'Failed to start practice');
-  } finally {
-    startBtn.disabled = false;
-    startBtn.textContent = 'Start Practice';
   }
 }
 
@@ -972,7 +970,6 @@ function editCurrentWord() {
 // Event listeners
 const quitBtn = document.getElementById('quit-btn')!;
 
-startBtn.addEventListener('click', () => handleStart());
 submitBtn.addEventListener('click', handleSubmit);
 skipBtn.addEventListener('click', handleSkip);
 nextBtn.addEventListener('click', handleNext);
@@ -1132,8 +1129,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     if (resultScreen.classList.contains('active')) {
       handleRestart();
-    } else if (startScreen.classList.contains('active')) {
-      handleStart();
     } else if (!practiceActions.classList.contains('hidden')) {
       handleNext();
     }
@@ -1146,29 +1141,6 @@ document.querySelectorAll('.preset-btn').forEach((btn) => {
     wordCountInput.value = (btn as HTMLElement).dataset.count!;
     localStorage.setItem('wordCount', wordCountInput.value);
   });
-});
-
-// "All due" button: set review-only mode with due count respecting categories
-dueBtn.addEventListener('click', async () => {
-  const reviewRadio = document.querySelector(
-    'input[name="word-selection"][value="review"]'
-  ) as HTMLInputElement;
-  reviewRadio.checked = true;
-  localStorage.setItem('wordSelection', 'review');
-
-  try {
-    const count = await getDueCount(
-      currentMode,
-      getSelectedCategories(),
-      characterModeCheckbox.checked
-    );
-    if (count > 0) {
-      wordCountInput.value = String(count);
-      localStorage.setItem('wordCount', String(count));
-    }
-  } catch (error) {
-    console.error('Failed to get due count:', error);
-  }
 });
 
 // Preview new words
@@ -1294,10 +1266,6 @@ async function loadPreviewPage(offset: number) {
   }
 }
 
-previewBtn.addEventListener('click', () => {
-  previewSelected.clear();
-  loadPreviewPage(0);
-});
 
 // Click handler for audio playback on hanzi
 document.addEventListener('click', (e) => {

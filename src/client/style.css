@@ -223,19 +223,6 @@ label.checkbox-label {
   background: #e0e0e0;
 }
 
-.start-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.start-actions .primary-btn {
-  flex: 1;
-}
-
-.start-actions .secondary-btn {
-  white-space: nowrap;
-}
-
 /* Preview section */
 .preview-section {
   margin-top: 20px;
@@ -356,20 +343,45 @@ label.checkbox-label {
 
 .stats {
   margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mode-card {
+  padding: 14px 16px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+}
+
+.mode-card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
   font-size: 14px;
+}
+
+.mode-card-stats {
   color: #666;
 }
 
-.stats p {
-  margin-bottom: 5px;
+.mode-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.mode-start-btn {
+  padding: 6px 18px;
+  font-size: 13px;
 }
 
 .bucket-bar {
   display: flex;
   gap: 2px;
-  margin-bottom: 10px;
 }
 
 .bucket-count {
@@ -383,8 +395,7 @@ label.checkbox-label {
 }
 
 .due-mode-btn {
-  margin-left: 8px;
-  padding: 2px 10px;
+  padding: 4px 12px;
   font-size: 13px;
   font-weight: 500;
   background: #fff3cd;
@@ -397,6 +408,21 @@ label.checkbox-label {
 
 .due-mode-btn:hover {
   background: #ffe69c;
+}
+
+.mode-preview-btn {
+  padding: 4px 12px;
+  font-size: 13px;
+  background: #e8f4fd;
+  color: #1a73e8;
+  border: 1px solid #b8daff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mode-preview-btn:hover {
+  background: #cce5ff;
 }
 
 /* Practice Screen */
