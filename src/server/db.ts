@@ -426,6 +426,7 @@ export function getStats(
   mastered: number;
   dueForReview: number;
   buckets: number[];
+  dueBuckets: number[];
 } {
   const f = getWordFilters(mode, categories, characterMode);
   const baseJoin = `FROM words w JOIN progress p ON w.hanzi = p.hanzi WHERE p.mode = ? ${f.wordFilter} ${f.progressFilter}`;
@@ -454,7 +455,16 @@ export function getStats(
     buckets[row.bucket as number] = row.cnt as number;
   }
 
-  return { totalWords, learned, mastered, dueForReview, buckets };
+  const dueBuckets = new Array(MAX_BUCKET + 1).fill(0);
+  for (const row of queryRows(
+    `SELECT p.bucket, COUNT(*) as cnt ${baseJoin} AND p.next_eligible <= datetime('now') GROUP BY p.bucket`,
+    baseParams,
+    (r) => r
+  )) {
+    dueBuckets[row.bucket as number] = row.cnt as number;
+  }
+
+  return { totalWords, learned, mastered, dueForReview, buckets, dueBuckets };
 }
 
 export function getDueCount(

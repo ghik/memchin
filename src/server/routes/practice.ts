@@ -276,7 +276,9 @@ router.get('/due-count', (req, res) => {
 
 router.get('/stats', (req, res) => {
   const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
-  const characterMode = req.query.characterMode === 'true';
+  const charModes = new Set(
+    req.query.charModes ? (req.query.charModes as string).split(',') : []
+  );
   const modes: PracticeMode[] = [
     'hanzi2pinyin',
     'english2hanzi',
@@ -284,7 +286,7 @@ router.get('/stats', (req, res) => {
   ];
   const stats = modes.map((mode) => ({
     mode,
-    ...getStats(mode, categories, characterMode),
+    ...getStats(mode, categories, charModes.has(mode)),
   }));
   res.json(stats);
 });

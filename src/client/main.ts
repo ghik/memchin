@@ -30,8 +30,6 @@ const practiceScreen = document.getElementById('practice-screen')!;
 const resultScreen = document.getElementById('result-screen')!;
 const addWordScreen = document.getElementById('add-word-screen')!;
 
-const wordCountInput = document.getElementById('word-count') as HTMLInputElement;
-const previewSection = document.getElementById('preview-section')!;
 const statsDiv = document.getElementById('stats')!;
 
 const progressText = document.getElementById('progress-text')!;
@@ -58,7 +56,6 @@ const categoryList = document.getElementById('category-list')!;
 const selectedCategoriesDiv = document.getElementById('selected-categories')!;
 const categoryDropdown = categoryToggle.parentElement!;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
-const characterModeCheckbox = document.getElementById('character-mode') as HTMLInputElement;
 
 // Sidebar nav
 const navItems = document.querySelectorAll('.nav-item');
@@ -104,16 +101,27 @@ autoplayCheckbox.checked = localStorage.getItem('autoplayAudio') !== 'false';
 autoplayCheckbox.addEventListener('change', () => {
   localStorage.setItem('autoplayAudio', String(autoplayCheckbox.checked));
 });
-characterModeCheckbox.checked = localStorage.getItem('characterMode') === 'true';
-characterModeCheckbox.addEventListener('change', () => {
-  localStorage.setItem('characterMode', String(characterModeCheckbox.checked));
-  reloadStats();
-});
-const savedWordCount = localStorage.getItem('wordCount');
-if (savedWordCount) wordCountInput.value = savedWordCount;
-wordCountInput.addEventListener('change', () => {
-  localStorage.setItem('wordCount', wordCountInput.value);
-});
+const savedCharMode: Record<string, boolean> = JSON.parse(localStorage.getItem('charModes') ?? '{}');
+function getCharMode(mode: PracticeMode): boolean {
+  return savedCharMode[mode] ?? false;
+}
+function setCharMode(mode: PracticeMode, on: boolean) {
+  savedCharMode[mode] = on;
+  localStorage.setItem('charModes', JSON.stringify(savedCharMode));
+}
+const ALL_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2hanzi', 'english2pinyin'];
+function getCharModesList(): PracticeMode[] {
+  return ALL_MODES.filter((m) => getCharMode(m));
+}
+
+const savedWordCounts: Record<string, number> = JSON.parse(localStorage.getItem('wordCounts') ?? '{}');
+function getModeWordCount(mode: PracticeMode): number {
+  return savedWordCounts[mode] ?? 10;
+}
+function setModeWordCount(mode: PracticeMode, count: number) {
+  savedWordCounts[mode] = count;
+  localStorage.setItem('wordCounts', JSON.stringify(savedWordCounts));
+}
 const savedWordSelection = localStorage.getItem('wordSelection');
 if (savedWordSelection) {
   const radio = document.querySelector(
@@ -335,8 +343,8 @@ function toggleCategory(cat: string, checked: boolean) {
 // Load stats on start
 async function loadStats() {
   try {
-    const [stats, wordCount, categories] = await Promise.all([
-      getStats(getSelectedCategories(), characterModeCheckbox.checked),
+    const [stats, totalWords, categories] = await Promise.all([
+      getStats(getSelectedCategories(), getCharModesList()),
       getWordCount(),
       getCategories(),
     ]);
@@ -362,7 +370,7 @@ async function loadStats() {
     updateCategoryToggleText();
     updateSelectedTags();
 
-    if (wordCount === 0) {
+    if (totalWords === 0) {
       statsDiv.innerHTML =
         '<p>No words in database. Run <code>npm run import-hsk</code> first.</p>';
       return;
@@ -386,7 +394,11 @@ function renderStats(stats: Stats[]) {
   const html = stats
     .map((s) => {
       const bucketBar = s.buckets
-        .map((count, i) => `<span class="bucket-count" title="Bucket ${i}">${count}</span>`)
+        .map((count, i) => {
+          const due = s.dueBuckets[i] || 0;
+          const dueLabel = due > 0 ? `<span class="bucket-due">${due}</span> ` : '';
+          return `<span class="bucket-count" title="Bucket ${i}: ${count} total, ${due} due">${dueLabel}${count}</span>`;
+        })
         .join('');
       const dueBtn = s.dueForReview > 0
         ? `<button class="due-mode-btn" data-mode="${s.mode}" data-count="${s.dueForReview}">${s.dueForReview} due</button>`
@@ -394,6 +406,13 @@ function renderStats(stats: Stats[]) {
       const previewBtn = showPreview
         ? `<button class="mode-preview-btn" data-mode="${s.mode}">Preview</button>`
         : '';
+      const presets = [5, 10, 20, 30, 50];
+      const modeCount = getModeWordCount(s.mode);
+      const isCustom = !presets.includes(modeCount);
+      const countPresets = presets
+        .map((n) => `<button class="count-preset${n === modeCount ? ' active' : ''}" data-mode="${s.mode}" data-count="${n}">${n}</button>`)
+        .join('') +
+        `<input type="number" class="count-input${isCustom ? ' active' : ''}" data-mode="${s.mode}" value="${modeCount}" min="1" max="999">`;
       return `
       <div class="mode-card" data-mode="${s.mode}">
         <div class="mode-card-header">
@@ -401,10 +420,16 @@ function renderStats(stats: Stats[]) {
           <span class="mode-card-stats">${s.learned}/${s.totalWords} learned, ${s.mastered} mastered</span>
         </div>
         <div class="bucket-bar">${bucketBar}</div>
+        <div class="mode-card-options">
+          <div class="mode-card-count">${countPresets}</div>
+          <label class="mode-char-mode"><input type="checkbox" class="char-mode-cb" data-mode="${s.mode}" ${getCharMode(s.mode) ? 'checked' : ''}> Char mode</label>
+        </div>
         <div class="mode-card-actions">
-          <button class="mode-start-btn primary-btn" data-mode="${s.mode}">Start</button>
+          <button class="mode-start-btn" data-mode="${s.mode}">Start</button>
+          <button class="mode-random-btn" data-mode="${s.mode}">Random</button>
           ${dueBtn}${previewBtn}
         </div>
+        <div class="preview-section hidden" data-mode="${s.mode}"></div>
       </div>
     `;
     })
@@ -413,13 +438,23 @@ function renderStats(stats: Stats[]) {
   statsDiv.innerHTML = html;
   latestStats = stats;
 
-  // Start buttons
+  // Start buttons (always mixed)
   statsDiv.querySelectorAll('.mode-start-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
       currentMode = mode;
       localStorage.setItem('mode', mode);
-      handleStart();
+      handleStart(undefined, 'mixed');
+    });
+  });
+
+  // Random review buttons
+  statsDiv.querySelectorAll('.mode-random-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      currentMode = mode;
+      localStorage.setItem('mode', mode);
+      handleStart(undefined, 'random');
     });
   });
 
@@ -433,9 +468,9 @@ function renderStats(stats: Stats[]) {
 
       try {
         const response = await startPractice(
-          count, mode, 'review', getSelectedCategories(), characterModeCheckbox.checked
+          count, mode, 'review', getSelectedCategories(), getCharMode(mode)
         );
-        characterMode = characterModeCheckbox.checked;
+        characterMode = getCharMode(mode);
         questions = shuffle(response.questions);
         allQuestions = [...questions];
         currentIndex = 0;
@@ -453,24 +488,95 @@ function renderStats(stats: Stats[]) {
     });
   });
 
-  // Preview buttons
+  // Preview buttons (toggle)
   statsDiv.querySelectorAll('.mode-preview-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      const section = statsDiv.querySelector(`.preview-section[data-mode="${mode}"]`) as HTMLElement;
+      if (previewMode === mode) {
+        // Toggle off
+        section.classList.add('hidden');
+        section.innerHTML = '';
+        previewMode = null;
+        previewSelected.clear();
+        return;
+      }
+      // Close any other open preview
+      if (previewMode) {
+        const prev = statsDiv.querySelector(`.preview-section[data-mode="${previewMode}"]`) as HTMLElement;
+        prev.classList.add('hidden');
+        prev.innerHTML = '';
+      }
       currentMode = mode;
       localStorage.setItem('mode', mode);
       previewSelected.clear();
+      previewMode = mode;
       loadPreviewPage(0);
+    });
+  });
+
+  // Count preset buttons and input (per-mode)
+  function updateModeCount(mode: PracticeMode, count: number) {
+    setModeWordCount(mode, count);
+    const presets = [5, 10, 20, 30, 50];
+    const card = statsDiv.querySelector(`.mode-card[data-mode="${mode}"]`)!;
+    card.querySelectorAll('.count-preset').forEach((b) => {
+      b.classList.toggle('active', (b as HTMLElement).dataset.count === String(count));
+    });
+    const input = card.querySelector('.count-input') as HTMLInputElement;
+    input.value = String(count);
+    input.classList.toggle('active', !presets.includes(count));
+  }
+
+  statsDiv.querySelectorAll('.count-preset').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      updateModeCount(mode, parseInt((btn as HTMLElement).dataset.count!));
+    });
+  });
+
+  statsDiv.querySelectorAll('.count-input').forEach((input) => {
+    input.addEventListener('focus', () => {
+      (input as HTMLInputElement).select();
+    });
+    input.addEventListener('change', () => {
+      const mode = (input as HTMLElement).dataset.mode as PracticeMode;
+      updateModeCount(mode, parseInt((input as HTMLInputElement).value) || 10);
+    });
+  });
+
+  // Character mode checkboxes
+  statsDiv.querySelectorAll('.char-mode-cb').forEach((cb) => {
+    cb.addEventListener('change', async () => {
+      const input = cb as HTMLInputElement;
+      const mode = input.dataset.mode as PracticeMode;
+      setCharMode(mode, input.checked);
+      const card = statsDiv.querySelector(`.mode-card[data-mode="${mode}"]`) as HTMLElement;
+      const timer = setTimeout(() => card.classList.add('loading'), 100);
+      try {
+        const stats = await getStats(getSelectedCategories(), getCharModesList());
+        clearTimeout(timer);
+        renderStats(stats);
+      } catch (error) {
+        clearTimeout(timer);
+        console.error('Failed to reload stats:', error);
+        card.classList.remove('loading');
+      }
     });
   });
 }
 
 async function reloadStats() {
+  const timer = setTimeout(() => statsDiv.classList.add('loading'), 100);
   try {
-    const stats = await getStats(getSelectedCategories(), characterModeCheckbox.checked);
+    const stats = await getStats(getSelectedCategories(), getCharModesList());
+    clearTimeout(timer);
     renderStats(stats);
   } catch (error) {
+    clearTimeout(timer);
     console.error('Failed to reload stats:', error);
+  } finally {
+    statsDiv.classList.remove('loading');
   }
 }
 
@@ -479,21 +585,21 @@ function getSelectedCategories(): string[] {
 }
 
 // Start practice
-async function handleStart(hanziList?: string[]) {
-  const count = parseInt(wordCountInput.value) || 10;
+async function handleStart(hanziList?: string[], wordSelectionOverride?: string) {
+  const count = getModeWordCount(currentMode);
 
   try {
     const selectedCategories = getSelectedCategories();
-    const wordSelection = getWordSelection();
+    const wordSelection = wordSelectionOverride ?? getWordSelection();
     const response = await startPractice(
       count,
       currentMode,
       wordSelection,
       selectedCategories,
-      characterModeCheckbox.checked,
+      getCharMode(currentMode),
       hanziList
     );
-    characterMode = characterModeCheckbox.checked;
+    characterMode = getCharMode(currentMode);
     questions = shuffle(response.questions);
     allQuestions = [...questions];
     currentIndex = 0;
@@ -502,9 +608,7 @@ async function handleStart(hanziList?: string[]) {
     roundNumber = 1;
     newWords.clear();
 
-    previewSection.classList.add('hidden');
-    previewSection.innerHTML = '';
-    previewSelected.clear();
+    closePreview();
 
     showScreen(practiceScreen);
     showQuestion();
@@ -1135,47 +1239,57 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Preset count buttons
-document.querySelectorAll('.preset-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    wordCountInput.value = (btn as HTMLElement).dataset.count!;
-    localStorage.setItem('wordCount', wordCountInput.value);
-  });
-});
 
 // Preview new words
 const PREVIEW_PAGE_SIZE = 50;
 let previewSelected = new Set<string>();
 let previewOffset = 0;
 let previewTotal = 0;
+let previewMode: PracticeMode | null = null;
 
 function updatePracticeSelectedBtn() {
-  const btn = document.getElementById('practice-selected-btn');
+  const section = getPreviewSection();
+  if (!section) return;
+  const btn = section.querySelector('.practice-selected-btn') as HTMLButtonElement | null;
   if (!btn) return;
   const count = previewSelected.size;
-  if (count === 0) {
-    btn.classList.add('hidden');
-  } else {
-    btn.classList.remove('hidden');
-    btn.textContent = `Practice ${count} selected`;
+  btn.disabled = count === 0;
+  btn.textContent = count === 0 ? 'Practice selected' : `Practice ${count} selected`;
+}
+
+function getPreviewSection(): HTMLElement | null {
+  if (!previewMode) return null;
+  return statsDiv.querySelector(`.preview-section[data-mode="${previewMode}"]`);
+}
+
+function closePreview() {
+  if (!previewMode) return;
+  const section = getPreviewSection();
+  if (section) {
+    section.classList.add('hidden');
+    section.innerHTML = '';
   }
+  previewMode = null;
+  previewSelected.clear();
 }
 
 async function loadPreviewPage(offset: number) {
+  const section = getPreviewSection();
+  if (!section) return;
   previewOffset = offset;
   try {
     const { words, total } = await previewNewWords(
       currentMode,
       getSelectedCategories(),
-      characterModeCheckbox.checked,
+      getCharMode(currentMode),
       PREVIEW_PAGE_SIZE,
       offset
     );
     previewTotal = total;
 
     if (total === 0) {
-      previewSection.innerHTML = '<p class="preview-empty">No new words available.</p>';
-      previewSection.classList.remove('hidden');
+      section.innerHTML = '<p class="preview-empty">No new words available.</p>';
+      section.classList.remove('hidden');
       return;
     }
 
@@ -1185,13 +1299,13 @@ async function loadPreviewPage(offset: number) {
     const hasNext = offset + words.length < total;
 
     const paginationHtml = `<div class="preview-pagination">` +
-      `<button id="preview-prev" class="secondary-btn" ${hasPrev ? '' : 'disabled'}>Prev</button>` +
+      `<button class="preview-prev secondary-btn" ${hasPrev ? '' : 'disabled'}>Prev</button>` +
       `<span class="preview-page-info">${pageStart}–${pageEnd} of ${total}</span>` +
-      `<button id="preview-next" class="secondary-btn" ${hasNext ? '' : 'disabled'}>Next</button>` +
+      `<button class="preview-next secondary-btn" ${hasNext ? '' : 'disabled'}>Next</button>` +
       `</div>`;
 
-    previewSection.innerHTML =
-      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" id="preview-select-all"> Select all</label><button id="practice-selected-btn" class="primary-btn hidden"></button></div>` +
+    section.innerHTML =
+      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label><button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
       words
         .map((w) => {
           const ranks = [
@@ -1214,7 +1328,8 @@ async function loadPreviewPage(offset: number) {
 
     // Checkbox handlers
     const pageHanzis = words.map((w) => w.hanzi);
-    previewSection.querySelectorAll('.preview-checkbox').forEach((cb) => {
+    const selectAllCb = section.querySelector('.preview-select-all-cb') as HTMLInputElement;
+    section.querySelectorAll('.preview-checkbox').forEach((cb) => {
       cb.addEventListener('change', () => {
         const input = cb as HTMLInputElement;
         const hanzi = input.dataset.hanzi!;
@@ -1223,18 +1338,16 @@ async function loadPreviewPage(offset: number) {
         } else {
           previewSelected.delete(hanzi);
         }
-        const selectAll = document.getElementById('preview-select-all') as HTMLInputElement;
-        selectAll.checked = pageHanzis.every((h) => previewSelected.has(h));
+        selectAllCb.checked = pageHanzis.every((h) => previewSelected.has(h));
         updatePracticeSelectedBtn();
       });
     });
 
     // Select all handler (toggles current page)
-    const selectAll = document.getElementById('preview-select-all') as HTMLInputElement;
-    selectAll.checked = pageHanzis.every((h) => previewSelected.has(h));
-    selectAll.addEventListener('change', (e) => {
+    selectAllCb.checked = pageHanzis.every((h) => previewSelected.has(h));
+    selectAllCb.addEventListener('change', (e) => {
       const checked = (e.target as HTMLInputElement).checked;
-      previewSection.querySelectorAll('.preview-checkbox').forEach((cb) => {
+      section.querySelectorAll('.preview-checkbox').forEach((cb) => {
         const input = cb as HTMLInputElement;
         input.checked = checked;
         if (checked) {
@@ -1247,20 +1360,20 @@ async function loadPreviewPage(offset: number) {
     });
 
     // Practice selected handler
-    document.getElementById('practice-selected-btn')!.addEventListener('click', () => {
+    section.querySelector('.practice-selected-btn')!.addEventListener('click', () => {
       handleStart([...previewSelected]);
     });
 
     // Pagination handlers
-    document.getElementById('preview-prev')!.addEventListener('click', () => {
+    section.querySelector('.preview-prev')!.addEventListener('click', () => {
       loadPreviewPage(Math.max(0, previewOffset - PREVIEW_PAGE_SIZE));
     });
-    document.getElementById('preview-next')!.addEventListener('click', () => {
+    section.querySelector('.preview-next')!.addEventListener('click', () => {
       loadPreviewPage(previewOffset + PREVIEW_PAGE_SIZE);
     });
 
     updatePracticeSelectedBtn();
-    previewSection.classList.remove('hidden');
+    section.classList.remove('hidden');
   } catch (error) {
     console.error('Failed to preview words:', error);
   }

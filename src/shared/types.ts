@@ -113,6 +113,7 @@ export interface Stats {
   mastered: number;
   dueForReview: number;
   buckets: number[]; // count of words in each bucket (index = bucket number)
+  dueBuckets: number[]; // count of due words in each bucket
 }
 
 export interface LookupResponse {
