@@ -122,20 +122,7 @@ function setModeWordCount(mode: PracticeMode, count: number) {
   savedWordCounts[mode] = count;
   localStorage.setItem('wordCounts', JSON.stringify(savedWordCounts));
 }
-const savedWordSelection = localStorage.getItem('wordSelection');
-if (savedWordSelection) {
-  const radio = document.querySelector(
-    `input[name="word-selection"][value="${savedWordSelection}"]`
-  ) as HTMLInputElement | null;
-  if (radio) radio.checked = true;
-}
 
-document.querySelectorAll('input[name="word-selection"]').forEach((radio) => {
-  radio.addEventListener('change', () => {
-    localStorage.setItem('wordSelection', (radio as HTMLInputElement).value);
-    renderStats(latestStats);
-  });
-});
 
 // State
 let latestStats: Stats[] = [];
@@ -383,16 +370,13 @@ async function loadStats() {
   }
 }
 
-function getWordSelection(): string {
-  return (document.querySelector('input[name="word-selection"]:checked') as HTMLInputElement).value;
-}
-
 function renderStats(stats: Stats[]) {
-  const wordSelection = getWordSelection();
-  const showPreview = wordSelection === 'new';
-
   const html = stats
     .map((s) => {
+      const BUCKET_LABELS = ['now', '5m', '30m', '4h', '1d', '3d', '7d', '14d', '30d'];
+      const bucketTimings = s.buckets
+        .map((_, i) => `<span class="bucket-timing">${BUCKET_LABELS[i] ?? ''}</span>`)
+        .join('');
       const bucketBar = s.buckets
         .map((count, i) => {
           const due = s.dueBuckets[i] || 0;
@@ -403,9 +387,7 @@ function renderStats(stats: Stats[]) {
       const dueBtn = s.dueForReview > 0
         ? `<button class="due-mode-btn" data-mode="${s.mode}" data-count="${s.dueForReview}">${s.dueForReview} due</button>`
         : '';
-      const previewBtn = showPreview
-        ? `<button class="mode-preview-btn" data-mode="${s.mode}">Preview</button>`
-        : '';
+      const previewBtn = `<button class="mode-preview-btn" data-mode="${s.mode}">Preview</button>`;
       const presets = [5, 10, 20, 30, 50];
       const modeCount = getModeWordCount(s.mode);
       const isCustom = !presets.includes(modeCount);
@@ -419,6 +401,7 @@ function renderStats(stats: Stats[]) {
           <strong>${MODE_LABELS[s.mode] ?? s.mode}</strong>
           <span class="mode-card-stats">${s.learned}/${s.totalWords} learned, ${s.mastered} mastered</span>
         </div>
+        <div class="bucket-timings">${bucketTimings}</div>
         <div class="bucket-bar">${bucketBar}</div>
         <div class="mode-card-options">
           <div class="mode-card-count">${countPresets}</div>
@@ -585,12 +568,11 @@ function getSelectedCategories(): string[] {
 }
 
 // Start practice
-async function handleStart(hanziList?: string[], wordSelectionOverride?: string) {
+async function handleStart(hanziList?: string[], wordSelection: string = 'mixed') {
   const count = getModeWordCount(currentMode);
 
   try {
     const selectedCategories = getSelectedCategories();
-    const wordSelection = wordSelectionOverride ?? getWordSelection();
     const response = await startPractice(
       count,
       currentMode,

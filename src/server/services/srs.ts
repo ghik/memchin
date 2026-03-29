@@ -5,15 +5,15 @@ const ACTIVE_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2hanzi', 'english2
 
 // Bucket delays in minutes
 const BUCKET_DELAYS_MINUTES = [
-  0, // 0: Immediate
-  1, // 1: 1 minute
-  5, // 2: 5 minutes
-  30, // 3: 30 minutes
-  4 * 60, // 4: 4 hours
-  24 * 60, // 5: 1 day
-  3 * 24 * 60, // 6: 3 day
-  7 * 24 * 60, // 7: 7 days
-  30 * 24 * 60, // 8: 30 days (mastered)
+  0, // Immediate
+  5, // 5 minutes
+  30, // 30 minutes
+  4 * 60, // 4 hours
+  24 * 60, // 1 day
+  3 * 24 * 60, // 3 day
+  7 * 24 * 60, // 7 days
+  14 * 24 * 60, // 14 days
+  30 * 24 * 60, // 30 days (mastered)
 ];
 
 export const MAX_BUCKET = BUCKET_DELAYS_MINUTES.length - 1;
