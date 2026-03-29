@@ -352,16 +352,17 @@ function queryNewWords(
   mode: PracticeMode,
   categories: string[],
   characterMode: boolean,
-  count: number
+  count: number,
+  offset: number = 0
 ): Word[] {
   const f = getWordFilters(mode, categories, characterMode);
   return queryWords(
     `
       SELECT w.* FROM words w LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
       WHERE ${f.newWordCondition} ${f.wordFilter}
-      ORDER BY w.reset_at IS NULL ASC, w.reset_at ASC, ${f.rankColumn} ASC LIMIT ?
+      ORDER BY w.reset_at IS NULL ASC, w.reset_at ASC, ${f.rankColumn} ASC LIMIT ? OFFSET ?
   `,
-    [mode, ...categories, count]
+    [mode, ...categories, count, offset]
   );
 }
 
@@ -379,9 +380,25 @@ export function getNewWords(
   mode: PracticeMode,
   count: number,
   categories: string[],
-  characterMode: boolean
+  characterMode: boolean,
+  offset: number = 0
 ): Word[] {
-  return queryNewWords(mode, categories, characterMode, count);
+  return queryNewWords(mode, categories, characterMode, count, offset);
+}
+
+export function getNewWordsCount(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean
+): number {
+  const f = getWordFilters(mode, categories, characterMode);
+  return queryCount(
+    `
+      SELECT COUNT(*) as cnt FROM words w LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
+      WHERE ${f.newWordCondition} ${f.wordFilter}
+  `,
+    [mode, ...categories]
+  );
 }
 
 export function getWordsForPractice(
@@ -514,6 +531,7 @@ function rowToWord(row: any): Word {
     translatable: Boolean(row.translatable),
     categories: JSON.parse(row.categories || '[]'),
     manual: Boolean(row.manual),
+    resetAt: row.reset_at ?? undefined,
   };
 }
 

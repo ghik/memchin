@@ -1172,7 +1172,10 @@ dueBtn.addEventListener('click', async () => {
 });
 
 // Preview new words
+const PREVIEW_PAGE_SIZE = 50;
 let previewSelected = new Set<string>();
+let previewOffset = 0;
+let previewTotal = 0;
 
 function updatePracticeSelectedBtn() {
   const btn = document.getElementById('practice-selected-btn');
@@ -1186,83 +1189,114 @@ function updatePracticeSelectedBtn() {
   }
 }
 
-previewBtn.addEventListener('click', async () => {
-  const count = parseInt(wordCountInput.value) || 10;
+async function loadPreviewPage(offset: number) {
+  previewOffset = offset;
   try {
-    previewBtn.disabled = true;
-    previewBtn.textContent = 'Loading...';
-    previewSelected.clear();
-    const words = await previewNewWords(
+    const { words, total } = await previewNewWords(
       currentMode,
-      count,
       getSelectedCategories(),
-      characterModeCheckbox.checked
+      characterModeCheckbox.checked,
+      PREVIEW_PAGE_SIZE,
+      offset
     );
-    if (words.length === 0) {
+    previewTotal = total;
+
+    if (total === 0) {
       previewSection.innerHTML = '<p class="preview-empty">No new words available.</p>';
-    } else {
-      previewSection.innerHTML =
-        `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" id="preview-select-all"> Select all</label><button id="practice-selected-btn" class="primary-btn hidden"></button></div>` +
-        words
-          .map((w) => {
-            const ranks = [
-              w.wordFrequencyRank != null ? `word #${w.wordFrequencyRank}` : null,
-              w.hanziFrequencyRank != null ? `char #${w.hanziFrequencyRank}` : null,
-            ]
-              .filter(Boolean)
-              .join(', ');
-            const rankSpan = ranks ? ` <span class="preview-rank">${ranks}</span>` : '';
-            const cats =
-              w.categories.length > 0
-                ? ` <span class="preview-categories">${w.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ')}</span>`
-                : '';
-            return `<label class="preview-word"><input type="checkbox" class="preview-checkbox" data-hanzi="${w.hanzi}"> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${rankSpan}${cats}</label>`;
-          })
-          .join('');
+      previewSection.classList.remove('hidden');
+      return;
+    }
 
-      // Checkbox handlers
-      previewSection.querySelectorAll('.preview-checkbox').forEach((cb) => {
-        cb.addEventListener('change', () => {
-          const input = cb as HTMLInputElement;
-          const hanzi = input.dataset.hanzi!;
-          if (input.checked) {
-            previewSelected.add(hanzi);
-          } else {
-            previewSelected.delete(hanzi);
-          }
-          const selectAll = document.getElementById('preview-select-all') as HTMLInputElement;
-          selectAll.checked = previewSelected.size === words.length;
-          updatePracticeSelectedBtn();
-        });
-      });
+    const pageStart = offset + 1;
+    const pageEnd = offset + words.length;
+    const hasPrev = offset > 0;
+    const hasNext = offset + words.length < total;
 
-      // Select all handler
-      document.getElementById('preview-select-all')!.addEventListener('change', (e) => {
-        const checked = (e.target as HTMLInputElement).checked;
-        previewSection.querySelectorAll('.preview-checkbox').forEach((cb) => {
-          const input = cb as HTMLInputElement;
-          input.checked = checked;
-          if (checked) {
-            previewSelected.add(input.dataset.hanzi!);
-          } else {
-            previewSelected.delete(input.dataset.hanzi!);
-          }
-        });
+    const paginationHtml = `<div class="preview-pagination">` +
+      `<button id="preview-prev" class="secondary-btn" ${hasPrev ? '' : 'disabled'}>Prev</button>` +
+      `<span class="preview-page-info">${pageStart}–${pageEnd} of ${total}</span>` +
+      `<button id="preview-next" class="secondary-btn" ${hasNext ? '' : 'disabled'}>Next</button>` +
+      `</div>`;
+
+    previewSection.innerHTML =
+      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" id="preview-select-all"> Select all</label><button id="practice-selected-btn" class="primary-btn hidden"></button></div>` +
+      words
+        .map((w) => {
+          const ranks = [
+            w.wordFrequencyRank != null ? `word #${w.wordFrequencyRank}` : null,
+            w.hanziFrequencyRank != null ? `char #${w.hanziFrequencyRank}` : null,
+          ]
+            .filter(Boolean)
+            .join(', ');
+          const rankSpan = ranks ? ` <span class="preview-rank">${ranks}</span>` : '';
+          const cats =
+            w.categories.length > 0
+              ? ` <span class="preview-categories">${w.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ')}</span>`
+              : '';
+          const resetTag = w.resetAt ? ' <span class="preview-reset">reset</span>' : '';
+          const checked = previewSelected.has(w.hanzi) ? 'checked' : '';
+          return `<label class="preview-word"><input type="checkbox" class="preview-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${rankSpan}${cats}${resetTag}</label>`;
+        })
+        .join('') +
+      paginationHtml;
+
+    // Checkbox handlers
+    const pageHanzis = words.map((w) => w.hanzi);
+    previewSection.querySelectorAll('.preview-checkbox').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const input = cb as HTMLInputElement;
+        const hanzi = input.dataset.hanzi!;
+        if (input.checked) {
+          previewSelected.add(hanzi);
+        } else {
+          previewSelected.delete(hanzi);
+        }
+        const selectAll = document.getElementById('preview-select-all') as HTMLInputElement;
+        selectAll.checked = pageHanzis.every((h) => previewSelected.has(h));
         updatePracticeSelectedBtn();
       });
+    });
 
-      // Practice selected handler
-      document.getElementById('practice-selected-btn')!.addEventListener('click', () => {
-        handleStart([...previewSelected]);
+    // Select all handler (toggles current page)
+    const selectAll = document.getElementById('preview-select-all') as HTMLInputElement;
+    selectAll.checked = pageHanzis.every((h) => previewSelected.has(h));
+    selectAll.addEventListener('change', (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      previewSection.querySelectorAll('.preview-checkbox').forEach((cb) => {
+        const input = cb as HTMLInputElement;
+        input.checked = checked;
+        if (checked) {
+          previewSelected.add(input.dataset.hanzi!);
+        } else {
+          previewSelected.delete(input.dataset.hanzi!);
+        }
       });
-    }
+      updatePracticeSelectedBtn();
+    });
+
+    // Practice selected handler
+    document.getElementById('practice-selected-btn')!.addEventListener('click', () => {
+      handleStart([...previewSelected]);
+    });
+
+    // Pagination handlers
+    document.getElementById('preview-prev')!.addEventListener('click', () => {
+      loadPreviewPage(Math.max(0, previewOffset - PREVIEW_PAGE_SIZE));
+    });
+    document.getElementById('preview-next')!.addEventListener('click', () => {
+      loadPreviewPage(previewOffset + PREVIEW_PAGE_SIZE);
+    });
+
+    updatePracticeSelectedBtn();
     previewSection.classList.remove('hidden');
   } catch (error) {
     console.error('Failed to preview words:', error);
-  } finally {
-    previewBtn.disabled = false;
-    previewBtn.textContent = 'Preview new words';
   }
+}
+
+previewBtn.addEventListener('click', () => {
+  previewSelected.clear();
+  loadPreviewPage(0);
 });
 
 // Click handler for audio playback on hanzi

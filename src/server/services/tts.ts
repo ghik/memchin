@@ -16,43 +16,15 @@ if (!fs.existsSync(audioDir)) {
   fs.mkdirSync(audioDir, { recursive: true });
 }
 
-interface AudioPaths {
-  word: string;
-  examples: string[];
-}
-
 /**
- * Generate speech audio for a word and its examples
- * Returns paths to the generated audio files (relative to data/audio)
+ * Generate speech audio for a hanzi string if it doesn't already exist
  */
-export async function generateSpeech(
-  hanzi: string,
-  exampleSentences: string[]
-): Promise<AudioPaths> {
-  const wordFile = `${hanzi}.mp3`;
-  const wordPath = path.join(audioDir, wordFile);
-
-  // Generate word audio if not exists
-  if (!fs.existsSync(wordPath)) {
-    await synthesizeToFile(hanzi, wordPath);
+export async function generateSpeech(hanzi: string): Promise<void> {
+  const filePath = path.join(audioDir, `${hanzi}.mp3`);
+  if (fs.existsSync(filePath)) {
+    return;
   }
-
-  // Generate example audio (named by example sentence)
-  const exampleFiles: string[] = [];
-  for (const sentence of exampleSentences) {
-    const exFile = `${sentence}.mp3`;
-    const exPath = path.join(audioDir, exFile);
-
-    if (!fs.existsSync(exPath)) {
-      await synthesizeToFile(sentence, exPath);
-    }
-    exampleFiles.push(exFile);
-  }
-
-  return {
-    word: wordFile,
-    examples: exampleFiles,
-  };
+  await synthesizeToFile(hanzi, filePath);
 }
 
 async function synthesizeToFile(text: string, outputPath: string): Promise<void> {

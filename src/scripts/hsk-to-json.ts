@@ -2,66 +2,26 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as cheerio from 'cheerio';
-import { numberedToToneMarked } from '../server/services/pinyin.js';
+import {
+  type HanziCharInfo,
+  loadWordFrequencyData,
+  parseHanziFrequencyFile,
+  splitEnglish,
+} from '../server/services/hanzi-freq.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sourcesDir = path.join(__dirname, '../../sources');
 const mainHtmlPath = path.join(sourcesDir, 'hsk_words.html');
 const commonWordsPath = path.join(sourcesDir, '1000_common_words.html');
 const labelledDir = path.join(sourcesDir, 'hsk_labelled_words');
-const freqPath = path.join(sourcesDir, 'internet-zh.num.txt');
 const hanziFreqPath = path.join(sourcesDir, 'hanzi_frequency.html');
 const bodyPath = path.join(sourcesDir, 'body.txt');
 const familyPath = path.join(sourcesDir, 'family.html');
 const clothingPath = path.join(sourcesDir, 'clothing.html');
 const outputPath = path.join(__dirname, '../../hsk_words.json');
 
-function loadFrequencyData(): Map<string, number> {
-  const hanziToRank = new Map<string, number>();
-  if (fs.existsSync(freqPath)) {
-    const data = fs.readFileSync(freqPath, 'utf-8');
-    for (const line of data.split('\n')) {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length >= 3) {
-        hanziToRank.set(parts[2], parseInt(parts[0]));
-      }
-    }
-  }
-  return hanziToRank;
-}
-
 function normalizeSpaces(text: string): string {
   return text.replace(/\s+/g, ' ');
-}
-
-function splitEnglish(text: string, delimiters: RegExp): string[] {
-  const results: string[] = [];
-  let current = '';
-  let depth = 0;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (ch === '(' || ch === '[') {
-      depth++;
-      current += ch;
-    } else if (ch === ')' || ch === ']') {
-      depth = Math.max(0, depth - 1);
-      current += ch;
-    } else if (depth === 0) {
-      const remaining = text.slice(i);
-      const m = remaining.match(delimiters);
-      if (m && m.index === 0) {
-        results.push(current.trim());
-        i += m[0].length - 1;
-        current = '';
-        continue;
-      }
-      current += ch;
-    } else {
-      current += ch;
-    }
-  }
-  results.push(current.trim());
-  return results.filter((s) => s.length > 0);
 }
 
 function depluralize(word: string): string {
@@ -126,7 +86,7 @@ interface WordEntry {
   hanziFrequencyRank?: number;
 }
 
-const frequencyData = loadFrequencyData();
+const frequencyData = loadWordFrequencyData();
 const wordMap = new Map<string, WordEntry>();
 
 function splitSlashes(translations: string[]): string[] {
@@ -290,75 +250,18 @@ function parseCommonWordsFile(htmlPath: string) {
 }
 
 // Parse hanzi_frequency.html for character-level frequency data
-interface HanziCharInfo {
-  pinyin: string;
-  english: string[];
-  rank: number;
-}
+let hanziCharData = new Map<string, HanziCharInfo>();
 
-const hanziCharData = new Map<string, HanziCharInfo>();
+function loadHanziFrequencyData(htmlPath: string) {
+  hanziCharData = parseHanziFrequencyFile(htmlPath);
 
-function parseHanziFrequencyFile(htmlPath: string) {
-  const buf = fs.readFileSync(htmlPath);
-  const html = new TextDecoder('gbk').decode(buf);
-  const $ = cheerio.load(html);
-  $('pre').find('br').replaceWith('\n');
-  const preText = $('pre').text();
-  const lines = preText.split('\n');
-
-  for (const line of lines) {
-    const cols = line.split('\t');
-    if (cols.length < 6) continue;
-
-    const rank = parseInt(cols[0]);
-    if (isNaN(rank)) continue;
-
-    const hanzi = cols[1].trim();
-    if (!hanzi || !/[\u4e00-\u9fff]/.test(hanzi)) continue;
-
-    // Parse pinyin: take first reading if multiple separated by /
-    let rawPinyin = cols[4].trim();
-    if (rawPinyin.includes('/')) {
-      rawPinyin = rawPinyin.split('/')[0];
-    }
-    const pinyin = numberedToToneMarked(rawPinyin);
-
-    // Parse english
-    const rawEnglish = cols[5].trim();
-    // Split by comma (respecting parens/brackets), take first group
-    const commaGroups = splitEnglish(rawEnglish, /^,\s*/);
-    const firstGroup = commaGroups[0] || '';
-    // Split by / and ; to get individual translations
-    const translations = firstGroup
-      .split(/[\/;]/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    // Filter out "(surname)" entries and extract word-class categories
-    const english: string[] = [];
-    for (const t of translations) {
-      if (t === '(surname)') continue;
-      // Check for leading word-class indicator like "(n) ", "(v) ", "(adj) "
-      const wcMatch = t.match(/^\((\w+)\)\s+(.+)$/);
-      if (wcMatch) {
-        english.push(wcMatch[2]);
-      } else {
-        english.push(t);
-      }
-    }
-
-    if (english.length === 0) continue;
-
-    hanziCharData.set(hanzi, { pinyin, english, rank });
-
-    // Only add top 5000 characters to wordMap directly
+  // Add top 5000 characters to wordMap directly
+  for (const [hanzi, { pinyin, english, rank }] of hanziCharData) {
     if (rank <= 5000) {
       const existing = wordMap.get(hanzi);
       if (existing) {
-        // Already in word list - just set hanzi frequency rank
         existing.hanziFrequencyRank = rank;
       } else {
-        // New character entry
         addWord(hanzi, pinyin, english, undefined, '');
         const entry = wordMap.get(hanzi);
         if (entry) {
@@ -513,7 +416,7 @@ if (fs.existsSync(clothingPath)) {
 if (fs.existsSync(hanziFreqPath)) {
   const sizeBefore = wordMap.size;
   console.log('Parsing hanzi_frequency.html...');
-  parseHanziFrequencyFile(hanziFreqPath);
+  loadHanziFrequencyData(hanziFreqPath);
   console.log(`  +${wordMap.size - sizeBefore} new characters (${wordMap.size} total)`);
 }
 

@@ -126,13 +126,15 @@ export async function getDueCount(
 
 export function previewNewWords(
   mode: PracticeMode,
-  count: number,
   categories: string[],
-  characterMode: boolean
-): Promise<Word[]> {
+  characterMode: boolean,
+  limit: number,
+  offset: number
+): Promise<{ words: Word[]; total: number }> {
   const params = new URLSearchParams({
     mode,
-    count: String(count),
+    limit: String(limit),
+    offset: String(offset),
     characterMode: String(characterMode),
   });
   if (categories.length > 0) params.set('categories', categories.join(','));

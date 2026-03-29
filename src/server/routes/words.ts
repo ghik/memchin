@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { Router } from 'express';
 import {
   getAllWords,
@@ -21,9 +18,8 @@ import { numberedToToneMarked, splitPinyin } from '../services/pinyin.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
 import { generateSpeech } from '../services/tts.js';
 import { decomposeWord } from '../services/ids.js';
+import { lookupChar, loadWordFrequencyData } from '../services/hanzi-freq.js';
 import type { Example, PracticeMode } from '../../shared/types.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ALL_MODES: PracticeMode[] = [
   'hanzi2pinyin',
@@ -41,24 +37,6 @@ function resetToBucket0(hanzi: string) {
   } else {
     setResetAt(hanzi);
   }
-}
-const freqPath = path.join(__dirname, '../../../sources/internet-zh.num.txt');
-
-let freqMap: Map<string, number> | null = null;
-
-function loadFrequencyData(): Map<string, number> {
-  if (freqMap) return freqMap;
-  freqMap = new Map();
-  if (fs.existsSync(freqPath)) {
-    const data = fs.readFileSync(freqPath, 'utf-8');
-    for (const line of data.split('\n')) {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length >= 3) {
-        freqMap.set(parts[2], parseInt(parts[0]));
-      }
-    }
-  }
-  return freqMap;
 }
 
 const router = Router();
@@ -79,7 +57,7 @@ router.get('/lookup/:hanzi', (req, res) => {
   const existing = getWordByHanzi(hanzi) ?? null;
   const maxBucket = existing ? getMaxBucket(hanzi) : 0;
   const breakdown = decomposeWord(hanzi, existing?.pinyin);
-  const freq = loadFrequencyData();
+  const freq = loadWordFrequencyData();
   const wordRank = freq.get(hanzi) ?? null;
   const charRank = [...hanzi].length === 1 ? wordRank : null;
   res.json({ entries, existing, maxBucket, breakdown, wordRank, charRank });
@@ -112,7 +90,7 @@ router.post('/', async (req, res) => {
     }
 
     // Look up frequency rank
-    const freq = loadFrequencyData();
+    const freq = loadWordFrequencyData();
     const wordFrequencyRank = freq.get(hanzi);
 
     // For single-char words, hanzi rank = word rank
@@ -140,25 +118,24 @@ router.post('/', async (req, res) => {
 
     // Auto-add individual characters for multi-character words
     const chars = [...hanzi];
+    const charsAdded: { hanzi: string; pinyin: string; english: string[]; wordFrequencyRank?: number }[] = [];
     if (chars.length > 1) {
       const charsToAdd = [];
       for (const char of chars) {
         if (getWordByHanzi(char)) {
           continue;
         }
-        const entries = lookupFiltered(char);
-        if (entries.length === 0) {
+        const charInfo = lookupChar(char);
+        if (!charInfo) {
           continue;
         }
-        const entry = entries[0];
-        const charFreq = freq.get(char);
         charsToAdd.push({
           hanzi: char,
-          pinyin: entry.pinyin,
-          english: entries.flatMap((e) => e.definitions),
+          pinyin: charInfo.pinyin,
+          english: charInfo.english,
           hskLevel: 0,
-          wordFrequencyRank: charFreq,
-          hanziFrequencyRank: charFreq,
+          wordFrequencyRank: freq.get(char),
+          hanziFrequencyRank: charInfo.rank,
           examples: [] as Example[],
           translatable: true,
           categories: [] as string[],
@@ -167,24 +144,37 @@ router.post('/', async (req, res) => {
       }
       if (charsToAdd.length > 0) {
         insertWords(charsToAdd);
-        for (const w of charsToAdd) {
-          resetToBucket0(w.hanzi);
-        }
+        charsAdded.push(...charsToAdd);
       }
     }
 
     saveDb();
 
-    // Generate examples and audio
+    // Generate examples and audio for main word
     const exampleMap = await generateExamples([
       { hanzi, pinyin: normalizedPinyin, english, hskLevel: 0 },
     ]);
     const examples = exampleMap.get(hanzi) || [];
     updateWordExamples(hanzi, examples);
-    await generateSpeech(
-      hanzi,
-      examples.map((ex) => ex.hanzi)
-    );
+    await generateSpeech(hanzi);
+    for (const ex of examples) {
+      await generateSpeech(ex.hanzi);
+    }
+
+    // Generate examples and audio for auto-added characters
+    for (const w of charsAdded) {
+      if (w.wordFrequencyRank) {
+        const charExampleMap = await generateExamples([
+          { hanzi: w.hanzi, pinyin: w.pinyin, english: w.english, hskLevel: 0 },
+        ]);
+        const charExamples = charExampleMap.get(w.hanzi) || [];
+        updateWordExamples(w.hanzi, charExamples);
+        for (const ex of charExamples) {
+          await generateSpeech(ex.hanzi);
+        }
+      }
+      await generateSpeech(w.hanzi);
+    }
 
     invalidateWordCache();
 

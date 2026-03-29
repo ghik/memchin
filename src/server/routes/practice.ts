@@ -16,6 +16,7 @@ import {
   getHanziSynonymHanzis,
   getLearnedWordsContaining,
   getNewWords,
+  getNewWordsCount,
   getProgress,
   getStats,
   getWordByHanzi,
@@ -240,7 +241,8 @@ router.post('/complete', (req, res) => {
 
 router.get('/preview', (req, res) => {
   const mode = req.query.mode as PracticeMode;
-  const count = parseInt(req.query.count as string) || 10;
+  const limit = parseInt(req.query.limit as string) || 50;
+  const offset = parseInt(req.query.offset as string) || 0;
   const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
   const characterMode = req.query.characterMode === 'true';
 
@@ -251,8 +253,9 @@ router.get('/preview', (req, res) => {
     return res.status(400).json({ error: 'Valid mode is required' });
   }
 
-  const words = getNewWords(mode, count, categories, characterMode).map(enrichWord);
-  res.json(words);
+  const words = getNewWords(mode, limit, categories, characterMode, offset).map(enrichWord);
+  const total = getNewWordsCount(mode, categories, characterMode);
+  res.json({ words, total });
 });
 
 router.get('/due-count', (req, res) => {
