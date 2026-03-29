@@ -16,32 +16,24 @@
     <div class="main-content">
       <div id="start-screen" class="screen active">
         <h1>Chinese Practice</h1>
-
-        <div class="form-group" id="category-filter-group">
-          <label>Filter by category:</label>
-          <div id="category-picker" class="category-picker">
-            <div class="category-dropdown">
-              <button type="button" class="category-dropdown-toggle" id="category-toggle">
-                <span id="category-toggle-text">All categories</span>
-                <span class="dropdown-arrow">▼</span>
-              </button>
-              <div class="category-dropdown-menu hidden" id="category-menu">
-                <input type="text" class="category-search" id="category-search" placeholder="Search categories...">
-                <div class="category-list" id="category-list"></div>
-              </div>
+        <div class="start-layout">
+          <div class="category-panel">
+            <div class="category-panel-title">Options</div>
+            <div class="panel-options">
+              <label class="checkbox-label">
+                <input type="checkbox" id="autoplay-audio" checked>
+                Auto-play audio
+              </label>
             </div>
-            <div class="selected-categories" id="selected-categories"></div>
+            <div class="category-panel-title">Categories</div>
+            <input type="text" id="category-search" class="category-search" placeholder="Search…" autocomplete="off">
+            <div class="category-selected" id="category-selected"></div>
+            <div class="category-box" id="category-list"></div>
+          </div>
+          <div class="start-main">
+            <div id="stats" class="stats"></div>
           </div>
         </div>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="autoplay-audio" checked>
-            Auto-play pronunciation on reveal
-          </label>
-        </div>
-
-        <div id="stats" class="stats"></div>
       </div>
 
       <div id="practice-screen" class="screen">

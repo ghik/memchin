@@ -48,13 +48,9 @@ const resultStatsDiv = document.getElementById('result-stats')!;
 const mistakesSection = document.getElementById('mistakes-section')!;
 const mistakesList = document.getElementById('mistakes-list')!;
 const restartBtn = document.getElementById('restart-btn')!;
-const categoryToggle = document.getElementById('category-toggle')!;
-const categoryToggleText = document.getElementById('category-toggle-text')!;
-const categoryMenu = document.getElementById('category-menu')!;
-const categorySearch = document.getElementById('category-search') as HTMLInputElement;
 const categoryList = document.getElementById('category-list')!;
-const selectedCategoriesDiv = document.getElementById('selected-categories')!;
-const categoryDropdown = categoryToggle.parentElement!;
+const categorySelected = document.getElementById('category-selected')!;
+const categorySearch = document.getElementById('category-search') as HTMLInputElement;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
 
 // Sidebar nav
@@ -101,6 +97,7 @@ autoplayCheckbox.checked = localStorage.getItem('autoplayAudio') !== 'false';
 autoplayCheckbox.addEventListener('change', () => {
   localStorage.setItem('autoplayAudio', String(autoplayCheckbox.checked));
 });
+categorySearch.addEventListener('input', filterCategoryList);
 const savedCharMode: Record<string, boolean> = JSON.parse(localStorage.getItem('charModes') ?? '{}');
 function getCharMode(mode: PracticeMode): boolean {
   return savedCharMode[mode] ?? false;
@@ -292,24 +289,6 @@ let selectedCategories: Set<string> = savedCategories
   ? new Set(JSON.parse(savedCategories))
   : new Set();
 
-function updateCategoryToggleText() {
-  if (selectedCategories.size === 0) {
-    categoryToggleText.textContent = 'All categories';
-  } else {
-    categoryToggleText.textContent = `${selectedCategories.size} selected`;
-  }
-}
-
-function updateSelectedTags() {
-  selectedCategoriesDiv.innerHTML = '';
-  for (const cat of selectedCategories) {
-    const tag = document.createElement('span');
-    tag.className = 'selected-tag';
-    tag.innerHTML = `${cat}<button type="button" class="selected-tag-remove" data-category="${cat}">×</button>`;
-    selectedCategoriesDiv.appendChild(tag);
-  }
-}
-
 function toggleCategory(cat: string, checked: boolean) {
   if (checked) {
     selectedCategories.add(cat);
@@ -317,14 +296,37 @@ function toggleCategory(cat: string, checked: boolean) {
     selectedCategories.delete(cat);
   }
   localStorage.setItem('selectedCategories', JSON.stringify([...selectedCategories]));
-  updateCategoryToggleText();
-  updateSelectedTags();
-  // Sync checkbox state
-  const checkbox = categoryList.querySelector(
-    `input[value="${CSS.escape(cat)}"]`
-  ) as HTMLInputElement | null;
-  if (checkbox) checkbox.checked = checked;
+  sortCategoryList();
   reloadStats();
+}
+
+function filterCategoryList() {
+  const query = categorySearch.value.toLowerCase();
+  for (const item of Array.from(categoryList.children) as HTMLElement[]) {
+    const value = (item.querySelector('input') as HTMLInputElement).value.toLowerCase();
+    item.classList.toggle('hidden', query !== '' && !value.includes(query));
+  }
+}
+
+function sortCategoryList() {
+  const items = [
+    ...Array.from(categorySelected.children),
+    ...Array.from(categoryList.children),
+  ] as HTMLElement[];
+  const checked = items.filter((el) => (el.querySelector('input') as HTMLInputElement).checked);
+  const unchecked = items.filter((el) => !(el.querySelector('input') as HTMLInputElement).checked);
+  unchecked.sort((a, b) =>
+    (a.querySelector('input') as HTMLInputElement).value.localeCompare(
+      (b.querySelector('input') as HTMLInputElement).value,
+    ),
+  );
+  for (const item of checked) {
+    categorySelected.appendChild(item);
+  }
+  for (const item of unchecked) {
+    categoryList.appendChild(item);
+  }
+  filterCategoryList();
 }
 
 // Load stats on start
@@ -337,14 +339,12 @@ async function loadStats() {
     ]);
     allCategoriesList = categories;
 
-    // Populate category dropdown list
+    // Populate category checkboxes
     categoryList.innerHTML = '';
-    const numRows = Math.ceil(categories.length / 3);
-    categoryList.style.gridTemplateRows = `repeat(${numRows}, auto)`;
+    categorySelected.innerHTML = '';
     for (const cat of categories) {
       const label = document.createElement('label');
       label.className = 'category-item';
-      label.dataset.category = cat;
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = cat;
@@ -354,8 +354,7 @@ async function loadStats() {
       label.appendChild(document.createTextNode(cat));
       categoryList.appendChild(label);
     }
-    updateCategoryToggleText();
-    updateSelectedTags();
+    sortCategoryList();
 
     if (totalWords === 0) {
       statsDiv.innerHTML =
@@ -1373,55 +1372,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Category dropdown handlers
-categoryToggle.addEventListener('click', () => {
-  const isOpen = !categoryMenu.classList.contains('hidden');
-  if (isOpen) {
-    categoryMenu.classList.add('hidden');
-    categoryDropdown.classList.remove('open');
-  } else {
-    categoryMenu.classList.remove('hidden');
-    categoryDropdown.classList.add('open');
-    categorySearch.value = '';
-    categorySearch.focus();
-    // Reset filter
-    categoryList.querySelectorAll('.category-item').forEach((item) => {
-      (item as HTMLElement).classList.remove('hidden');
-    });
-  }
-});
-
-// Close dropdown when clicking outside
-document.addEventListener('click', (e) => {
-  if (!categoryDropdown.contains(e.target as Node)) {
-    categoryMenu.classList.add('hidden');
-    categoryDropdown.classList.remove('open');
-  }
-});
-
-// Category search filter
-categorySearch.addEventListener('input', () => {
-  const query = categorySearch.value.toLowerCase();
-  categoryList.querySelectorAll('.category-item').forEach((item) => {
-    const cat = (item as HTMLElement).dataset.category?.toLowerCase() || '';
-    if (cat.includes(query)) {
-      (item as HTMLElement).classList.remove('hidden');
-    } else {
-      (item as HTMLElement).classList.add('hidden');
-    }
-  });
-});
-
-// Remove tag handler
-selectedCategoriesDiv.addEventListener('click', (e) => {
-  const target = e.target as HTMLElement;
-  if (target.classList.contains('selected-tag-remove')) {
-    const cat = target.dataset.category;
-    if (cat) {
-      toggleCategory(cat, false);
-    }
-  }
-});
 
 // Add word form
 const addWordForm = document.getElementById('add-word-screen')!;
