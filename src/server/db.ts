@@ -285,7 +285,10 @@ function getWordFilters(
   }
 
   const rankColumn = characterMode ? 'w.hanzi_rank' : 'w.rank';
-  wordParts.push(`AND ${rankColumn} IS NOT NULL`);
+
+  if (characterMode) {
+    wordParts.push(`AND ${rankColumn} IS NOT NULL`);
+  }
 
   if (characterMode) {
     wordParts.push('AND EXISTS (SELECT 1 FROM progress p2 WHERE INSTR(p2.hanzi, w.hanzi) > 0)');
@@ -360,7 +363,7 @@ function queryNewWords(
     `
       SELECT w.* FROM words w LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
       WHERE ${f.newWordCondition} ${f.wordFilter}
-      ORDER BY w.reset_at IS NULL ASC, w.reset_at ASC, ${f.rankColumn} ASC LIMIT ? OFFSET ?
+      ORDER BY w.reset_at IS NULL ASC, w.reset_at ASC, ${f.rankColumn} IS NULL ASC, ${f.rankColumn} ASC LIMIT ? OFFSET ?
   `,
     [mode, ...categories, count, offset]
   );

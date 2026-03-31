@@ -407,6 +407,22 @@ label.checkbox-label {
   background: #c8e6d0;
 }
 
+.mode-review-btn {
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #e8f0fe;
+  color: #1a56b0;
+  border: 1px solid #a8c0f0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mode-review-btn:hover {
+  background: #d0e2fc;
+}
+
 .mode-random-btn {
   padding: 4px 12px;
   font-size: 13px;

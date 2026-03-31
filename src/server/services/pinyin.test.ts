@@ -94,6 +94,18 @@ describe('splitPinyin', () => {
   it('gives n to next syllable when followed by a vowel', () => {
     expect(splitPinyin('zhīdào')).toBe('zhī dào');
   });
+
+  it('keeps erhua r as suffix, not breaking the preceding syllable', () => {
+    expect(splitPinyin('yīdiǎnr')).toBe('yī diǎn r');
+    expect(splitPinyin('nàr')).toBe('nà r');
+  });
+});
+
+describe('erhua normalization', () => {
+  it('accepts numbered erhua input for tone-marked expected', () => {
+    expect(pinyinMatches('yi1dian3r', 'yīdiǎnr')).toBe(true);
+    expect(pinyinMatches('na4r', 'nàr')).toBe(true);
+  });
 });
 
 describe('pinyinMatches', () => {

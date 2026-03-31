@@ -53,8 +53,22 @@ export function splitPinyin(pinyin: string): string {
         len--;
       }
       // General backtrack: if remaining can't start a valid syllable
-      // (e.g. lone consonant), the greedy match took too much
+      // (e.g. lone consonant), the greedy match took too much.
+      // Exception: if the only thing left is an erhua 'r' (optionally preceded by a
+      // tone digit) and no shorter match would leave a single clean syllable as the
+      // entire remainder, treat 'r' as an erhua suffix and stop backtracking.
       while (len > 1 && remaining.length > len && !SYLLABLE_PATTERN.test(remaining.slice(len))) {
+        if (/^[1-5]?r$/i.test(remaining.slice(len))) {
+          // Only stop if no backtrack position yields a complete single syllable
+          const hasCleanBacktrack = Array.from({ length: len - 1 }, (_, i) => i + 1).some((l) => {
+            const after = remaining.slice(l);
+            const m = after.match(SYLLABLE_PATTERN);
+            return m && m[1].length === after.length;
+          });
+          if (!hasCleanBacktrack) {
+            break;
+          }
+        }
         len--;
       }
       syllables.push(remaining.slice(0, len));

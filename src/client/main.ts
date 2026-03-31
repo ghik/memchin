@@ -387,7 +387,7 @@ function renderStats(stats: Stats[]) {
       const dueBtn = s.dueForReview > 0
         ? `<button class="due-mode-btn" data-mode="${s.mode}" data-count="${s.dueForReview}">${s.dueForReview} due</button>`
         : '';
-      const previewBtn = `<button class="mode-preview-btn" data-mode="${s.mode}">Preview</button>`;
+      const previewBtn = `<button class="mode-preview-btn" data-mode="${s.mode}">Preview new</button>`;
       const presets = [5, 10, 20, 30, 50];
       const modeCount = getModeWordCount(s.mode);
       const isCustom = !presets.includes(modeCount);
@@ -408,7 +408,8 @@ function renderStats(stats: Stats[]) {
           <label class="mode-char-mode"><input type="checkbox" class="char-mode-cb" data-mode="${s.mode}" ${getCharMode(s.mode) ? 'checked' : ''}> Char mode</label>
         </div>
         <div class="mode-card-actions">
-          <button class="mode-start-btn" data-mode="${s.mode}">Start</button>
+          <button class="mode-start-btn" data-mode="${s.mode}">Review and new</button>
+          <button class="mode-review-btn" data-mode="${s.mode}">Review only</button>
           <button class="mode-random-btn" data-mode="${s.mode}">Random</button>
           ${dueBtn}${previewBtn}
         </div>
@@ -428,6 +429,16 @@ function renderStats(stats: Stats[]) {
       currentMode = mode;
       localStorage.setItem('mode', mode);
       handleStart(undefined, 'mixed');
+    });
+  });
+
+  // Review-only buttons
+  statsDiv.querySelectorAll('.mode-review-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      currentMode = mode;
+      localStorage.setItem('mode', mode);
+      handleStart(undefined, 'review');
     });
   });
 
@@ -494,7 +505,7 @@ function renderStats(stats: Stats[]) {
       localStorage.setItem('mode', mode);
       previewSelected.clear();
       previewMode = mode;
-      loadPreviewPage(0);
+      loadPreviewPage(0, btn as HTMLButtonElement);
     });
   });
 
@@ -1255,10 +1266,14 @@ function closePreview() {
   previewSelected.clear();
 }
 
-async function loadPreviewPage(offset: number) {
+async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
   const section = getPreviewSection();
   if (!section) return;
   previewOffset = offset;
+  const originalLabel = triggerBtn?.textContent ?? null;
+  const loadingTimer = triggerBtn
+    ? setTimeout(() => { triggerBtn.textContent = 'Loading…'; }, 100)
+    : null;
   try {
     const { words, total } = await previewNewWords(
       currentMode,
@@ -1358,6 +1373,13 @@ async function loadPreviewPage(offset: number) {
     section.classList.remove('hidden');
   } catch (error) {
     console.error('Failed to preview words:', error);
+  } finally {
+    if (loadingTimer !== null) {
+      clearTimeout(loadingTimer);
+    }
+    if (triggerBtn && originalLabel !== null) {
+      triggerBtn.textContent = originalLabel;
+    }
   }
 }
 
