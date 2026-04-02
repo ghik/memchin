@@ -210,7 +210,10 @@ router.put('/:hanzi', (req, res) => {
     const hasDigitTones = /[1-4]/.test(pinyin);
     let normalizedPinyin: string;
     if (hasDigitTones) {
-      normalizedPinyin = numberedToToneMarked(splitPinyin(pinyin));
+      normalizedPinyin = pinyin
+        .split(/\s+/)
+        .map((token) => numberedToToneMarked(token.replace(/([1-5])(?=[a-zA-Z])/g, '$1 ')).replace(/\s+/g, ''))
+        .join(' ');
     } else {
       normalizedPinyin = splitPinyin(pinyin);
     }
