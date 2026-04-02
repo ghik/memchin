@@ -187,8 +187,8 @@ export function resetWordProgress(hanzi: string, mode?: string): Promise<void> {
   return apiDelete(`/words/${encodeURIComponent(hanzi)}/progress${query}`);
 }
 
-export function resetWordBucket(hanzi: string, mode: string): Promise<void> {
-  return apiPost(`/words/${encodeURIComponent(hanzi)}/reset-bucket`, { mode });
+export function resetWordBucket(hanzi: string, mode: string, toCharacterModeOnly = false): Promise<void> {
+  return apiPost(`/words/${encodeURIComponent(hanzi)}/reset-bucket`, { mode, toCharacterModeOnly });
 }
 
 export async function assessSpeech(audio: ArrayBuffer, hanzi: string): Promise<SpeechAssessResponse> {

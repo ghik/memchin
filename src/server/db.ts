@@ -250,11 +250,18 @@ export function deleteProgress(hanzi: string, mode?: string): void {
   saveDb();
 }
 
-export function resetProgressBucket(hanzi: string, mode: string): void {
-  db.run(
-    'UPDATE progress SET bucket = NULL, next_eligible = NULL WHERE hanzi = ? AND mode = ?',
-    [hanzi, mode]
-  );
+export function resetProgressBucket(hanzi: string, mode: string, toCharacterModeOnly = false): void {
+  if (toCharacterModeOnly) {
+    db.run(
+      'UPDATE progress SET bucket = NULL, next_eligible = NULL, character_mode_only = 1 WHERE hanzi = ? AND mode = ?',
+      [hanzi, mode]
+    );
+  } else {
+    db.run(
+      'UPDATE progress SET bucket = NULL, next_eligible = NULL WHERE hanzi = ? AND mode = ?',
+      [hanzi, mode]
+    );
+  }
   saveDb();
 }
 

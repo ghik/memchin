@@ -222,7 +222,7 @@ router.delete('/:hanzi/progress', (req, res) => {
 
 router.post('/:hanzi/reset-bucket', (req, res) => {
   const hanzi = decodeURIComponent(req.params.hanzi);
-  const { mode } = req.body as { mode: string };
+  const { mode, toCharacterModeOnly } = req.body as { mode: string; toCharacterModeOnly?: boolean };
   if (!mode) {
     return res.status(400).json({ error: 'mode is required' });
   }
@@ -230,7 +230,7 @@ router.post('/:hanzi/reset-bucket', (req, res) => {
   if (!existing) {
     return res.status(404).json({ error: `Word "${hanzi}" not found` });
   }
-  resetProgressBucket(hanzi, mode);
+  resetProgressBucket(hanzi, mode, toCharacterModeOnly);
   res.json({ ok: true });
 });
 

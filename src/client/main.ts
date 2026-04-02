@@ -1111,7 +1111,10 @@ resetWordBtn.addEventListener('click', async () => {
   const question = questions[currentIndex];
   const hanzi = question.word.hanzi;
   try {
-    await resetWordBucket(hanzi, currentMode);
+    if (question.bucket !== null) {
+      const toCharacterModeOnly = question.word.hanzi.length === 1 && !characterMode;
+      await resetWordBucket(hanzi, currentMode, toCharacterModeOnly);
+    }
     // Remove this word from all remaining state
     questions = questions.filter((q, i) => i === currentIndex ? false : q.word.hanzi !== hanzi);
     incorrectThisRound = incorrectThisRound.filter((q) => q.word.hanzi !== hanzi);
