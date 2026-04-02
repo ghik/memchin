@@ -10,6 +10,7 @@ import {
   saveDb,
   invalidateWordCache,
   deleteProgress,
+  resetProgressBucket,
   setResetAt,
   updateWordExamples,
 } from '../db.js';
@@ -214,7 +215,22 @@ router.delete('/:hanzi/progress', (req, res) => {
   if (!existing) {
     return res.status(404).json({ error: `Word "${hanzi}" not found` });
   }
-  deleteProgress(hanzi);
+  const mode = req.query.mode as string | undefined;
+  deleteProgress(hanzi, mode);
+  res.json({ ok: true });
+});
+
+router.post('/:hanzi/reset-bucket', (req, res) => {
+  const hanzi = decodeURIComponent(req.params.hanzi);
+  const { mode } = req.body as { mode: string };
+  if (!mode) {
+    return res.status(400).json({ error: 'mode is required' });
+  }
+  const existing = getWordByHanzi(hanzi);
+  if (!existing) {
+    return res.status(404).json({ error: `Word "${hanzi}" not found` });
+  }
+  resetProgressBucket(hanzi, mode);
   res.json({ ok: true });
 });
 

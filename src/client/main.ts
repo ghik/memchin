@@ -18,6 +18,7 @@ import {
   getWordCount,
   lookupHanzi,
   previewNewWords,
+  resetWordBucket,
   resetWordProgress,
   startPractice,
   submitAnswer,
@@ -42,6 +43,7 @@ const skipBtn = document.getElementById('skip-btn')!;
 
 const practiceActions = document.getElementById('practice-actions')!;
 const editWordBtn = document.getElementById('edit-word-btn')!;
+const resetWordBtn = document.getElementById('reset-word-btn')!;
 const cancelEditBtn = document.getElementById('cancel-edit-btn') as HTMLButtonElement;
 const resetProgressBtn = document.getElementById('reset-progress-btn') as HTMLButtonElement;
 const resultStatsDiv = document.getElementById('result-stats')!;
@@ -1105,6 +1107,37 @@ finishBtn.addEventListener('click', () => {
   finishPractice();
 });
 editWordBtn.addEventListener('click', editCurrentWord);
+resetWordBtn.addEventListener('click', async () => {
+  const question = questions[currentIndex];
+  const hanzi = question.word.hanzi;
+  try {
+    await resetWordBucket(hanzi, currentMode);
+    // Remove this word from all remaining state
+    questions = questions.filter((q, i) => i === currentIndex ? false : q.word.hanzi !== hanzi);
+    incorrectThisRound = incorrectThisRound.filter((q) => q.word.hanzi !== hanzi);
+    allQuestions = allQuestions.filter((q) => q.word.hanzi !== hanzi);
+    results.delete(hanzi);
+    newWords.delete(hanzi);
+    // currentIndex now points to the next question (or past end) since we removed current
+    if (currentIndex >= questions.length) {
+      if (incorrectThisRound.length > 0) {
+        questions = shuffle(incorrectThisRound);
+        incorrectThisRound = [];
+        roundNumber++;
+        currentIndex = 0;
+        showQuestion();
+        saveSession();
+      } else {
+        finishPractice();
+      }
+    } else {
+      showQuestion();
+      saveSession();
+    }
+  } catch (error) {
+    alert(error instanceof Error ? error.message : 'Failed to reset word');
+  }
+});
 
 let pendingAudioData: ArrayBuffer | null = null;
 let speechAssessing = false;

@@ -241,8 +241,20 @@ export function upsertProgress(
   clearResetAt(hanzi);
 }
 
-export function deleteProgress(hanzi: string): void {
-  db.run('DELETE FROM progress WHERE hanzi = ?', [hanzi]);
+export function deleteProgress(hanzi: string, mode?: string): void {
+  if (mode) {
+    db.run('DELETE FROM progress WHERE hanzi = ? AND mode = ?', [hanzi, mode]);
+  } else {
+    db.run('DELETE FROM progress WHERE hanzi = ?', [hanzi]);
+  }
+  saveDb();
+}
+
+export function resetProgressBucket(hanzi: string, mode: string): void {
+  db.run(
+    'UPDATE progress SET bucket = NULL, next_eligible = NULL WHERE hanzi = ? AND mode = ?',
+    [hanzi, mode]
+  );
   saveDb();
 }
 
@@ -302,7 +314,7 @@ function getWordFilters(
 
   const wordFilter = wordParts.join(' ');
   const progressFilter = '';
-  const newWordCondition = 'p.id IS NULL';
+  const newWordCondition = '(p.id IS NULL OR p.bucket IS NULL)';
 
   return { rankColumn, wordFilter, progressFilter, newWordCondition };
 }
@@ -344,7 +356,7 @@ function queryReviewWords(
   return queryWords(
     `
       SELECT w.* FROM words w JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? ${dueFilter} ${f.wordFilter} ${f.progressFilter}
+      WHERE p.mode = ? AND p.bucket IS NOT NULL ${dueFilter} ${f.wordFilter} ${f.progressFilter}
       ORDER BY ${orderBy} LIMIT ?
   `,
     [mode, ...categories, count]
@@ -432,7 +444,7 @@ export function getStats(
   dueBuckets: number[];
 } {
   const f = getWordFilters(mode, categories, characterMode);
-  const baseJoin = `FROM words w JOIN progress p ON w.hanzi = p.hanzi WHERE p.mode = ? ${f.wordFilter} ${f.progressFilter}`;
+  const baseJoin = `FROM words w JOIN progress p ON w.hanzi = p.hanzi WHERE p.mode = ? AND p.bucket IS NOT NULL ${f.wordFilter} ${f.progressFilter}`;
   const baseParams = [mode, ...categories];
 
   const totalWords = queryCount(
@@ -490,7 +502,7 @@ export function getLearnedWordsContaining(hanzi: string): ContainingWord[] {
   return queryRows(
     `SELECT DISTINCT w.hanzi, w.pinyin, w.english FROM words w
      JOIN progress p ON w.hanzi = p.hanzi
-     WHERE INSTR(w.hanzi, ?) > 0 AND length(w.hanzi) > 1
+     WHERE INSTR(w.hanzi, ?) > 0 AND length(w.hanzi) > 1 AND p.bucket IS NOT NULL
      ORDER BY w.rank ASC`,
     [hanzi],
     (row) => ({ hanzi: row.hanzi, pinyin: row.pinyin, english: JSON.parse(row.english) })
