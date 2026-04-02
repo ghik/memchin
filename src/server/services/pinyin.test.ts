@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { splitPinyin, toNumberedPinyin, normalizePinyin, pinyinMatches } from './pinyin.js';
+import { splitPinyin, toNumberedPinyin, normalizePinyin, normalizePinyinInput, pinyinMatches } from './pinyin.js';
 
 describe('toNumberedPinyin', () => {
   it('converts single syllable with tone 1', () => {
@@ -98,6 +98,28 @@ describe('splitPinyin', () => {
   it('keeps erhua r as suffix, not breaking the preceding syllable', () => {
     expect(splitPinyin('yīdiǎnr')).toBe('yī diǎn r');
     expect(splitPinyin('nàr')).toBe('nà r');
+  });
+});
+
+describe('normalizePinyinInput', () => {
+  it('converts unspaced numbered pinyin without adding spaces', () => {
+    expect(normalizePinyinInput('huo3che1zhan4')).toBe('huǒchēzhàn');
+    expect(normalizePinyinInput('ni3hao3')).toBe('nǐhǎo');
+    expect(normalizePinyinInput('zhong1guo2')).toBe('zhōngguó');
+  });
+
+  it('converts spaced numbered pinyin preserving spaces', () => {
+    expect(normalizePinyinInput('huo3 che1 zhan4')).toBe('huǒ chē zhàn');
+    expect(normalizePinyinInput('zhong1 guo2')).toBe('zhōng guó');
+  });
+
+  it('preserves partial spacing between tokens', () => {
+    expect(normalizePinyinInput('huo3che1 zhan4')).toBe('huǒchē zhàn');
+  });
+
+  it('passes through tone-marked pinyin via splitPinyin', () => {
+    expect(normalizePinyinInput('nǐhǎo')).toBe('nǐ hǎo');
+    expect(normalizePinyinInput('nǐ hǎo')).toBe('nǐ hǎo');
   });
 });
 

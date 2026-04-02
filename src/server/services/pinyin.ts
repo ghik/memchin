@@ -226,3 +226,20 @@ export function numberedToToneMarked(pinyin: string): string {
     .map((s) => syllableToToneMarked(s))
     .join(' ');
 }
+
+/**
+ * Normalize pinyin input to tone-marked form, handling both numbered and tone-marked input.
+ * Preserves spaces that were present in the original input but not those inserted for conversion.
+ * e.g. "huo3che1zhan4" -> "huǒchēzhàn"
+ *      "huo3che1 zhan4" -> "huǒchē zhàn"
+ *      "huǒchē zhàn" -> "huǒchē zhàn"
+ */
+export function normalizePinyinInput(pinyin: string): string {
+  if (!/[1-5]/.test(pinyin)) {
+    return splitPinyin(pinyin);
+  }
+  return pinyin
+    .split(/\s+/)
+    .map((token) => numberedToToneMarked(token.replace(/([1-5])(?=[a-zA-Z])/g, '$1 ')).replace(/\s+/g, ''))
+    .join(' ');
+}

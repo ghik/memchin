@@ -14,7 +14,7 @@ import {
   updateWordExamples,
 } from '../db.js';
 import { lookupFiltered } from '../services/cedict.js';
-import { numberedToToneMarked, splitPinyin } from '../services/pinyin.js';
+import { normalizePinyinInput } from '../services/pinyin.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
 import { generateSpeech } from '../services/tts.js';
 import { decomposeWord } from '../services/ids.js';
@@ -78,20 +78,7 @@ router.post('/', async (req, res) => {
       return res.status(409).json({ error: `Word "${hanzi}" already exists` });
     }
 
-    // Normalize pinyin: detect numbered format (contains digits 1-4) and convert
-    const hasDigitTones = /[1-4]/.test(pinyin);
-    let normalizedPinyin: string;
-    if (hasDigitTones) {
-      // Numbered format like "ge4ren2" or "ge4ren2 hao3" — preserve only the spaces
-      // that were in the original by converting each space-delimited token independently
-      normalizedPinyin = pinyin
-        .split(/\s+/)
-        .map((token) => numberedToToneMarked(token.replace(/([1-5])(?=[a-zA-Z])/g, '$1 ')).replace(/\s+/g, ''))
-        .join(' ');
-    } else {
-      // Already tone-marked — just split
-      normalizedPinyin = splitPinyin(pinyin);
-    }
+    const normalizedPinyin = normalizePinyinInput(pinyin);
 
     // Look up frequency rank
     const freq = loadWordFrequencyData();
@@ -206,17 +193,7 @@ router.put('/:hanzi', (req, res) => {
       return res.status(404).json({ error: `Word "${hanzi}" not found` });
     }
 
-    // Normalize pinyin
-    const hasDigitTones = /[1-4]/.test(pinyin);
-    let normalizedPinyin: string;
-    if (hasDigitTones) {
-      normalizedPinyin = pinyin
-        .split(/\s+/)
-        .map((token) => numberedToToneMarked(token.replace(/([1-5])(?=[a-zA-Z])/g, '$1 ')).replace(/\s+/g, ''))
-        .join(' ');
-    } else {
-      normalizedPinyin = splitPinyin(pinyin);
-    }
+    const normalizedPinyin = normalizePinyinInput(pinyin);
 
     updateWord(hanzi, normalizedPinyin, english, categories || []);
     if (resetBucket) {
