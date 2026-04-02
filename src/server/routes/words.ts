@@ -82,8 +82,12 @@ router.post('/', async (req, res) => {
     const hasDigitTones = /[1-4]/.test(pinyin);
     let normalizedPinyin: string;
     if (hasDigitTones) {
-      // Numbered format like "ge4ren2" — split and convert
-      normalizedPinyin = numberedToToneMarked(splitPinyin(pinyin));
+      // Numbered format like "ge4ren2" or "ge4ren2 hao3" — preserve only the spaces
+      // that were in the original by converting each space-delimited token independently
+      normalizedPinyin = pinyin
+        .split(/\s+/)
+        .map((token) => numberedToToneMarked(token.replace(/([1-5])(?=[a-zA-Z])/g, '$1 ')).replace(/\s+/g, ''))
+        .join(' ');
     } else {
       // Already tone-marked — just split
       normalizedPinyin = splitPinyin(pinyin);

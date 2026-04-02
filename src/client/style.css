@@ -602,6 +602,12 @@ label.checkbox-label {
   animation: assessing-pulse 1s ease-in-out infinite;
 }
 
+.answer-section input.invalid,
+.answer-section input.invalid:focus {
+  border-color: #dc3545 !important;
+  background: #fff5f5 !important;
+}
+
 @keyframes assessing-pulse {
   0%, 100% { border-color: #ffc107; }
   50% { border-color: #ffe082; }

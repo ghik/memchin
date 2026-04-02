@@ -408,10 +408,10 @@ function renderStats(stats: Stats[]) {
           <label class="mode-char-mode"><input type="checkbox" class="char-mode-cb" data-mode="${s.mode}" ${getCharMode(s.mode) ? 'checked' : ''}> Char mode</label>
         </div>
         <div class="mode-card-actions">
-          <button class="mode-start-btn" data-mode="${s.mode}">Review and new</button>
+          ${dueBtn}<button class="mode-start-btn" data-mode="${s.mode}">Review and new</button>
           <button class="mode-review-btn" data-mode="${s.mode}">Review only</button>
           <button class="mode-random-btn" data-mode="${s.mode}">Random</button>
-          ${dueBtn}${previewBtn}
+          ${previewBtn}
         </div>
         <div class="preview-section hidden" data-mode="${s.mode}"></div>
       </div>
@@ -684,9 +684,17 @@ function showQuestion() {
       : 'prompt';
 
   answerInput.value = '';
+  answerInput.placeholder =
+    currentMode === 'english2hanzi' ? 'Enter hanzi…' :
+    currentMode === 'english2pinyin' || currentMode === 'hanzi2pinyin' ? 'Enter pinyin…' :
+    'Enter English…';
   pendingAudioData = null;
   speechAttemptCount = 0;
-  answerInput.classList.remove('has-audio', 'recording', 'assessing');
+  answerInput.classList.remove('has-audio', 'recording', 'assessing', 'invalid');
+  if (validationTimer !== null) {
+    clearTimeout(validationTimer);
+    validationTimer = null;
+  }
 
   if (question.bucket === null && !newWords.has(word.hanzi)) {
     // New word — show answer immediately for learning, will be quizzed next round
@@ -889,13 +897,30 @@ async function handleSubmit() {
 
   const question = questions[currentIndex];
 
+  function markInvalid() {
+    answerInput.classList.add('invalid');
+    answerInput.focus();
+  }
+
   // Validate pinyin input for pinyin-answer modes
   if ((currentMode === 'hanzi2pinyin' || currentMode === 'english2pinyin') && !validatePinyin(answer)) {
     feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
     feedbackDiv.classList.add('incorrect');
     feedbackDiv.innerHTML = 'Not valid pinyin. Use tone marks (zhōng) or tone numbers (zhong1).';
+    markInvalid();
     return;
   }
+
+  // Validate hanzi input for hanzi-answer mode
+  if (currentMode === 'english2hanzi' && !/\p{Script=Han}/u.test(answer)) {
+    feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
+    feedbackDiv.classList.add('incorrect');
+    feedbackDiv.innerHTML = 'Answer must contain hanzi (Chinese characters).';
+    markInvalid();
+    return;
+  }
+
+  answerInput.classList.remove('invalid');
 
   try {
     submitBtn.disabled = true;
@@ -1135,6 +1160,31 @@ function canStartRecording(): boolean {
 }
 
 // Hold spacebar to record, release to buffer audio, hold again to re-record
+let validationTimer: ReturnType<typeof setTimeout> | null = null;
+answerInput.addEventListener('input', (e) => {
+  if ((e as InputEvent).isComposing) {
+    return;
+  }
+  if (validationTimer !== null) {
+    clearTimeout(validationTimer);
+  }
+  const val = answerInput.value.trim();
+  if (!val) {
+    answerInput.classList.remove('invalid');
+    return;
+  }
+  validationTimer = setTimeout(() => {
+    validationTimer = null;
+    if (currentMode === 'hanzi2pinyin' || currentMode === 'english2pinyin') {
+      answerInput.classList.toggle('invalid', !validatePinyin(val));
+    } else if (currentMode === 'english2hanzi') {
+      answerInput.classList.toggle('invalid', !/\p{Script=Han}/u.test(val));
+    } else {
+      answerInput.classList.remove('invalid');
+    }
+  }, 500);
+});
+
 answerInput.addEventListener('keydown', (e) => {
   if (e.key === ' ' && (canStartRecording() || isRecording)) {
     e.preventDefault();
