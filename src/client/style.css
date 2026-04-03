@@ -17,6 +17,26 @@
   --accent-hover: #3a7bc8;
   --input-bg: #ffffff;
   --shadow: rgba(0, 0, 0, 0.1);
+  --btn-start-bg: #e3f0e8;
+  --btn-start-bg-hover: #c8e6d0;
+  --btn-start-color: #1a7a3a;
+  --btn-start-border: #8fcea5;
+  --btn-review-bg: #e8f0fe;
+  --btn-review-bg-hover: #d0e2fc;
+  --btn-review-color: #1a56b0;
+  --btn-review-border: #a8c0f0;
+  --btn-random-bg: #ede8f5;
+  --btn-random-bg-hover: #ddd4ec;
+  --btn-random-color: #5b3ea1;
+  --btn-random-border: #c4b5e0;
+  --btn-due-bg: #fff3cd;
+  --btn-due-bg-hover: #ffe69c;
+  --btn-due-color: #856404;
+  --btn-due-border: #ffc107;
+  --btn-preview-bg: #e8f4fd;
+  --btn-preview-bg-hover: #cce5ff;
+  --btn-preview-color: #1a73e8;
+  --btn-preview-border: #b8daff;
 }
 
 body.dark {
@@ -38,6 +58,26 @@ body.dark {
   --accent-hover: #4a90d9;
   --input-bg: #1e1f32;
   --shadow: rgba(0, 0, 0, 0.4);
+  --btn-start-bg: #1a3d26;
+  --btn-start-bg-hover: #225232;
+  --btn-start-color: #6fcf97;
+  --btn-start-border: #2d6e44;
+  --btn-review-bg: #1a2d4a;
+  --btn-review-bg-hover: #1f3a5f;
+  --btn-review-color: #7ab3e8;
+  --btn-review-border: #2d5080;
+  --btn-random-bg: #2a1f40;
+  --btn-random-bg-hover: #352852;
+  --btn-random-color: #b89de0;
+  --btn-random-border: #5a3ea8;
+  --btn-due-bg: #3d2800;
+  --btn-due-bg-hover: #4d3300;
+  --btn-due-color: #f0c040;
+  --btn-due-border: #7a5800;
+  --btn-preview-bg: #1a2d4a;
+  --btn-preview-bg-hover: #1f3a5f;
+  --btn-preview-color: #7ab3e8;
+  --btn-preview-border: #2d5080;
 }
 
 * {
@@ -160,6 +200,11 @@ label.checkbox-label {
   flex-shrink: 0;
   margin: 0;
   cursor: pointer;
+}
+
+body.dark input[type="checkbox"] {
+  accent-color: var(--accent);
+  color-scheme: dark;
 }
 
 .primary-btn {
@@ -426,6 +471,10 @@ body.dark .preview-reset {
   opacity: 1;
 }
 
+body.dark .count-input {
+  color-scheme: dark;
+}
+
 .count-input.active {
   background: var(--accent);
   color: white;
@@ -443,48 +492,48 @@ body.dark .preview-reset {
   padding: 4px 12px;
   font-size: 13px;
   font-weight: 500;
-  background: #e3f0e8;
-  color: #1a7a3a;
-  border: 1px solid #8fcea5;
+  background: var(--btn-start-bg);
+  color: var(--btn-start-color);
+  border: 1px solid var(--btn-start-border);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .mode-start-btn:hover {
-  background: #c8e6d0;
+  background: var(--btn-start-bg-hover);
 }
 
 .mode-review-btn {
   padding: 4px 12px;
   font-size: 13px;
   font-weight: 500;
-  background: #e8f0fe;
-  color: #1a56b0;
-  border: 1px solid #a8c0f0;
+  background: var(--btn-review-bg);
+  color: var(--btn-review-color);
+  border: 1px solid var(--btn-review-border);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .mode-review-btn:hover {
-  background: #d0e2fc;
+  background: var(--btn-review-bg-hover);
 }
 
 .mode-random-btn {
   padding: 4px 12px;
   font-size: 13px;
   font-weight: 500;
-  background: #ede8f5;
-  color: #5b3ea1;
-  border: 1px solid #c4b5e0;
+  background: var(--btn-random-bg);
+  color: var(--btn-random-color);
+  border: 1px solid var(--btn-random-border);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .mode-random-btn:hover {
-  background: #ddd4ec;
+  background: var(--btn-random-bg-hover);
 }
 
 .bucket-timings {
@@ -523,31 +572,31 @@ body.dark .preview-reset {
   padding: 4px 12px;
   font-size: 13px;
   font-weight: 500;
-  background: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffc107;
+  background: var(--btn-due-bg);
+  color: var(--btn-due-color);
+  border: 1px solid var(--btn-due-border);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .due-mode-btn:hover {
-  background: #ffe69c;
+  background: var(--btn-due-bg-hover);
 }
 
 .mode-preview-btn {
   padding: 4px 12px;
   font-size: 13px;
-  background: #e8f4fd;
-  color: #1a73e8;
-  border: 1px solid #b8daff;
+  background: var(--btn-preview-bg);
+  color: var(--btn-preview-color);
+  border: 1px solid var(--btn-preview-border);
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .mode-preview-btn:hover {
-  background: #cce5ff;
+  background: var(--btn-preview-bg-hover);
 }
 
 /* Practice Screen */
