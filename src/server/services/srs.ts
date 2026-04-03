@@ -38,6 +38,14 @@ export function updateProgress(
   const currentProgress = getProgress(hanzi, mode);
   const currentBucket = currentProgress?.bucket ?? 0;
 
+  const isDue =
+    !currentProgress?.nextEligible ||
+    new Date(currentProgress.nextEligible) <= new Date();
+
+  if (!isDue && correct) {
+    return;
+  }
+
   let newBucket: number;
   if (correct) {
     newBucket = Math.min(currentBucket + 1, MAX_BUCKET);
