@@ -7,7 +7,7 @@ import type {
   Word,
 } from './services.js';
 import type { Example, Stats } from '../shared/types.js';
-import { validatePinyin } from '../shared/pinyin.js';
+import { toNumberedPinyin, validatePinyin } from '../shared/pinyin.js';
 import {
   addHanziSynonym,
   addWord,
@@ -54,6 +54,16 @@ const categoryList = document.getElementById('category-list')!;
 const categorySelected = document.getElementById('category-selected')!;
 const categorySearch = document.getElementById('category-search') as HTMLInputElement;
 const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
+
+// Dark mode toggle
+const themeCheckbox = document.getElementById('theme-checkbox') as HTMLInputElement;
+const isDark = localStorage.getItem('theme') === 'dark';
+document.body.classList.toggle('dark', isDark);
+themeCheckbox.checked = isDark;
+themeCheckbox.addEventListener('change', () => {
+  document.body.classList.toggle('dark', themeCheckbox.checked);
+  localStorage.setItem('theme', themeCheckbox.checked ? 'dark' : 'light');
+});
 
 // Sidebar nav
 const navItems = document.querySelectorAll('.nav-item');
@@ -1751,18 +1761,20 @@ addWordBtn.addEventListener('click', async () => {
 
       // Update word data in practice questions so display stays current
       if (returnToPractice && updated) {
-        for (const q of questions) {
-          if (q.word.hanzi === hanzi) {
-            q.word.pinyin = updated.pinyin;
-            q.word.english = updated.english;
-            q.word.categories = updated.categories;
+        const numberedPinyin = toNumberedPinyin(updated.pinyin);
+        const englishPrompt = updated.english.join(', ');
+        for (const q of [...questions, ...allQuestions, ...incorrectThisRound]) {
+          if (q.word.hanzi !== hanzi) {
+            continue;
           }
-        }
-        for (const q of allQuestions) {
-          if (q.word.hanzi === hanzi) {
-            q.word.pinyin = updated.pinyin;
-            q.word.english = updated.english;
-            q.word.categories = updated.categories;
+          q.word.pinyin = updated.pinyin;
+          q.word.english = updated.english;
+          q.word.categories = updated.categories;
+          if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
+            q.prompt = englishPrompt;
+          }
+          if (currentMode === 'hanzi2pinyin' || currentMode === 'english2pinyin') {
+            q.acceptedAnswers = [numberedPinyin];
           }
         }
       }

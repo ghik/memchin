@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import https from 'https';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { initDb, getAllCategories } from './db.js';
 import { loadCedict } from './services/cedict.js';
@@ -9,6 +11,7 @@ import wordsRouter from './routes/words.js';
 import practiceRouter from './routes/practice.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const CERTS_DIR = path.join(__dirname, '../../certs');
 
 async function main() {
   // Initialize database and data files
@@ -41,8 +44,12 @@ async function main() {
     });
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  const tlsOptions = {
+    key: fs.readFileSync(path.join(CERTS_DIR, 'key.pem')),
+    cert: fs.readFileSync(path.join(CERTS_DIR, 'cert.pem')),
+  };
+  https.createServer(tlsOptions, app).listen(PORT, () => {
+    console.log(`Server running on https://localhost:${PORT}`);
   });
 }
 

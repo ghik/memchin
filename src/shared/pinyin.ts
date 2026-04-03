@@ -40,6 +40,28 @@ export const INITIALS = '(?:zh|ch|sh|[bpmfdtnlgkhjqxrzcsyw])';
 export const SYLLABLE_PATTERN = new RegExp(`^(${INITIALS}?(?:${FINALS}))`, 'i');
 
 /**
+ * Convert tone-marked pinyin to numbered format.
+ * e.g. "nǐ hǎo" -> "ni3hao3"
+ */
+export function toNumberedPinyin(pinyin: string): string {
+  return pinyin
+    .toLowerCase()
+    .split(' ')
+    .map((syllable) => {
+      let s = syllable;
+      let tone = 0;
+      for (const [marked, [plain, t]] of Object.entries(TONE_TO_NUMBER)) {
+        if (s.includes(marked)) {
+          s = s.replaceAll(marked, plain);
+          tone = t;
+        }
+      }
+      return tone > 0 ? `${s}${tone}` : s;
+    })
+    .join('');
+}
+
+/**
  * Validate that a string contains only valid pinyin syllables.
  * Accepts tone-marked (zhōng) or numbered (zhong1) pinyin.
  * Tokens are split on spaces and apostrophes.

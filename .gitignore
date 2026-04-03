@@ -14,6 +14,9 @@ data/
 .env.local
 .env.*.local
 
+# TLS certificates
+certs/
+
 # Google Cloud credentials
 *-credentials.json
 *-service-account.json
