@@ -27,7 +27,8 @@ export interface Word extends WordCore {
   breakdown?: CharacterInfo[];
   categories: string[];
   manual: boolean;
-  resetAt?: string;
+  queuedAt?: string;
+  charQueuedAt?: string;
 }
 
 export type PracticeMode = 'hanzi2pinyin' | 'english2hanzi' | 'english2pinyin';

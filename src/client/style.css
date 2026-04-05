@@ -327,7 +327,7 @@ body.dark input[type="checkbox"] {
   margin-left: 4px;
 }
 
-.preview-reset {
+.preview-queued {
   color: #e67e22;
   font-size: 0.8em;
   font-weight: 600;
@@ -336,9 +336,23 @@ body.dark input[type="checkbox"] {
   border-radius: 4px;
 }
 
-body.dark .preview-reset {
+body.dark .preview-queued {
   background: #3d2800;
   color: #f0a040;
+}
+
+.preview-dismiss-btn {
+  background: none;
+  border: none;
+  color: var(--text-4);
+  cursor: pointer;
+  font-size: 0.8em;
+  padding: 1px 4px;
+  vertical-align: middle;
+}
+
+.preview-dismiss-btn:hover {
+  color: var(--text-1);
 }
 
 .preview-empty {
@@ -570,6 +584,8 @@ body.dark .count-input {
 
 .due-mode-btn {
   padding: 4px 12px;
+  min-width: 82px;
+  text-align: center;
   font-size: 13px;
   font-weight: 500;
   background: var(--btn-due-bg);
@@ -781,16 +797,16 @@ body.dark .answer-section input.invalid:focus {
   padding: 4px 12px;
   font-size: 14px;
   font-weight: 500;
-  color: #856404;
-  background: #fff3cd;
-  border: 1px solid #ffc107;
+  color: var(--btn-due-color);
+  background: var(--btn-due-bg);
+  border: 1px solid var(--btn-due-border);
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .synonym-btn:hover {
-  background: #ffe69c;
+  background: var(--btn-due-bg-hover);
 }
 
 .synonym-input-row {

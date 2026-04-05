@@ -142,6 +142,10 @@ export function previewNewWords(
   return apiGet(`/practice/preview?${params}`);
 }
 
+export function clearWordQueued(hanzi: string, characterMode: boolean): Promise<{ ok: boolean }> {
+  return apiPost(`/words/${encodeURIComponent(hanzi)}/clear-queued`, { characterMode });
+}
+
 export function getCategories(): Promise<string[]> {
   return apiGet('/categories');
 }
@@ -156,13 +160,13 @@ export function updateWord(
   pinyin: string,
   english: string[],
   categories: string[],
-  resetBucket: boolean
+  queueAsNew: boolean
 ): Promise<Word> {
   return apiPut(`/words/${encodeURIComponent(hanzi)}`, {
     pinyin,
     english,
     categories,
-    resetBucket,
+    queueAsNew,
   });
 }
 
@@ -177,9 +181,9 @@ export function addWord(
   pinyin: string,
   english: string[],
   categories: string[],
-  resetBucket: boolean
+  queueAsNew: boolean
 ): Promise<Word> {
-  return apiPost('/words', { hanzi, pinyin, english, categories, resetBucket });
+  return apiPost('/words', { hanzi, pinyin, english, categories, queueAsNew });
 }
 
 export function resetWordProgress(hanzi: string, mode?: string): Promise<void> {

@@ -42,6 +42,29 @@ export async function initDb(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_progress_hanzi_charmode ON progress(hanzi, character_mode_only)`
   );
 
+  // Migration: rename reset_at → queued_at, char_reset_at → char_queued_at
+  // (or add char_queued_at fresh if neither old nor new column exists yet)
+  const tableInfo = db.exec('PRAGMA table_info(words)');
+  const columns: string[] = tableInfo[0]?.values.map((row: any) => row[1] as string) ?? [];
+
+  if (columns.includes('reset_at')) {
+    db.run('ALTER TABLE words RENAME COLUMN reset_at TO queued_at');
+  }
+
+  if (columns.includes('char_reset_at')) {
+    db.run('ALTER TABLE words RENAME COLUMN char_reset_at TO char_queued_at');
+  } else if (!columns.includes('char_queued_at')) {
+    db.run('ALTER TABLE words ADD COLUMN char_queued_at TEXT');
+    db.run(`
+      UPDATE words SET char_queued_at = datetime('now')
+      WHERE LENGTH(hanzi) = 1
+      AND EXISTS (
+        SELECT 1 FROM progress p
+        WHERE INSTR(p.hanzi, words.hanzi) > 0 AND LENGTH(p.hanzi) > 1
+      )
+    `);
+  }
+
   saveDb();
 }
 
@@ -238,7 +261,8 @@ export function upsertProgress(
     `,
     [hanzi, mode, bucket, now, nextEligible, characterMode ? 1 : 0]
   );
-  clearResetAt(hanzi);
+  clearQueuedAt(hanzi);
+  clearCharQueuedAt(hanzi);
 }
 
 export function deleteProgress(hanzi: string, mode?: string): void {
@@ -265,22 +289,35 @@ export function resetProgressBucket(hanzi: string, mode: string, toCharacterMode
   saveDb();
 }
 
-export function setResetAt(hanzi: string): void {
+export function setQueuedAt(hanzi: string): void {
   const now = new Date()
     .toISOString()
     .replace('T', ' ')
     .replace(/\.\d+Z$/, '');
-  db.run('UPDATE words SET reset_at = ? WHERE hanzi = ?', [now, hanzi]);
+  db.run('UPDATE words SET queued_at = ? WHERE hanzi = ?', [now, hanzi]);
 }
 
-export function clearResetAt(hanzi: string): void {
-  db.run('UPDATE words SET reset_at = NULL WHERE hanzi = ?', [hanzi]);
+export function clearQueuedAt(hanzi: string): void {
+  db.run('UPDATE words SET queued_at = NULL WHERE hanzi = ?', [hanzi]);
+}
+
+export function setCharQueuedAt(hanzi: string): void {
+  const now = new Date()
+    .toISOString()
+    .replace('T', ' ')
+    .replace(/\.\d+Z$/, '');
+  db.run('UPDATE words SET char_queued_at = ? WHERE hanzi = ? AND char_queued_at IS NULL', [now, hanzi]);
+}
+
+export function clearCharQueuedAt(hanzi: string): void {
+  db.run('UPDATE words SET char_queued_at = NULL WHERE hanzi = ?', [hanzi]);
 }
 
 // Word query helpers
 
 interface WordFilters {
   rankColumn: string; // 'w.rank' or 'w.hanzi_rank', for ORDER BY
+  queueColumn: string; // 'w.queued_at' or 'w.char_queued_at', for new word priority ordering
   wordFilter: string; // AND clauses on w.* (translatable, category, rank, character mode)
   progressFilter: string; // AND clauses on p.* (excludes character-mode-only in word mode)
   newWordCondition: string; // WHERE condition for LEFT JOIN queries ('p.id IS NULL' or includes char-mode-only)
@@ -304,13 +341,10 @@ function getWordFilters(
   }
 
   const rankColumn = characterMode ? 'w.hanzi_rank' : 'w.rank';
+  const queueColumn = characterMode ? 'w.char_queued_at' : 'w.queued_at';
 
   if (characterMode) {
     wordParts.push(`AND ${rankColumn} IS NOT NULL`);
-  }
-
-  if (characterMode) {
-    wordParts.push('AND EXISTS (SELECT 1 FROM progress p2 WHERE INSTR(p2.hanzi, w.hanzi) > 0)');
   }
 
   if (!characterMode) {
@@ -323,7 +357,7 @@ function getWordFilters(
   const progressFilter = '';
   const newWordCondition = '(p.id IS NULL OR p.bucket IS NULL)';
 
-  return { rankColumn, wordFilter, progressFilter, newWordCondition };
+  return { rankColumn, queueColumn, wordFilter, progressFilter, newWordCondition };
 }
 
 function queryCount(sql: string, params: any[]): number {
@@ -382,7 +416,7 @@ function queryNewWords(
     `
       SELECT w.* FROM words w LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
       WHERE ${f.newWordCondition} ${f.wordFilter}
-      ORDER BY w.reset_at IS NULL ASC, w.reset_at ASC, ${f.rankColumn} IS NULL ASC, ${f.rankColumn} ASC LIMIT ? OFFSET ?
+      ORDER BY ${f.queueColumn} IS NULL ASC, ${f.queueColumn} ASC, ${f.rankColumn} IS NULL ASC, ${f.rankColumn} ASC LIMIT ? OFFSET ?
   `,
     [mode, ...categories, count, offset]
   );
@@ -563,7 +597,8 @@ function rowToWord(row: any): Word {
     translatable: Boolean(row.translatable),
     categories: JSON.parse(row.categories || '[]'),
     manual: Boolean(row.manual),
-    resetAt: row.reset_at ?? undefined,
+    queuedAt: row.queued_at ?? undefined,
+    charQueuedAt: row.char_queued_at ?? undefined,
   };
 }
 

@@ -6,12 +6,14 @@ import {
   getWordCount,
   insertWords,
   updateWord,
-  upsertProgress,
   saveDb,
   invalidateWordCache,
   deleteProgress,
   resetProgressBucket,
-  setResetAt,
+  setQueuedAt,
+  setCharQueuedAt,
+  clearQueuedAt,
+  clearCharQueuedAt,
   updateWordExamples,
 } from '../db.js';
 import { lookupFiltered } from '../services/cedict.js';
@@ -20,23 +22,18 @@ import { generateExamples } from '../../scripts/generate-examples.js';
 import { generateSpeech } from '../services/tts.js';
 import { decomposeWord } from '../services/ids.js';
 import { lookupChar, loadWordFrequencyData } from '../services/hanzi-freq.js';
-import type { Example, PracticeMode } from '../../shared/types.js';
+import type { Example } from '../../shared/types.js';
 
-const ALL_MODES: PracticeMode[] = [
-  'hanzi2pinyin',
-  'english2hanzi',
-  'english2pinyin',
-];
-
-function resetToBucket0(hanzi: string) {
-  const hasProgress = getMaxBucket(hanzi) !== null;
-  if (hasProgress) {
-    const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, '');
-    for (const mode of ALL_MODES) {
-      upsertProgress(hanzi, mode, 0, now, false);
+function resetCharsForWord(hanzi: string): void {
+  const chars = [...hanzi];
+  if (chars.length <= 1) {
+    return;
+  }
+  for (const char of chars) {
+    if (!getWordByHanzi(char)) {
+      continue;
     }
-  } else {
-    setResetAt(hanzi);
+    setCharQueuedAt(char);
   }
 }
 
@@ -66,7 +63,7 @@ router.get('/lookup/:hanzi', (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { hanzi, pinyin, english, categories, resetBucket } = req.body;
+    const { hanzi, pinyin, english, categories } = req.body;
 
     if (!hanzi || !pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
@@ -104,9 +101,7 @@ router.post('/', async (req, res) => {
       },
     ]);
 
-    if (resetBucket) {
-      resetToBucket0(hanzi);
-    }
+    setQueuedAt(hanzi);
 
     // Auto-add individual characters for multi-character words
     const chars = [...hanzi];
@@ -138,6 +133,7 @@ router.post('/', async (req, res) => {
         insertWords(charsToAdd);
         charsAdded.push(...charsToAdd);
       }
+      resetCharsForWord(hanzi);
     }
 
     saveDb();
@@ -181,7 +177,7 @@ router.post('/', async (req, res) => {
 router.put('/:hanzi', (req, res) => {
   try {
     const hanzi = decodeURIComponent(req.params.hanzi);
-    const { pinyin, english, categories, resetBucket } = req.body;
+    const { pinyin, english, categories, queueAsNew } = req.body;
 
     if (!pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
@@ -197,8 +193,9 @@ router.put('/:hanzi', (req, res) => {
     const normalizedPinyin = normalizePinyinInput(pinyin);
 
     updateWord(hanzi, normalizedPinyin, english, categories || []);
-    if (resetBucket) {
-      resetToBucket0(hanzi);
+    if (queueAsNew) {
+      setQueuedAt(hanzi);
+      resetCharsForWord(hanzi);
     }
 
     const word = getWordByHanzi(hanzi);
@@ -231,6 +228,22 @@ router.post('/:hanzi/reset-bucket', (req, res) => {
     return res.status(404).json({ error: `Word "${hanzi}" not found` });
   }
   resetProgressBucket(hanzi, mode, toCharacterModeOnly);
+  resetCharsForWord(hanzi);
+  res.json({ ok: true });
+});
+
+router.post('/:hanzi/clear-queued', (req, res) => {
+  const hanzi = decodeURIComponent(req.params.hanzi);
+  const { characterMode } = req.body as { characterMode: boolean };
+  if (!getWordByHanzi(hanzi)) {
+    return res.status(404).json({ error: `Word "${hanzi}" not found` });
+  }
+  if (characterMode) {
+    clearCharQueuedAt(hanzi);
+  } else {
+    clearQueuedAt(hanzi);
+  }
+  saveDb();
   res.json({ ok: true });
 });
 

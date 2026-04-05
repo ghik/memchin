@@ -12,6 +12,7 @@ import {
   addHanziSynonym,
   addWord,
   assessSpeech,
+  clearWordQueued,
   completePractice,
   getCategories,
   getStats,
@@ -1089,7 +1090,7 @@ function editCurrentWord() {
   ensureCurated();
   renderChips(categoryChips, categoryValues, removeCategoryChip);
   editingExistingWord = true;
-  resetBucketCb.checked = question.bucket === null;
+  queueAsNewCb.checked = question.bucket === null;
   addWordBtn.textContent = 'Save';
   addWordStatus.classList.add('hidden');
   performHanziLookup(word.hanzi);
@@ -1412,7 +1413,11 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
             w.categories.length > 0
               ? ` <span class="preview-categories">${w.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ')}</span>`
               : '';
-          const resetTag = w.resetAt ? ' <span class="preview-reset">reset</span>' : '';
+          const charMode = getCharMode(currentMode);
+          const hasResetPriority = charMode ? !!w.charQueuedAt : !!w.queuedAt;
+          const resetTag = hasResetPriority
+            ? ` <span class="preview-queued">queued</span><button class="preview-dismiss-btn" data-hanzi="${w.hanzi}">✕</button>`
+            : '';
           const checked = previewSelected.has(w.hanzi) ? 'checked' : '';
           return `<label class="preview-word"><input type="checkbox" class="preview-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${rankSpan}${cats}${resetTag}</label>`;
         })
@@ -1455,6 +1460,17 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     // Practice selected handler
     section.querySelector('.practice-selected-btn')!.addEventListener('click', () => {
       handleStart([...previewSelected]);
+    });
+
+    // Dismiss (clear reset priority) handlers
+    section.querySelectorAll('.preview-dismiss-btn').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const hanzi = (btn as HTMLButtonElement).dataset.hanzi!;
+        await clearWordQueued(hanzi, getCharMode(currentMode));
+        loadPreviewPage(previewOffset);
+      });
     });
 
     // Pagination handlers
@@ -1506,8 +1522,8 @@ const wordBreakdown = document.getElementById('word-breakdown')!;
 const categorySuggestions = document.getElementById('category-suggestions')!;
 const addWordBtn = document.getElementById('add-word-btn') as HTMLButtonElement;
 const addWordStatus = document.getElementById('add-word-status')!;
-const resetBucketCb = document.getElementById('reset-bucket-cb') as HTMLInputElement;
-const resetBucketLabel = document.getElementById('reset-bucket-label')!;
+const queueAsNewCb = document.getElementById('queue-as-new-cb') as HTMLInputElement;
+const queueAsNewLabel = document.getElementById('queue-as-new-label')!;
 
 let englishValues: string[] = [];
 let categoryValues: string[] = [];
@@ -1611,7 +1627,7 @@ async function performHanziLookup(hanzi: string) {
 
     if (existing) {
       editingExistingWord = true;
-      resetBucketCb.checked = maxBucket === null;
+      queueAsNewCb.checked = maxBucket === null;
       addWordBtn.textContent = 'Save';
       resetProgressBtn.classList.remove('hidden');
       addPinyinInput.value = existing.pinyin;
@@ -1629,7 +1645,7 @@ async function performHanziLookup(hanzi: string) {
       wordInfoDiv.classList.remove('hidden');
     } else {
       editingExistingWord = false;
-      resetBucketCb.checked = true;
+      queueAsNewCb.checked = true;
       addWordBtn.textContent = 'Add';
       resetProgressBtn.classList.add('hidden');
       addPinyinInput.value = '';
@@ -1702,7 +1718,7 @@ addHanziInput.addEventListener('input', () => {
     wordInfoDiv.classList.add('hidden');
     wordBreakdown.classList.add('hidden');
     editingExistingWord = false;
-    resetBucketCb.checked = true;
+    queueAsNewCb.checked = true;
     addWordBtn.textContent = 'Add';
     resetProgressBtn.classList.add('hidden');
     return;
@@ -1755,7 +1771,7 @@ addWordBtn.addEventListener('click', async () => {
         pinyin,
         englishValues,
         categoryValues,
-        resetBucketCb.checked
+        queueAsNewCb.checked
       );
       showAddWordStatus(`Updated "${hanzi}" successfully!`, 'success');
 
@@ -1779,7 +1795,7 @@ addWordBtn.addEventListener('click', async () => {
         }
       }
     } else {
-      await addWord(hanzi, pinyin, englishValues, categoryValues, resetBucketCb.checked);
+      await addWord(hanzi, pinyin, englishValues, categoryValues, queueAsNewCb.checked);
       showAddWordStatus(`Added "${hanzi}" successfully!`, 'success');
     }
 
