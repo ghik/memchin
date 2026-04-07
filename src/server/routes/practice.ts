@@ -20,7 +20,6 @@ import {
   getProgress,
   getStats,
   getWordByHanzi,
-  getWordsForPractice,
   getWordsForReview,
   incrementAnswerCounts,
   isAmbiguousTranslation,
@@ -101,17 +100,11 @@ router.post('/start', (req, res) => {
       return res.status(400).json({ error: 'count is required' });
     }
     switch (wordSelection) {
-      case 'new':
-        words = getNewWords(mode, count, categories, characterMode);
-        break;
       case 'review':
         words = getWordsForReview(mode, count, categories, characterMode, false);
         break;
       case 'random':
         words = getWordsForReview(mode, count, categories, characterMode, true);
-        break;
-      default:
-        words = getWordsForPractice(mode, count, categories, characterMode);
         break;
     }
   }

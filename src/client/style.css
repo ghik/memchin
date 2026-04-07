@@ -17,10 +17,6 @@
   --accent-hover: #3a7bc8;
   --input-bg: #ffffff;
   --shadow: rgba(0, 0, 0, 0.1);
-  --btn-start-bg: #e3f0e8;
-  --btn-start-bg-hover: #c8e6d0;
-  --btn-start-color: #1a7a3a;
-  --btn-start-border: #8fcea5;
   --btn-review-bg: #e8f0fe;
   --btn-review-bg-hover: #d0e2fc;
   --btn-review-color: #1a56b0;
@@ -58,10 +54,6 @@ body.dark {
   --accent-hover: #4a90d9;
   --input-bg: #1e1f32;
   --shadow: rgba(0, 0, 0, 0.4);
-  --btn-start-bg: #1a3d26;
-  --btn-start-bg-hover: #225232;
-  --btn-start-color: #6fcf97;
-  --btn-start-border: #2d6e44;
   --btn-review-bg: #1a2d4a;
   --btn-review-bg-hover: #1f3a5f;
   --btn-review-color: #7ab3e8;
@@ -502,21 +494,6 @@ body.dark .count-input {
   margin-top: 6px;
 }
 
-.mode-start-btn {
-  padding: 4px 12px;
-  font-size: 13px;
-  font-weight: 500;
-  background: var(--btn-start-bg);
-  color: var(--btn-start-color);
-  border: 1px solid var(--btn-start-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.mode-start-btn:hover {
-  background: var(--btn-start-bg-hover);
-}
 
 .mode-review-btn {
   padding: 4px 12px;

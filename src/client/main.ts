@@ -398,7 +398,7 @@ function renderStats(stats: Stats[]) {
         })
         .join('');
       const dueBtn = `<button class="due-mode-btn" data-mode="${s.mode}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
-      const previewBtn = `<button class="mode-preview-btn" data-mode="${s.mode}">Preview new</button>`;
+      const previewBtn = `<button class="mode-preview-btn" data-mode="${s.mode}">Preview queued</button>`;
       const presets = [5, 10, 20, 30, 50];
       const modeCount = getModeWordCount(s.mode);
       const isCustom = !presets.includes(modeCount);
@@ -419,8 +419,7 @@ function renderStats(stats: Stats[]) {
           <label class="mode-char-mode"><input type="checkbox" class="char-mode-cb" data-mode="${s.mode}" ${getCharMode(s.mode) ? 'checked' : ''}> Char mode</label>
         </div>
         <div class="mode-card-actions">
-          ${dueBtn}<button class="mode-start-btn" data-mode="${s.mode}">Review and new</button>
-          <button class="mode-review-btn" data-mode="${s.mode}">Review only</button>
+          ${dueBtn}<button class="mode-review-btn" data-mode="${s.mode}">Review</button>
           <button class="mode-random-btn" data-mode="${s.mode}">Random</button>
           ${previewBtn}
         </div>
@@ -432,16 +431,6 @@ function renderStats(stats: Stats[]) {
 
   statsDiv.innerHTML = html;
   latestStats = stats;
-
-  // Start buttons (always mixed)
-  statsDiv.querySelectorAll('.mode-start-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
-      currentMode = mode;
-      localStorage.setItem('mode', mode);
-      handleStart(undefined, 'mixed');
-    });
-  });
 
   // Review-only buttons
   statsDiv.querySelectorAll('.mode-review-btn').forEach((btn) => {
@@ -590,7 +579,7 @@ function getSelectedCategories(): string[] {
 }
 
 // Start practice
-async function handleStart(hanziList?: string[], wordSelection: string = 'mixed') {
+async function handleStart(hanziList?: string[], wordSelection: string = 'review') {
   const count = getModeWordCount(currentMode);
 
   try {
@@ -1411,8 +1400,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
             w.categories.length > 0
               ? ` <span class="preview-categories">${w.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ')}</span>`
               : '';
-          const charMode = getCharMode(currentMode);
-          const hasResetPriority = charMode ? !!w.charQueuedAt : !!w.queuedAt;
+          const hasResetPriority = getCharMode(currentMode) ? !!w.charQueuedAt : !!w.queuedAt;
           const resetTag = hasResetPriority
             ? ` <span class="preview-queued">queued</span><button class="preview-dismiss-btn" data-hanzi="${w.hanzi}">✕</button>`
             : '';
@@ -1425,6 +1413,9 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     // Checkbox handlers
     const pageHanzis = words.map((w) => w.hanzi);
     const selectAllCb = section.querySelector('.preview-select-all-cb') as HTMLInputElement;
+    selectAllCb.checked = pageHanzis.every((h) => previewSelected.has(h));
+
+    // Individual checkbox handlers
     section.querySelectorAll('.preview-checkbox').forEach((cb) => {
       cb.addEventListener('change', () => {
         const input = cb as HTMLInputElement;
@@ -1439,8 +1430,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       });
     });
 
-    // Select all handler (toggles current page)
-    selectAllCb.checked = pageHanzis.every((h) => previewSelected.has(h));
+    // Select all handler
     selectAllCb.addEventListener('change', (e) => {
       const checked = (e.target as HTMLInputElement).checked;
       section.querySelectorAll('.preview-checkbox').forEach((cb) => {

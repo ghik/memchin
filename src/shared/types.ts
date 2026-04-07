@@ -55,7 +55,7 @@ export interface PracticeQuestion {
 export interface StartRequest {
   count: number;
   mode: PracticeMode;
-  wordSelection: 'mixed' | 'new' | 'review' | 'random';
+  wordSelection: 'review' | 'random';
   categories: string[];
   characterMode: boolean;
   hanziList?: string[]; // specific words to practice (overrides count/wordSelection/categories)

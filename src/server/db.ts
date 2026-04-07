@@ -340,11 +340,8 @@ export function clearCharQueuedAt(hanzi: string): void {
 // Word query helpers
 
 interface WordFilters {
-  rankColumn: string; // 'w.rank' or 'w.hanzi_rank', for ORDER BY
-  queueColumn: string; // 'w.queued_at' or 'w.char_queued_at', for new word priority ordering
-  wordFilter: string; // AND clauses on w.* (translatable, category, rank, character mode)
-  progressFilter: string; // AND clauses on p.* (excludes character-mode-only in word mode)
-  newWordCondition: string; // WHERE condition for LEFT JOIN queries ('p.id IS NULL' or includes char-mode-only)
+  queueColumn: string; // 'w.queued_at' or 'w.char_queued_at'
+  wordFilter: string; // AND clauses on w.*
 }
 
 function getWordFilters(
@@ -364,11 +361,10 @@ function getWordFilters(
     );
   }
 
-  const rankColumn = characterMode ? 'w.hanzi_rank' : 'w.rank';
   const queueColumn = characterMode ? 'w.char_queued_at' : 'w.queued_at';
 
   if (characterMode) {
-    wordParts.push(`AND ${rankColumn} IS NOT NULL`);
+    wordParts.push('AND w.hanzi_rank IS NOT NULL');
   }
 
   if (!characterMode) {
@@ -377,11 +373,7 @@ function getWordFilters(
     );
   }
 
-  const wordFilter = wordParts.join(' ');
-  const progressFilter = '';
-  const newWordCondition = '(p.id IS NULL OR p.bucket IS NULL)';
-
-  return { rankColumn, queueColumn, wordFilter, progressFilter, newWordCondition };
+  return { queueColumn, wordFilter: wordParts.join(' ') };
 }
 
 function queryCount(sql: string, params: any[]): number {
@@ -421,7 +413,7 @@ function queryReviewWords(
   return queryWords(
     `
       SELECT w.* FROM words w JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? AND p.bucket IS NOT NULL ${dueFilter} ${f.wordFilter} ${f.progressFilter}
+      WHERE p.mode = ? AND p.bucket IS NOT NULL ${dueFilter} ${f.wordFilter}
       ORDER BY ${orderBy} LIMIT ?
   `,
     [mode, ...categories, count]
@@ -438,11 +430,11 @@ function queryNewWords(
   const f = getWordFilters(mode, categories, characterMode);
   return queryWords(
     `
-      SELECT w.* FROM words w LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
-      WHERE ${f.newWordCondition} ${f.wordFilter}
-      ORDER BY ${f.queueColumn} IS NULL ASC, ${f.queueColumn} ASC, ${f.rankColumn} IS NULL ASC, ${f.rankColumn} ASC LIMIT ? OFFSET ?
+      SELECT w.* FROM words w
+      WHERE ${f.queueColumn} IS NOT NULL ${f.wordFilter}
+      ORDER BY ${f.queueColumn} ASC LIMIT ? OFFSET ?
   `,
-    [mode, ...categories, count, offset]
+    [...categories, count, offset]
   );
 }
 
@@ -473,28 +465,11 @@ export function getNewWordsCount(
 ): number {
   const f = getWordFilters(mode, categories, characterMode);
   return queryCount(
-    `
-      SELECT COUNT(*) as cnt FROM words w LEFT JOIN progress p ON w.hanzi = p.hanzi AND p.mode = ?
-      WHERE ${f.newWordCondition} ${f.wordFilter}
-  `,
-    [mode, ...categories]
+    `SELECT COUNT(*) as cnt FROM words w WHERE ${f.queueColumn} IS NOT NULL ${f.wordFilter}`,
+    categories
   );
 }
 
-export function getWordsForPractice(
-  mode: PracticeMode,
-  count: number,
-  categories: string[],
-  characterMode: boolean
-): Word[] {
-  const result = queryReviewWords(mode, categories, characterMode, count, true, false);
-
-  if (result.length < count) {
-    result.push(...queryNewWords(mode, categories, characterMode, count - result.length));
-  }
-
-  return result;
-}
 
 export function getStats(
   mode: PracticeMode,
@@ -509,7 +484,7 @@ export function getStats(
   dueBuckets: number[];
 } {
   const f = getWordFilters(mode, categories, characterMode);
-  const baseJoin = `FROM words w JOIN progress p ON w.hanzi = p.hanzi WHERE p.mode = ? AND p.bucket IS NOT NULL ${f.wordFilter} ${f.progressFilter}`;
+  const baseJoin = `FROM words w JOIN progress p ON w.hanzi = p.hanzi WHERE p.mode = ? AND p.bucket IS NOT NULL ${f.wordFilter}`;
   const baseParams = [mode, ...categories];
 
   const totalWords = queryCount(
@@ -556,8 +531,7 @@ export function getDueCount(
   return queryCount(
     `
       SELECT COUNT(*) as cnt FROM words w JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? AND p.next_eligible <= datetime('now') ${f.wordFilter} ${f.progressFilter}
-  `,
+      WHERE p.mode = ? AND p.next_eligible <= datetime('now') ${f.wordFilter}   `,
     [mode, ...categories]
   );
 }
