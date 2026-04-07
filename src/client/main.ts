@@ -397,9 +397,7 @@ function renderStats(stats: Stats[]) {
           return `<span class="bucket-count" title="Bucket ${i}: ${count} total, ${due} due">${dueLabel}${count}</span>`;
         })
         .join('');
-      const dueBtn = s.dueForReview > 0
-        ? `<button class="due-mode-btn" data-mode="${s.mode}" data-count="${s.dueForReview}">${s.dueForReview} due</button>`
-        : '';
+      const dueBtn = `<button class="due-mode-btn" data-mode="${s.mode}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
       const previewBtn = `<button class="mode-preview-btn" data-mode="${s.mode}">Preview new</button>`;
       const presets = [5, 10, 20, 30, 50];
       const modeCount = getModeWordCount(s.mode);

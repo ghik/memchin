@@ -596,8 +596,14 @@ body.dark .count-input {
   transition: background 0.2s;
 }
 
-.due-mode-btn:hover {
+.due-mode-btn:hover:not(:disabled) {
   background: var(--btn-due-bg-hover);
+}
+
+.due-mode-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transition: none;
 }
 
 .mode-preview-btn {

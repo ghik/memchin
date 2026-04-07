@@ -1,12 +1,10 @@
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import type { ContainingWord, Example, PracticeMode, Progress, Word } from '../shared/types.js';
 import { MAX_BUCKET } from './services/srs.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, '../../data/memchin.db');
+const dbPath = path.join(process.env.HOME!, 'Dropbox/memchin/memchin.db');
 const dataDir = path.dirname(dbPath);
 
 let db: SqlJsDatabase;
@@ -42,6 +40,29 @@ export async function initDb(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS idx_progress_hanzi_charmode ON progress(hanzi, character_mode_only)`
   );
 
+  // Migration: make progress.bucket nullable (schema had NOT NULL DEFAULT 0)
+  const progressInfo = db.exec('PRAGMA table_info(progress)');
+  const progressCols: any[] = progressInfo[0]?.values ?? [];
+  const bucketCol = progressCols.find((r) => r[1] === 'bucket');
+  if (bucketCol?.[3] === 1) { // notnull = 1 means NOT NULL constraint present
+    const colNames = progressCols.map((r) => r[1] as string);
+    const colDefs = progressCols.map((r) => {
+      const [, name, type, notnull, dflt, pk] = r;
+      if (pk) {
+        return `${name} ${type} PRIMARY KEY AUTOINCREMENT`;
+      }
+      const notNullClause = (notnull && name !== 'bucket') ? ' NOT NULL' : '';
+      const defaultClause = dflt != null ? ` DEFAULT ${dflt}` : '';
+      return `${name} ${type}${notNullClause}${defaultClause}`;
+    }).join(', ');
+    db.run(`CREATE TABLE progress_new (${colDefs}, FOREIGN KEY (hanzi) REFERENCES words(hanzi), UNIQUE(hanzi, mode))`);
+    db.run(`INSERT INTO progress_new (${colNames.join(', ')}) SELECT ${colNames.join(', ')} FROM progress`);
+    db.run('DROP TABLE progress');
+    db.run('ALTER TABLE progress_new RENAME TO progress');
+    db.run('CREATE INDEX IF NOT EXISTS idx_progress_mode_eligible ON progress(mode, next_eligible)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_progress_hanzi_charmode ON progress(hanzi, character_mode_only)');
+  }
+
   // Migration: rename reset_at → queued_at, char_reset_at → char_queued_at
   // (or add char_queued_at fresh if neither old nor new column exists yet)
   const tableInfo = db.exec('PRAGMA table_info(words)');
@@ -55,15 +76,18 @@ export async function initDb(): Promise<void> {
     db.run('ALTER TABLE words RENAME COLUMN char_reset_at TO char_queued_at');
   } else if (!columns.includes('char_queued_at')) {
     db.run('ALTER TABLE words ADD COLUMN char_queued_at TEXT');
-    db.run(`
-      UPDATE words SET char_queued_at = datetime('now')
-      WHERE LENGTH(hanzi) = 1
-      AND EXISTS (
-        SELECT 1 FROM progress p
-        WHERE INSTR(p.hanzi, words.hanzi) > 0 AND LENGTH(p.hanzi) > 1
-      )
-    `);
   }
+
+  // Seed char_queued_at for all chars from already-learned words that aren't yet queued
+  db.run(`
+    UPDATE words SET char_queued_at = datetime('now')
+    WHERE LENGTH(hanzi) = 1
+    AND char_queued_at IS NULL
+    AND EXISTS (
+      SELECT 1 FROM progress p
+      WHERE INSTR(p.hanzi, words.hanzi) > 0 AND LENGTH(p.hanzi) > 1
+    )
+  `);
 
   saveDb();
 }
