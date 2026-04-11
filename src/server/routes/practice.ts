@@ -19,6 +19,8 @@ import {
   getNewWordsCount,
   getProgress,
   getStats,
+  getUnqueuedWords,
+  getUnqueuedWordsCount,
   getWordByHanzi,
   getWordsForReview,
   incrementAnswerCounts,
@@ -27,6 +29,7 @@ import {
   isHanziSynonym,
   saveDb,
 } from '../db.js';
+import { setQueuedAt, setCharQueuedAt } from '../db.js';
 import { updateProgress } from '../services/srs.js';
 import {
   hanziMatches,
@@ -330,6 +333,41 @@ router.post('/speech-assess', express.raw({ type: 'application/octet-stream', li
     console.error('Speech assessment failed:', error);
     res.status(500).json({ error: 'Speech assessment failed' });
   }
+});
+
+router.get('/unqueued', (req, res) => {
+  const mode = req.query.mode as PracticeMode;
+  const limit = parseInt(req.query.limit as string) || 50;
+  const offset = parseInt(req.query.offset as string) || 0;
+  const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
+  const characterMode = req.query.characterMode === 'true';
+
+  if (
+    !mode ||
+    !['hanzi2pinyin', 'english2hanzi', 'english2pinyin'].includes(mode)
+  ) {
+    return res.status(400).json({ error: 'Valid mode is required' });
+  }
+
+  const words = getUnqueuedWords(mode, categories, characterMode, limit, offset).map(enrichWord);
+  const total = getUnqueuedWordsCount(mode, categories, characterMode);
+  res.json({ words, total });
+});
+
+router.post('/queue-words', (req, res) => {
+  const { hanzis, characterMode } = req.body as { hanzis: string[]; characterMode: boolean };
+  if (!Array.isArray(hanzis) || hanzis.length === 0) {
+    return res.status(400).json({ error: 'hanzis array is required' });
+  }
+  for (const hanzi of hanzis) {
+    if (characterMode) {
+      setCharQueuedAt(hanzi);
+    } else {
+      setQueuedAt(hanzi);
+    }
+  }
+  saveDb();
+  res.json({ ok: true });
 });
 
 export default router;

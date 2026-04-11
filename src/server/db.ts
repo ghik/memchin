@@ -85,6 +85,30 @@ export async function initDb(): Promise<void> {
     AND EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = words.hanzi AND p.bucket IS NOT NULL)
   `);
 
+  // Re-queue words that were learned in at least one mode but had queued_at cleared by the old
+  // upsertProgress (which unconditionally cleared queued_at on every practice). Now that queued_at
+  // is preserved across modes, restore it so these words appear as "new" in modes not yet practiced.
+  db.run(`
+    UPDATE words SET queued_at = datetime('now')
+    WHERE queued_at IS NULL
+    AND EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = words.hanzi AND p.bucket IS NOT NULL)
+  `);
+
+  // Also restore char_queued_at for individual characters that belong to practiced multi-char words
+  // but haven't been learned in character mode yet.
+  db.run(`
+    UPDATE words SET char_queued_at = datetime('now')
+    WHERE char_queued_at IS NULL
+    AND length(hanzi) = 1
+    AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = words.hanzi AND p.bucket IS NOT NULL)
+    AND EXISTS (
+      SELECT 1 FROM words w2
+      WHERE length(w2.hanzi) > 1
+      AND INSTR(w2.hanzi, words.hanzi) > 0
+      AND EXISTS (SELECT 1 FROM progress p2 WHERE p2.hanzi = w2.hanzi AND p2.bucket IS NOT NULL)
+    )
+  `);
+
   saveDb();
 }
 
@@ -292,8 +316,6 @@ export function upsertProgress(
     `,
     [hanzi, mode, bucket, now, nextEligible, characterMode ? 1 : 0]
   );
-  clearQueuedAt(hanzi);
-  clearCharQueuedAt(hanzi);
 }
 
 export function deleteProgress(hanzi: string, mode?: string): void {
@@ -443,9 +465,10 @@ function queryNewWords(
     `
       SELECT w.* FROM words w
       WHERE ${f.queueColumn} IS NOT NULL ${f.wordFilter}
+      AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)
       ORDER BY ${f.queueColumn} ASC LIMIT ? OFFSET ?
   `,
-    [...categories, count, offset]
+    [...categories, mode, count, offset]
   );
 }
 
@@ -469,6 +492,43 @@ export function getNewWords(
   return queryNewWords(mode, categories, characterMode, count, offset);
 }
 
+export function getUnqueuedWords(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean,
+  count: number,
+  offset: number = 0
+): Word[] {
+  const f = getWordFilters(mode, categories, characterMode);
+  const rankCol = characterMode ? 'w.hanzi_rank' : 'w.rank';
+  return queryWords(
+    `
+      SELECT w.* FROM words w
+      WHERE ${f.queueColumn} IS NULL ${f.wordFilter}
+      AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)
+      ORDER BY CASE WHEN ${rankCol} IS NULL THEN 1 ELSE 0 END, ${rankCol} ASC LIMIT ? OFFSET ?
+    `,
+    [...categories, mode, count, offset]
+  );
+}
+
+export function getUnqueuedWordsCount(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean
+): number {
+  const f = getWordFilters(mode, categories, characterMode);
+  return queryCount(
+    `
+      SELECT COUNT(*) as cnt FROM words w
+      WHERE ${f.queueColumn} IS NULL ${f.wordFilter}
+      AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)
+    `,
+    [...categories, mode]
+  );
+}
+
+
 export function getNewWordsCount(
   mode: PracticeMode,
   categories: string[],
@@ -476,8 +536,9 @@ export function getNewWordsCount(
 ): number {
   const f = getWordFilters(mode, categories, characterMode);
   return queryCount(
-    `SELECT COUNT(*) as cnt FROM words w WHERE ${f.queueColumn} IS NOT NULL ${f.wordFilter}`,
-    categories
+    `SELECT COUNT(*) as cnt FROM words w WHERE ${f.queueColumn} IS NOT NULL ${f.wordFilter}
+     AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)`,
+    [...categories, mode]
   );
 }
 

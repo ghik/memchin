@@ -145,6 +145,27 @@ export function clearWordQueued(hanzi: string, characterMode: boolean): Promise<
   return apiPost(`/words/${encodeURIComponent(hanzi)}/clear-queued`, { characterMode });
 }
 
+export function browseUnqueuedWords(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean,
+  limit: number,
+  offset: number
+): Promise<{ words: Word[]; total: number }> {
+  const params = new URLSearchParams({
+    mode,
+    limit: String(limit),
+    offset: String(offset),
+    characterMode: String(characterMode),
+  });
+  if (categories.length > 0) params.set('categories', categories.join(','));
+  return apiGet(`/practice/unqueued?${params}`);
+}
+
+export function queueWords(hanzis: string[], characterMode: boolean): Promise<{ ok: boolean }> {
+  return apiPost('/practice/queue-words', { hanzis, characterMode });
+}
+
 export function getCategories(): Promise<string[]> {
   return apiGet('/categories');
 }

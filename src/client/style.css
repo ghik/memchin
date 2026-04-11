@@ -33,6 +33,10 @@
   --btn-preview-bg-hover: #cce5ff;
   --btn-preview-color: #1a73e8;
   --btn-preview-border: #b8daff;
+  --btn-browse-bg: #f0faf0;
+  --btn-browse-bg-hover: #d4edda;
+  --btn-browse-color: #1a6b3a;
+  --btn-browse-border: #a8d5b5;
 }
 
 body.dark {
@@ -70,6 +74,10 @@ body.dark {
   --btn-preview-bg-hover: #1f3a5f;
   --btn-preview-color: #7ab3e8;
   --btn-preview-border: #2d5080;
+  --btn-browse-bg: #1a2d1a;
+  --btn-browse-bg-hover: #1f3d1f;
+  --btn-browse-color: #7ac87a;
+  --btn-browse-border: #2d5c2d;
   color-scheme: dark;
 }
 
@@ -237,7 +245,13 @@ body.dark input[type="checkbox"] {
   background: var(--border-2);
 }
 
-/* Preview section */
+/* Preview / Browse sections */
+.browse-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-2);
+}
+
 .preview-section {
   margin-top: 10px;
   padding-top: 10px;
@@ -257,6 +271,11 @@ body.dark input[type="checkbox"] {
   width: auto;
   padding: 8px 16px;
   font-size: 14px;
+}
+
+.browse-action-btns {
+  display: flex;
+  gap: 8px;
 }
 
 .preview-select-all {
@@ -413,15 +432,6 @@ body.dark .preview-queued {
   margin-bottom: 0;
 }
 
-.mode-card-chevron {
-  font-size: 12px;
-  transition: transform 0.15s;
-  color: var(--text-4);
-}
-
-.mode-card.collapsed .mode-card-chevron {
-  transform: rotate(-90deg);
-}
 
 .mode-card-scope {
   font-weight: normal;
@@ -433,8 +443,18 @@ body.dark .preview-queued {
   color: var(--text-3);
 }
 
+.mode-card-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.2s ease;
+}
+
 .mode-card.collapsed .mode-card-body {
-  display: none;
+  grid-template-rows: 0fr;
+}
+
+.mode-card-body-inner {
+  overflow: hidden;
 }
 
 .mode-card-options {
@@ -595,9 +615,20 @@ body.dark .preview-queued {
   border-color: var(--btn-preview-border);
 }
 
-.mode-card-actions .mode-preview-btn:hover:not(:disabled) {
+.mode-card-actions .mode-preview-btn:hover:not(:disabled),
+.mode-card-actions .mode-preview-btn.active {
   background: var(--btn-preview-bg-hover);
 }
+
+.mode-card-actions .mode-browse-btn {
+  background: var(--btn-browse-bg);
+  color: var(--btn-browse-color);
+  border-color: var(--btn-browse-border);
+}
+
+.mode-card-actions .mode-browse-btn:hover,
+.mode-card-actions .mode-browse-btn.active {
+  background: var(--btn-browse-bg-hover);
 }
 
 /* Practice Screen */

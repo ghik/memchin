@@ -12,6 +12,7 @@ import {
   addHanziSynonym,
   addWord,
   assessSpeech,
+  browseUnqueuedWords,
   clearWordQueued,
   completePractice,
   getCategories,
@@ -19,6 +20,7 @@ import {
   getWordCount,
   lookupHanzi,
   previewNewWords,
+  queueWords,
   resetWordBucket,
   resetWordProgress,
   startPractice,
@@ -124,6 +126,12 @@ function setCardCollapsed(key: string, collapsed: boolean) {
 }
 function modeKey(mode: PracticeMode, charMode: boolean): string {
   return charMode ? `${mode}:char` : mode;
+}
+function parseCardKey(key: string): { mode: PracticeMode; cm: boolean } {
+  if (key.endsWith(':char')) {
+    return { mode: key.slice(0, -5) as PracticeMode, cm: true };
+  }
+  return { mode: key as PracticeMode, cm: false };
 }
 function getModeWordCount(mode: PracticeMode, charMode: boolean): number {
   return savedWordCounts[modeKey(mode, charMode)] ?? 10;
@@ -404,7 +412,8 @@ function renderStats(stats: Stats[]) {
         })
         .join('');
       const dueBtn = `<button class="due-mode-btn" data-mode="${s.mode}" data-charmode="${cm}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
-      const previewBtn = `<button class="mode-preview-btn" data-mode="${s.mode}" data-charmode="${cm}" ${s.newWordsCount === 0 ? 'disabled' : ''}>${s.newWordsCount} new</button>`;
+      const previewBtn = `<button class="mode-preview-btn${previewMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" ${s.newWordsCount === 0 ? 'disabled' : ''}>${s.newWordsCount} new</button>`;
+      const browseBtn = `<button class="mode-browse-btn${browseMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}">Browse</button>`;
       const presets = [5, 10, 20, 30, 50];
       const modeCount = getModeWordCount(s.mode, cm);
       const isCustom = !presets.includes(modeCount);
@@ -417,21 +426,23 @@ function renderStats(stats: Stats[]) {
       return `
       <div class="mode-card${collapsed ? ' collapsed' : ''}" data-mode="${s.mode}" data-charmode="${cm}" data-key="${cardKey}">
         <div class="mode-card-header">
-          <span class="mode-card-chevron">▾</span>
           <strong>${label}</strong>
           <span class="mode-card-stats">${s.learned} learned, ${s.mastered} mastered</span>
         </div>
         <div class="mode-card-body">
+          <div class="mode-card-body-inner">
           <div class="bucket-timings">${bucketTimings}</div>
           <div class="bucket-bar">${bucketBar}</div>
           <div class="mode-card-options">
             <div class="mode-card-count">${countPresets}</div>
           </div>
           <div class="mode-card-actions">
-            ${previewBtn}${dueBtn}<button class="mode-review-btn" data-mode="${s.mode}" data-charmode="${cm}">Review</button>
+            ${browseBtn}${previewBtn}${dueBtn}<button class="mode-review-btn" data-mode="${s.mode}" data-charmode="${cm}">Review</button>
             <button class="mode-random-btn" data-mode="${s.mode}" data-charmode="${cm}">Random</button>
           </div>
           <div class="preview-section hidden" data-key="${cardKey}"></div>
+          <div class="browse-section hidden" data-key="${cardKey}"></div>
+          </div>
         </div>
       </div>
     `;
@@ -506,6 +517,17 @@ function renderStats(stats: Stats[]) {
     });
   });
 
+  function setPreviewBtnActive(key: string | null) {
+    statsDiv.querySelectorAll('.mode-preview-btn').forEach((b) => {
+      b.classList.toggle('active', modeKey((b as HTMLElement).dataset.mode as PracticeMode, cardCharMode(b)) === key);
+    });
+  }
+  function setBrowseBtnActive(key: string | null) {
+    statsDiv.querySelectorAll('.mode-browse-btn').forEach((b) => {
+      b.classList.toggle('active', modeKey((b as HTMLElement).dataset.mode as PracticeMode, cardCharMode(b)) === key);
+    });
+  }
+
   // Preview buttons (toggle)
   statsDiv.querySelectorAll('.mode-preview-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -519,6 +541,7 @@ function renderStats(stats: Stats[]) {
         section.innerHTML = '';
         previewMode = null;
         previewSelected.clear();
+        setPreviewBtnActive(null);
         return;
       }
       // Close any other open preview
@@ -532,7 +555,38 @@ function renderStats(stats: Stats[]) {
       localStorage.setItem('mode', mode);
       previewSelected.clear();
       previewMode = key;
+      setPreviewBtnActive(key);
       loadPreviewPage(0, btn as HTMLButtonElement);
+    });
+  });
+
+  // Browse buttons (toggle)
+  statsDiv.querySelectorAll('.mode-browse-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      const cm = cardCharMode(btn);
+      const key = modeKey(mode, cm);
+      const section = statsDiv.querySelector(`.browse-section[data-key="${key}"]`) as HTMLElement;
+      if (browseMode === key) {
+        section.classList.add('hidden');
+        section.innerHTML = '';
+        browseMode = null;
+        browseSelected.clear();
+        setBrowseBtnActive(null);
+        return;
+      }
+      if (browseMode) {
+        const prev = statsDiv.querySelector(`.browse-section[data-key="${browseMode}"]`) as HTMLElement;
+        prev.classList.add('hidden');
+        prev.innerHTML = '';
+      }
+      currentMode = mode;
+      characterMode = cm;
+      localStorage.setItem('mode', mode);
+      browseSelected.clear();
+      browseMode = key;
+      setBrowseBtnActive(key);
+      loadBrowsePage(0, btn as HTMLButtonElement);
     });
   });
 
@@ -567,6 +621,21 @@ function renderStats(stats: Stats[]) {
       updateModeCount(mode, cm, parseInt((input as HTMLInputElement).value) || 10);
     });
   });
+
+  // Restore open preview/browse sections after re-render
+  // Use the key to restore currentMode/characterMode correctly regardless of what was last clicked
+  if (previewMode) {
+    const parsed = parseCardKey(previewMode);
+    currentMode = parsed.mode;
+    characterMode = parsed.cm;
+    loadPreviewPage(previewOffset);
+  }
+  if (browseMode) {
+    const parsed = parseCardKey(browseMode);
+    currentMode = parsed.mode;
+    characterMode = parsed.cm;
+    loadBrowsePage(browseOffset);
+  }
 }
 
 async function reloadStats() {
@@ -610,6 +679,7 @@ async function handleStart(hanziList?: string[], wordSelection: string = 'review
     newWords.clear();
 
     closePreview();
+    closeBrowse();
 
     showScreen(practiceScreen);
     showQuestion();
@@ -1344,6 +1414,12 @@ let previewOffset = 0;
 let previewTotal = 0;
 let previewMode: string | null = null; // composite key from modeKey()
 
+// Browse unqueued words
+let browseSelected = new Set<string>();
+let browseOffset = 0;
+let browseTotal = 0;
+let browseMode: string | null = null;
+
 function updatePracticeSelectedBtn() {
   const section = getPreviewSection();
   if (!section) return;
@@ -1500,6 +1576,156 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
   }
 }
 
+
+function getBrowseSection(): HTMLElement | null {
+  if (!browseMode) return null;
+  return statsDiv.querySelector(`.browse-section[data-key="${browseMode}"]`);
+}
+
+function closeBrowse() {
+  if (!browseMode) return;
+  const section = getBrowseSection();
+  if (section) {
+    section.classList.add('hidden');
+    section.innerHTML = '';
+  }
+  browseMode = null;
+  browseSelected.clear();
+}
+
+function updateBrowseActionBtns() {
+  const section = getBrowseSection();
+  if (!section) return;
+  const count = browseSelected.size;
+  const practiceBtn = section.querySelector('.browse-practice-btn') as HTMLButtonElement | null;
+  const queueBtn = section.querySelector('.browse-queue-btn') as HTMLButtonElement | null;
+  if (practiceBtn) {
+    practiceBtn.disabled = count === 0;
+    practiceBtn.textContent = count === 0 ? 'Practice selected' : `Practice ${count} selected`;
+  }
+  if (queueBtn) {
+    queueBtn.disabled = count === 0;
+    queueBtn.textContent = count === 0 ? 'Queue selected' : `Queue ${count} selected`;
+  }
+}
+
+async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
+  const section = getBrowseSection();
+  if (!section) return;
+  browseOffset = offset;
+  const originalLabel = triggerBtn?.textContent ?? null;
+  const loadingTimer = triggerBtn
+    ? setTimeout(() => { triggerBtn.textContent = 'Loading…'; }, 100)
+    : null;
+  try {
+    const { words, total } = await browseUnqueuedWords(
+      currentMode,
+      getSelectedCategories(),
+      characterMode,
+      PREVIEW_PAGE_SIZE,
+      offset
+    );
+    browseTotal = total;
+
+    if (total === 0) {
+      section.innerHTML = '<p class="preview-empty">No words available to browse.</p>';
+      section.classList.remove('hidden');
+      return;
+    }
+
+    const pageStart = offset + 1;
+    const pageEnd = offset + words.length;
+    const hasPrev = offset > 0;
+    const hasNext = offset + words.length < total;
+
+    const paginationHtml = `<div class="preview-pagination">` +
+      `<button class="browse-prev secondary-btn" ${hasPrev ? '' : 'disabled'}>Prev</button>` +
+      `<span class="preview-page-info">${pageStart}–${pageEnd} of ${total}</span>` +
+      `<button class="browse-next secondary-btn" ${hasNext ? '' : 'disabled'}>Next</button>` +
+      `</div>`;
+
+    section.innerHTML =
+      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="browse-select-all-cb"> Select all</label>` +
+      `<div class="browse-action-btns"><button class="browse-queue-btn primary-btn" disabled>Queue selected</button>` +
+      `<button class="browse-practice-btn primary-btn" disabled>Practice selected</button></div></div>` +
+      words.map((w) => {
+        const ranks = [
+          w.wordFrequencyRank != null ? `word #${w.wordFrequencyRank}` : null,
+          w.hanziFrequencyRank != null ? `char #${w.hanziFrequencyRank}` : null,
+        ].filter(Boolean).join(', ');
+        const rankSpan = ranks ? ` <span class="preview-rank">${ranks}</span>` : '';
+        const cats = w.categories.length > 0
+          ? ` <span class="preview-categories">${w.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ')}</span>`
+          : '';
+        const checked = browseSelected.has(w.hanzi) ? 'checked' : '';
+        return `<label class="preview-word"><input type="checkbox" class="browse-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${rankSpan}${cats}</label>`;
+      }).join('') +
+      paginationHtml;
+
+    const pageHanzis = words.map((w) => w.hanzi);
+    const selectAllCb = section.querySelector('.browse-select-all-cb') as HTMLInputElement;
+    selectAllCb.checked = pageHanzis.every((h) => browseSelected.has(h));
+
+    section.querySelectorAll('.browse-checkbox').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const input = cb as HTMLInputElement;
+        const hanzi = input.dataset.hanzi!;
+        if (input.checked) {
+          browseSelected.add(hanzi);
+        } else {
+          browseSelected.delete(hanzi);
+        }
+        selectAllCb.checked = pageHanzis.every((h) => browseSelected.has(h));
+        updateBrowseActionBtns();
+      });
+    });
+
+    selectAllCb.addEventListener('change', (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      section.querySelectorAll('.browse-checkbox').forEach((cb) => {
+        const input = cb as HTMLInputElement;
+        input.checked = checked;
+        if (checked) {
+          browseSelected.add(input.dataset.hanzi!);
+        } else {
+          browseSelected.delete(input.dataset.hanzi!);
+        }
+      });
+      updateBrowseActionBtns();
+    });
+
+    section.querySelector('.browse-practice-btn')!.addEventListener('click', () => {
+      handleStart([...browseSelected]);
+    });
+
+    section.querySelector('.browse-queue-btn')!.addEventListener('click', async () => {
+      const hanzis = [...browseSelected];
+      await queueWords(hanzis, characterMode);
+      browseSelected.clear();
+      loadBrowsePage(browseOffset);
+      reloadStats();
+    });
+
+    section.querySelector('.browse-prev')!.addEventListener('click', () => {
+      loadBrowsePage(Math.max(0, browseOffset - PREVIEW_PAGE_SIZE));
+    });
+    section.querySelector('.browse-next')!.addEventListener('click', () => {
+      loadBrowsePage(browseOffset + PREVIEW_PAGE_SIZE);
+    });
+
+    updateBrowseActionBtns();
+    section.classList.remove('hidden');
+  } catch (error) {
+    console.error('Failed to browse words:', error);
+  } finally {
+    if (loadingTimer !== null) {
+      clearTimeout(loadingTimer);
+    }
+    if (triggerBtn && originalLabel !== null) {
+      triggerBtn.textContent = originalLabel;
+    }
+  }
+}
 
 // Click handler for audio playback on hanzi
 document.addEventListener('click', (e) => {
@@ -1982,3 +2208,13 @@ if (!restoreSession()) {
   showScreen(startScreen);
 }
 loadStats();
+setInterval(() => {
+  if (startScreen.classList.contains('active')) {
+    reloadStats();
+  }
+}, 10_000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && startScreen.classList.contains('active')) {
+    reloadStats();
+  }
+});
