@@ -1037,8 +1037,9 @@ async function finishPractice() {
             ? `try ${isNew ? round - 1 : round}`
             : '?';
         const className = firstTry ? 'result-correct' : 'result-retry';
+        const bucketLabel = q.bucket === null ? 'new' : `B${q.bucket}`;
         const progressInfo = prog
-          ? `<span class="progress-info">B${prog.bucket} · ${formatNextEligible(prog.nextEligible)}</span>`
+          ? `<span class="progress-info">${bucketLabel} · ${formatNextEligible(prog.nextEligible)}</span>`
           : '';
         return `
         <li class="${className}">
@@ -1072,7 +1073,7 @@ function editCurrentWord() {
   addHanziInput.value = word.hanzi;
   addPinyinInput.value = word.pinyin;
   englishValues = [...word.english];
-  renderChips(englishChips, englishValues, removeEnglishChip);
+  renderEnglishList();
   categoryValues = [...word.categories];
   ensureCurated();
   renderChips(categoryChips, categoryValues, removeCategoryChip);
@@ -1502,7 +1503,7 @@ const addHanziInput = document.getElementById('add-hanzi') as HTMLInputElement;
 const addPinyinInput = document.getElementById('add-pinyin') as HTMLInputElement;
 const addEnglishInput = document.getElementById('add-english') as HTMLInputElement;
 const addCategoriesInput = document.getElementById('add-categories') as HTMLInputElement;
-const englishChips = document.getElementById('english-chips')!;
+const englishList = document.getElementById('english-list')!;
 const categoryChips = document.getElementById('category-chips')!;
 const cedictEntries = document.getElementById('cedict-entries')!;
 const wordInfoDiv = document.getElementById('word-info')!;
@@ -1537,18 +1538,152 @@ function renderChips(container: HTMLElement, values: string[], onRemove: (index:
   });
 }
 
-function addEnglishChip(value: string) {
+let englishDragSrcIndex: number | null = null;
+let englishInsertIndex: number | null = null;
+let englishStride = 0;
+const englishItemEls: HTMLElement[] = [];
+let englishDraggableItem: HTMLElement | null = null;
+
+document.addEventListener('mouseup', () => {
+  if (englishDraggableItem) {
+    englishDraggableItem.draggable = false;
+    englishDraggableItem = null;
+  }
+});
+
+function calcEnglishInsertIndex(clientY: number): number {
+  for (let i = 0; i < englishItemEls.length; i++) {
+    if (i === englishDragSrcIndex) {
+      continue;
+    }
+    const rect = englishItemEls[i].getBoundingClientRect();
+    if (clientY < rect.top + rect.height / 2) {
+      return i;
+    }
+  }
+  return englishValues.length;
+}
+
+function applyEnglishTransforms() {
+  const src = englishDragSrcIndex;
+  const ins = englishInsertIndex;
+  if (src === null || ins === null) {
+    return;
+  }
+  for (let i = 0; i < englishItemEls.length; i++) {
+    if (i === src) {
+      continue;
+    }
+    let shift = 0;
+    if (ins > src && i > src && i < ins) {
+      shift = -englishStride;
+    } else if (ins < src && i >= ins && i < src) {
+      shift = englishStride;
+    }
+    englishItemEls[i].style.transform = shift ? `translateY(${shift}px)` : '';
+  }
+}
+
+function clearEnglishTransforms() {
+  englishItemEls.forEach((el) => (el.style.transform = ''));
+}
+
+document.addEventListener('dragover', (e) => {
+  if (englishDragSrcIndex === null) {
+    return;
+  }
+  e.preventDefault();
+  const newIns = calcEnglishInsertIndex(e.clientY);
+  if (newIns !== englishInsertIndex) {
+    englishInsertIndex = newIns;
+    applyEnglishTransforms();
+  }
+});
+
+document.addEventListener('drop', (e) => {
+  if (englishDragSrcIndex === null) {
+    return;
+  }
+  e.preventDefault();
+  const src = englishDragSrcIndex;
+  const ins = englishInsertIndex;
+  englishDragSrcIndex = null;
+  englishInsertIndex = null;
+  if (ins === null || ins === src || ins === src + 1) {
+    return;
+  }
+  const [moved] = englishValues.splice(src, 1);
+  englishValues.splice(src < ins ? ins - 1 : ins, 0, moved);
+  renderEnglishList();
+});
+
+function renderEnglishList() {
+  englishList.innerHTML = '';
+  englishItemEls.length = 0;
+
+  englishValues.forEach((val, i) => {
+    const item = document.createElement('div');
+    item.className = 'english-item';
+    englishItemEls.push(item);
+
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.textContent = '⠿';
+    handle.addEventListener('mousedown', () => {
+      item.draggable = true;
+      englishDraggableItem = item;
+    });
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'english-item-input';
+    input.value = val;
+    input.addEventListener('input', () => {
+      englishValues[i] = input.value;
+    });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'english-item-remove';
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', () => {
+      englishValues.splice(i, 1);
+      renderEnglishList();
+    });
+
+    item.addEventListener('dragstart', (e) => {
+      englishDragSrcIndex = i;
+      e.dataTransfer!.effectAllowed = 'move';
+      if (englishItemEls.length > 1) {
+        const a = englishItemEls[0].getBoundingClientRect().top;
+        const b = englishItemEls[1].getBoundingClientRect().top;
+        englishStride = b - a;
+      } else {
+        englishStride = item.offsetHeight;
+      }
+      setTimeout(() => item.classList.add('dragging'), 0);
+    });
+    item.addEventListener('dragend', () => {
+      item.draggable = false;
+      englishDraggableItem = null;
+      item.classList.remove('dragging');
+      clearEnglishTransforms();
+      englishDragSrcIndex = null;
+      englishInsertIndex = null;
+    });
+
+    item.append(handle, input, removeBtn);
+    englishList.appendChild(item);
+  });
+}
+
+function addEnglishItem(value: string) {
   const trimmed = value.trim();
   if (trimmed && !englishValues.includes(trimmed)) {
     englishValues.push(trimmed);
-    renderChips(englishChips, englishValues, removeEnglishChip);
+    renderEnglishList();
   }
   addEnglishInput.value = '';
-}
-
-function removeEnglishChip(index: number) {
-  englishValues.splice(index, 1);
-  renderChips(englishChips, englishValues, removeEnglishChip);
 }
 
 function addCategoryChip(value: string) {
@@ -1569,7 +1704,7 @@ function removeCategoryChip(index: number) {
 addEnglishInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
-    addEnglishChip(addEnglishInput.value);
+    addEnglishItem(addEnglishInput.value);
   }
 });
 
@@ -1620,7 +1755,7 @@ async function performHanziLookup(hanzi: string) {
       resetProgressBtn.classList.remove('hidden');
       addPinyinInput.value = existing.pinyin;
       englishValues = [...existing.english];
-      renderChips(englishChips, englishValues, removeEnglishChip);
+      renderEnglishList();
       categoryValues = [...existing.categories];
       ensureCurated();
       renderChips(categoryChips, categoryValues, removeCategoryChip);
@@ -1642,7 +1777,7 @@ async function performHanziLookup(hanzi: string) {
       englishValues = [];
       categoryValues = [];
       ensureCurated();
-      renderChips(englishChips, englishValues, removeEnglishChip);
+      renderEnglishList();
       renderChips(categoryChips, categoryValues, removeCategoryChip);
       const rankParts: string[] = [];
       if (wordRank != null) rankParts.push(`word #${wordRank}`);
@@ -1676,7 +1811,7 @@ async function performHanziLookup(hanzi: string) {
       if (entries.length === 1) {
         addPinyinInput.value = entries[0].pinyin;
         englishValues = [...entries[0].definitions];
-        renderChips(englishChips, englishValues, removeEnglishChip);
+        renderEnglishList();
       } else {
         const allSamePinyin = entries.every((e) => e.pinyin === entries[0].pinyin);
         if (allSamePinyin) {
@@ -1700,7 +1835,7 @@ addHanziInput.addEventListener('input', () => {
     englishValues = [];
     categoryValues = [];
     ensureCurated();
-    renderChips(englishChips, englishValues, removeEnglishChip);
+    renderEnglishList();
     renderChips(categoryChips, categoryValues, removeCategoryChip);
     cedictEntries.classList.add('hidden');
     wordInfoDiv.classList.add('hidden');
@@ -1723,7 +1858,7 @@ function renderCedictEntries(entries: CedictEntry[]) {
     div.addEventListener('click', () => {
       addPinyinInput.value = entry.pinyin;
       englishValues = [...entry.definitions];
-      renderChips(englishChips, englishValues, removeEnglishChip);
+      renderEnglishList();
     });
     cedictEntries.appendChild(div);
   }
@@ -1795,7 +1930,7 @@ addWordBtn.addEventListener('click', async () => {
     englishValues = [];
     categoryValues = [];
     editingExistingWord = false;
-    renderChips(englishChips, englishValues, removeEnglishChip);
+    renderEnglishList();
     renderChips(categoryChips, categoryValues, removeCategoryChip);
     cedictEntries.classList.add('hidden');
     wordInfoDiv.classList.add('hidden');

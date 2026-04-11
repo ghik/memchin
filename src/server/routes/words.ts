@@ -228,7 +228,6 @@ router.post('/:hanzi/reset-bucket', (req, res) => {
     return res.status(404).json({ error: `Word "${hanzi}" not found` });
   }
   resetProgressBucket(hanzi, mode, toCharacterModeOnly);
-  resetCharsForWord(hanzi);
   res.json({ ok: true });
 });
 

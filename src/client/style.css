@@ -70,6 +70,7 @@ body.dark {
   --btn-preview-bg-hover: #1f3a5f;
   --btn-preview-color: #7ab3e8;
   --btn-preview-border: #2d5080;
+  color-scheme: dark;
 }
 
 * {
@@ -196,7 +197,6 @@ label.checkbox-label {
 
 body.dark input[type="checkbox"] {
   accent-color: var(--accent);
-  color-scheme: dark;
 }
 
 .primary-btn {
@@ -477,9 +477,6 @@ body.dark .preview-queued {
   opacity: 1;
 }
 
-body.dark .count-input {
-  color-scheme: dark;
-}
 
 .count-input.active {
   background: var(--accent);
@@ -1316,6 +1313,92 @@ label.category-item input[type="checkbox"] {
 
 .chip-input-container {
   position: relative;
+}
+
+.english-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.english-list:empty {
+  display: none;
+}
+
+.english-list:not(:empty) {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.english-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border-2);
+  transition: transform 0.15s ease;
+  font-size: 14px;
+}
+
+.english-item:last-child {
+  border-bottom: none;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: var(--text-4);
+  user-select: none;
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.add-word-form input[type="text"].english-item-input,
+.add-word-form .english-add-row input[type="text"] {
+  flex: 1;
+  padding: 6px 0;
+  font-size: 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  outline: none;
+  width: 100%;
+}
+
+.add-word-form input[type="text"].english-item-input:focus,
+.add-word-form .english-add-row input[type="text"]:focus {
+  color: var(--text);
+}
+
+.english-add-row .drag-handle,
+.english-add-row .english-item-remove {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.english-item.dragging {
+  visibility: hidden;
+}
+
+.english-item-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-3);
+  padding: 0 2px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.english-item-remove:hover {
+  opacity: 1;
 }
 
 .chips {

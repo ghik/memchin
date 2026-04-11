@@ -78,15 +78,11 @@ export async function initDb(): Promise<void> {
     db.run('ALTER TABLE words ADD COLUMN char_queued_at TEXT');
   }
 
-  // Seed char_queued_at for all chars from already-learned words that aren't yet queued
+  // Clear char_queued_at for any chars that have already been practiced (cleanup for bad migrations)
   db.run(`
-    UPDATE words SET char_queued_at = datetime('now')
-    WHERE LENGTH(hanzi) = 1
-    AND char_queued_at IS NULL
-    AND EXISTS (
-      SELECT 1 FROM progress p
-      WHERE INSTR(p.hanzi, words.hanzi) > 0 AND LENGTH(p.hanzi) > 1
-    )
+    UPDATE words SET char_queued_at = NULL
+    WHERE char_queued_at IS NOT NULL
+    AND EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = words.hanzi AND p.bucket IS NOT NULL)
   `);
 
   saveDb();
@@ -154,6 +150,17 @@ export function isAmbiguousTranslation(englishTranslations: string[]): boolean {
     loadAmbiguousTranslations();
   }
   return ambiguousTranslations!.has(normalizedTranslations(englishTranslations));
+}
+
+export function getWordsWithSameEnglish(hanzi: string, englishTranslations: string[]): Word[] {
+  const key = normalizedTranslations(englishTranslations);
+  const result: Word[] = [];
+  for (const word of getAllWords().values()) {
+    if (word.hanzi !== hanzi && normalizedTranslations(word.english) === key) {
+      result.push(word);
+    }
+  }
+  return result;
 }
 
 export interface WordToInsert {
@@ -330,7 +337,11 @@ export function setCharQueuedAt(hanzi: string): void {
     .toISOString()
     .replace('T', ' ')
     .replace(/\.\d+Z$/, '');
-  db.run('UPDATE words SET char_queued_at = ? WHERE hanzi = ? AND char_queued_at IS NULL', [now, hanzi]);
+  db.run(
+    `UPDATE words SET char_queued_at = ? WHERE hanzi = ? AND char_queued_at IS NULL
+     AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = words.hanzi AND p.bucket IS NOT NULL)`,
+    [now, hanzi]
+  );
 }
 
 export function clearCharQueuedAt(hanzi: string): void {

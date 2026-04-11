@@ -22,6 +22,7 @@ import {
   getWordByHanzi,
   getWordsForReview,
   incrementAnswerCounts,
+  getWordsWithSameEnglish,
   isAmbiguousTranslation,
   isHanziSynonym,
   saveDb,
@@ -151,18 +152,25 @@ router.post('/answer', (req, res) => {
       const normalizedExpected = normalizePinyin(word.pinyin);
       correct = normalizedAnswer === normalizedExpected;
       if (!correct) {
-        if (
-          (word.hanzi.length > 1 && lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)) ||
-          isAmbiguousTranslation(word.english)
-        ) {
+        if (word.hanzi.length > 1 && lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)) {
           synonym = true;
         } else {
+          // Check if the typed pinyin matches a registered hanzi synonym
           const synonymHanzis = getHanziSynonymHanzis(word.hanzi);
           for (const sh of synonymHanzis) {
             const synWord = getWordByHanzi(sh);
             if (synWord && normalizePinyin(synWord.pinyin) === normalizedAnswer) {
               synonym = true;
               break;
+            }
+          }
+          // Check if the typed pinyin matches another word with the same English translation
+          if (!synonym && isAmbiguousTranslation(word.english)) {
+            for (const w of getWordsWithSameEnglish(word.hanzi, word.english)) {
+              if (normalizePinyin(w.pinyin) === normalizedAnswer) {
+                synonym = true;
+                break;
+              }
             }
           }
         }

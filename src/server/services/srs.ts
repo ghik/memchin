@@ -1,8 +1,6 @@
 import type { PracticeMode } from '../../shared/types.js';
 import { getProgress, upsertProgress } from '../db.js';
 
-const ACTIVE_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2hanzi', 'english2pinyin'];
-
 // Bucket delays in minutes
 const BUCKET_DELAYS_MINUTES = [
   0, // Immediate
@@ -55,13 +53,4 @@ export function updateProgress(
 
   const nextEligible = calculateNextEligible(newBucket);
   upsertProgress(hanzi, mode, newBucket, nextEligible, characterMode);
-
-  // When a word is first learned, initialize bucket 0 for all other active modes
-  if (currentProgress === null) {
-    for (const otherMode of ACTIVE_MODES) {
-      if (otherMode !== mode && getProgress(hanzi, otherMode) === null) {
-        upsertProgress(hanzi, otherMode, 0, calculateNextEligible(0), characterMode);
-      }
-    }
-  }
 }
