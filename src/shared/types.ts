@@ -109,10 +109,12 @@ export interface CompleteResponse {
 
 export interface Stats {
   mode: PracticeMode;
+  characterMode: boolean;
   totalWords: number;
   learned: number;
   mastered: number;
   dueForReview: number;
+  newWordsCount: number;
   buckets: number[]; // count of words in each bucket (index = bucket number)
   dueBuckets: number[]; // count of due words in each bucket
 }

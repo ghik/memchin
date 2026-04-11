@@ -103,10 +103,9 @@ export function completePractice(
   return apiPost('/practice/complete', { mode, results, characterMode });
 }
 
-export function getStats(categories: string[], charModes: PracticeMode[]): Promise<Stats[]> {
+export function getStats(categories: string[]): Promise<Stats[]> {
   const params = new URLSearchParams();
   if (categories.length > 0) params.set('categories', categories.join(','));
-  if (charModes.length > 0) params.set('charModes', charModes.join(','));
   return apiGet(`/practice/stats?${params}`);
 }
 

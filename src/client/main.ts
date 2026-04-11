@@ -111,25 +111,25 @@ autoplayCheckbox.addEventListener('change', () => {
   localStorage.setItem('autoplayAudio', String(autoplayCheckbox.checked));
 });
 categorySearch.addEventListener('input', filterCategoryList);
-const savedCharMode: Record<string, boolean> = JSON.parse(localStorage.getItem('charModes') ?? '{}');
-function getCharMode(mode: PracticeMode): boolean {
-  return savedCharMode[mode] ?? false;
-}
-function setCharMode(mode: PracticeMode, on: boolean) {
-  savedCharMode[mode] = on;
-  localStorage.setItem('charModes', JSON.stringify(savedCharMode));
-}
 const ALL_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2pinyin', 'english2hanzi'];
-function getCharModesList(): PracticeMode[] {
-  return ALL_MODES.filter((m) => getCharMode(m));
-}
 
 const savedWordCounts: Record<string, number> = JSON.parse(localStorage.getItem('wordCounts') ?? '{}');
-function getModeWordCount(mode: PracticeMode): number {
-  return savedWordCounts[mode] ?? 10;
+const savedCardCollapsed: Record<string, boolean> = JSON.parse(localStorage.getItem('cardCollapsed') ?? '{}');
+function getCardCollapsed(key: string): boolean {
+  return savedCardCollapsed[key] ?? false;
 }
-function setModeWordCount(mode: PracticeMode, count: number) {
-  savedWordCounts[mode] = count;
+function setCardCollapsed(key: string, collapsed: boolean) {
+  savedCardCollapsed[key] = collapsed;
+  localStorage.setItem('cardCollapsed', JSON.stringify(savedCardCollapsed));
+}
+function modeKey(mode: PracticeMode, charMode: boolean): string {
+  return charMode ? `${mode}:char` : mode;
+}
+function getModeWordCount(mode: PracticeMode, charMode: boolean): number {
+  return savedWordCounts[modeKey(mode, charMode)] ?? 10;
+}
+function setModeWordCount(mode: PracticeMode, charMode: boolean, count: number) {
+  savedWordCounts[modeKey(mode, charMode)] = count;
   localStorage.setItem('wordCounts', JSON.stringify(savedWordCounts));
 }
 
@@ -346,7 +346,7 @@ function sortCategoryList() {
 async function loadStats() {
   try {
     const [stats, totalWords, categories] = await Promise.all([
-      getStats(getSelectedCategories(), getCharModesList()),
+      getStats(getSelectedCategories()),
       getWordCount(),
       getCategories(),
     ]);
@@ -383,9 +383,15 @@ async function loadStats() {
 }
 
 function renderStats(stats: Stats[]) {
-  stats = [...stats].sort((a, b) => ALL_MODES.indexOf(a.mode) - ALL_MODES.indexOf(b.mode));
+  stats = [...stats].sort((a, b) => {
+    const mi = ALL_MODES.indexOf(a.mode) - ALL_MODES.indexOf(b.mode);
+    if (mi !== 0) return mi;
+    return (a.characterMode ? 1 : 0) - (b.characterMode ? 1 : 0);
+  });
   const html = stats
     .map((s) => {
+      const cm = s.characterMode;
+      const cardKey = modeKey(s.mode, cm);
       const BUCKET_LABELS = ['now', '5m', '30m', '4h', '1d', '3d', '7d', '14d', '30d'];
       const bucketTimings = s.buckets
         .map((_, i) => `<span class="bucket-timing">${BUCKET_LABELS[i] ?? ''}</span>`)
@@ -397,33 +403,36 @@ function renderStats(stats: Stats[]) {
           return `<span class="bucket-count" title="Bucket ${i}: ${count} total, ${due} due">${dueLabel}${count}</span>`;
         })
         .join('');
-      const dueBtn = `<button class="due-mode-btn" data-mode="${s.mode}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
-      const previewBtn = `<button class="mode-preview-btn" data-mode="${s.mode}">Preview queued</button>`;
+      const dueBtn = `<button class="due-mode-btn" data-mode="${s.mode}" data-charmode="${cm}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
+      const previewBtn = `<button class="mode-preview-btn" data-mode="${s.mode}" data-charmode="${cm}" ${s.newWordsCount === 0 ? 'disabled' : ''}>${s.newWordsCount} new</button>`;
       const presets = [5, 10, 20, 30, 50];
-      const modeCount = getModeWordCount(s.mode);
+      const modeCount = getModeWordCount(s.mode, cm);
       const isCustom = !presets.includes(modeCount);
       const countPresets = presets
-        .map((n) => `<button class="count-preset${n === modeCount ? ' active' : ''}" data-mode="${s.mode}" data-count="${n}">${n}</button>`)
+        .map((n) => `<button class="count-preset${n === modeCount ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" data-count="${n}">${n}</button>`)
         .join('') +
-        `<input type="number" class="count-input${isCustom ? ' active' : ''}" data-mode="${s.mode}" value="${modeCount}" min="1" max="999">`;
+        `<input type="number" class="count-input${isCustom ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" value="${modeCount}" min="1" max="999">`;
+      const label = `${MODE_LABELS[s.mode] ?? s.mode} <span class="mode-card-scope">(${cm ? 'characters' : 'words'})</span>`;
+      const collapsed = getCardCollapsed(cardKey);
       return `
-      <div class="mode-card" data-mode="${s.mode}">
+      <div class="mode-card${collapsed ? ' collapsed' : ''}" data-mode="${s.mode}" data-charmode="${cm}" data-key="${cardKey}">
         <div class="mode-card-header">
-          <strong>${MODE_LABELS[s.mode] ?? s.mode}</strong>
-          <span class="mode-card-stats">${s.learned}/${s.totalWords} learned, ${s.mastered} mastered</span>
+          <span class="mode-card-chevron">▾</span>
+          <strong>${label}</strong>
+          <span class="mode-card-stats">${s.learned} learned, ${s.mastered} mastered</span>
         </div>
-        <div class="bucket-timings">${bucketTimings}</div>
-        <div class="bucket-bar">${bucketBar}</div>
-        <div class="mode-card-options">
-          <div class="mode-card-count">${countPresets}</div>
-          <label class="mode-char-mode"><input type="checkbox" class="char-mode-cb" data-mode="${s.mode}" ${getCharMode(s.mode) ? 'checked' : ''}> Char mode</label>
+        <div class="mode-card-body">
+          <div class="bucket-timings">${bucketTimings}</div>
+          <div class="bucket-bar">${bucketBar}</div>
+          <div class="mode-card-options">
+            <div class="mode-card-count">${countPresets}</div>
+          </div>
+          <div class="mode-card-actions">
+            ${previewBtn}${dueBtn}<button class="mode-review-btn" data-mode="${s.mode}" data-charmode="${cm}">Review</button>
+            <button class="mode-random-btn" data-mode="${s.mode}" data-charmode="${cm}">Random</button>
+          </div>
+          <div class="preview-section hidden" data-key="${cardKey}"></div>
         </div>
-        <div class="mode-card-actions">
-          ${dueBtn}<button class="mode-review-btn" data-mode="${s.mode}">Review</button>
-          <button class="mode-random-btn" data-mode="${s.mode}">Random</button>
-          ${previewBtn}
-        </div>
-        <div class="preview-section hidden" data-mode="${s.mode}"></div>
       </div>
     `;
     })
@@ -432,11 +441,26 @@ function renderStats(stats: Stats[]) {
   statsDiv.innerHTML = html;
   latestStats = stats;
 
+  // Collapsible headers
+  statsDiv.querySelectorAll('.mode-card-header').forEach((header) => {
+    header.addEventListener('click', () => {
+      const card = header.closest('.mode-card') as HTMLElement;
+      const key = card.dataset.key!;
+      const collapsed = card.classList.toggle('collapsed');
+      setCardCollapsed(key, collapsed);
+    });
+  });
+
+  function cardCharMode(el: Element): boolean {
+    return (el as HTMLElement).dataset.charmode === 'true';
+  }
+
   // Review-only buttons
   statsDiv.querySelectorAll('.mode-review-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
       currentMode = mode;
+      characterMode = cardCharMode(btn);
       localStorage.setItem('mode', mode);
       handleStart(undefined, 'review');
     });
@@ -447,6 +471,7 @@ function renderStats(stats: Stats[]) {
     btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
       currentMode = mode;
+      characterMode = cardCharMode(btn);
       localStorage.setItem('mode', mode);
       handleStart(undefined, 'random');
     });
@@ -457,14 +482,13 @@ function renderStats(stats: Stats[]) {
     btn.addEventListener('click', async () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
       const count = parseInt((btn as HTMLElement).dataset.count!);
+      const cm = cardCharMode(btn);
       currentMode = mode;
+      characterMode = cm;
       localStorage.setItem('mode', mode);
 
       try {
-        const response = await startPractice(
-          count, mode, 'review', getSelectedCategories(), getCharMode(mode)
-        );
-        characterMode = getCharMode(mode);
+        const response = await startPractice(count, mode, 'review', getSelectedCategories(), cm);
         questions = shuffle(response.questions);
         allQuestions = [...questions];
         currentIndex = 0;
@@ -486,8 +510,10 @@ function renderStats(stats: Stats[]) {
   statsDiv.querySelectorAll('.mode-preview-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
-      const section = statsDiv.querySelector(`.preview-section[data-mode="${mode}"]`) as HTMLElement;
-      if (previewMode === mode) {
+      const cm = cardCharMode(btn);
+      const key = modeKey(mode, cm);
+      const section = statsDiv.querySelector(`.preview-section[data-key="${key}"]`) as HTMLElement;
+      if (previewMode === key) {
         // Toggle off
         section.classList.add('hidden');
         section.innerHTML = '';
@@ -497,23 +523,24 @@ function renderStats(stats: Stats[]) {
       }
       // Close any other open preview
       if (previewMode) {
-        const prev = statsDiv.querySelector(`.preview-section[data-mode="${previewMode}"]`) as HTMLElement;
+        const prev = statsDiv.querySelector(`.preview-section[data-key="${previewMode}"]`) as HTMLElement;
         prev.classList.add('hidden');
         prev.innerHTML = '';
       }
       currentMode = mode;
+      characterMode = cm;
       localStorage.setItem('mode', mode);
       previewSelected.clear();
-      previewMode = mode;
+      previewMode = key;
       loadPreviewPage(0, btn as HTMLButtonElement);
     });
   });
 
-  // Count preset buttons and input (per-mode)
-  function updateModeCount(mode: PracticeMode, count: number) {
-    setModeWordCount(mode, count);
+  // Count preset buttons and input (per-card)
+  function updateModeCount(mode: PracticeMode, cm: boolean, count: number) {
+    setModeWordCount(mode, cm, count);
     const presets = [5, 10, 20, 30, 50];
-    const card = statsDiv.querySelector(`.mode-card[data-mode="${mode}"]`)!;
+    const card = statsDiv.querySelector(`.mode-card[data-mode="${mode}"][data-charmode="${cm}"]`)!;
     card.querySelectorAll('.count-preset').forEach((b) => {
       b.classList.toggle('active', (b as HTMLElement).dataset.count === String(count));
     });
@@ -525,7 +552,8 @@ function renderStats(stats: Stats[]) {
   statsDiv.querySelectorAll('.count-preset').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
-      updateModeCount(mode, parseInt((btn as HTMLElement).dataset.count!));
+      const cm = cardCharMode(btn);
+      updateModeCount(mode, cm, parseInt((btn as HTMLElement).dataset.count!));
     });
   });
 
@@ -535,27 +563,8 @@ function renderStats(stats: Stats[]) {
     });
     input.addEventListener('change', () => {
       const mode = (input as HTMLElement).dataset.mode as PracticeMode;
-      updateModeCount(mode, parseInt((input as HTMLInputElement).value) || 10);
-    });
-  });
-
-  // Character mode checkboxes
-  statsDiv.querySelectorAll('.char-mode-cb').forEach((cb) => {
-    cb.addEventListener('change', async () => {
-      const input = cb as HTMLInputElement;
-      const mode = input.dataset.mode as PracticeMode;
-      setCharMode(mode, input.checked);
-      const card = statsDiv.querySelector(`.mode-card[data-mode="${mode}"]`) as HTMLElement;
-      const timer = setTimeout(() => card.classList.add('loading'), 100);
-      try {
-        const stats = await getStats(getSelectedCategories(), getCharModesList());
-        clearTimeout(timer);
-        renderStats(stats);
-      } catch (error) {
-        clearTimeout(timer);
-        console.error('Failed to reload stats:', error);
-        card.classList.remove('loading');
-      }
+      const cm = cardCharMode(input);
+      updateModeCount(mode, cm, parseInt((input as HTMLInputElement).value) || 10);
     });
   });
 }
@@ -563,7 +572,7 @@ function renderStats(stats: Stats[]) {
 async function reloadStats() {
   const timer = setTimeout(() => statsDiv.classList.add('loading'), 100);
   try {
-    const stats = await getStats(getSelectedCategories(), getCharModesList());
+    const stats = await getStats(getSelectedCategories());
     clearTimeout(timer);
     renderStats(stats);
   } catch (error) {
@@ -580,7 +589,7 @@ function getSelectedCategories(): string[] {
 
 // Start practice
 async function handleStart(hanziList?: string[], wordSelection: string = 'review') {
-  const count = getModeWordCount(currentMode);
+  const count = getModeWordCount(currentMode, characterMode);
 
   try {
     const selectedCategories = getSelectedCategories();
@@ -589,10 +598,9 @@ async function handleStart(hanziList?: string[], wordSelection: string = 'review
       currentMode,
       wordSelection,
       selectedCategories,
-      getCharMode(currentMode),
+      characterMode,
       hanziList
     );
-    characterMode = getCharMode(currentMode);
     questions = shuffle(response.questions);
     allQuestions = [...questions];
     currentIndex = 0;
@@ -624,6 +632,11 @@ function clickableHanzi(hanzi: string, className: string): string {
   return `<span class="${className} clickable-hanzi" data-hanzi="${hanzi}">${hanzi}</span>`;
 }
 
+function formatTranslations(english: string[]): string {
+  const chips = english.map((t) => `<span class="translation-chip">${t}</span>`).join('');
+  return `<span class="translation-chips">${chips}</span>`;
+}
+
 // Format example hints for question (varies by mode)
 function formatExampleHints(examples: Example[]): string {
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
@@ -640,7 +653,7 @@ function formatExampleAnswers(examples: Example[]): string {
   return examples
     .map(
       (ex) =>
-        `${clickableHanzi(ex.hanzi, 'ex-hanzi')} <span class="ex-pinyin">(${ex.pinyin})</span> <span class="ex-english">— ${ex.english}</span>`
+        `${clickableHanzi(ex.hanzi, 'ex-hanzi')} <span class="ex-pinyin">${ex.pinyin}</span> <span class="ex-english">— ${ex.english}</span>`
     )
     .join('<br>');
 }
@@ -663,10 +676,11 @@ function showQuestion() {
   // Show example hints alongside the question
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
     // english->X mode: show english prompt, no clickable hanzi
+    const translationsHtml = formatTranslations(word.english);
     if (word.examples.length > 0) {
-      promptDiv.innerHTML = `${question.prompt}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
+      promptDiv.innerHTML = `${translationsHtml}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
     } else {
-      promptDiv.textContent = question.prompt;
+      promptDiv.innerHTML = translationsHtml;
     }
   } else {
     // hanzi->X modes: show clickable hanzi prompt
@@ -746,10 +760,15 @@ function formatFullAnswer(question: PracticeQuestion): string {
   const word = question.word;
   const hanzi = clickableHanzi(word.hanzi, 'answer-hanzi');
   const pinyin = `<span class="answer-pinyin">${word.pinyin}</span>`;
-  const english = `<span class="answer-english">${word.english.join('; ')}</span>`;
+  const english = `<span class="answer-english">${formatTranslations(word.english)}</span>`;
 
-  // All modes show: hanzi (pinyin) - english
-  let result = `${hanzi} (${pinyin}) — ${english}`;
+  let result: string;
+  if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
+    result = `${hanzi} ${pinyin}`;
+  } else {
+    // hanzi2pinyin: hanzi was the question, reveal pinyin and english
+    result = `${pinyin}<div class="answer-english">${formatTranslations(word.english)}</div>`;
+  }
 
   // Show categories
   if (word.categories.length > 0) {
@@ -1323,7 +1342,7 @@ const PREVIEW_PAGE_SIZE = 50;
 let previewSelected = new Set<string>();
 let previewOffset = 0;
 let previewTotal = 0;
-let previewMode: PracticeMode | null = null;
+let previewMode: string | null = null; // composite key from modeKey()
 
 function updatePracticeSelectedBtn() {
   const section = getPreviewSection();
@@ -1337,7 +1356,7 @@ function updatePracticeSelectedBtn() {
 
 function getPreviewSection(): HTMLElement | null {
   if (!previewMode) return null;
-  return statsDiv.querySelector(`.preview-section[data-mode="${previewMode}"]`);
+  return statsDiv.querySelector(`.preview-section[data-key="${previewMode}"]`);
 }
 
 function closePreview() {
@@ -1363,7 +1382,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     const { words, total } = await previewNewWords(
       currentMode,
       getSelectedCategories(),
-      getCharMode(currentMode),
+      characterMode,
       PREVIEW_PAGE_SIZE,
       offset
     );
@@ -1401,10 +1420,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
             w.categories.length > 0
               ? ` <span class="preview-categories">${w.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ')}</span>`
               : '';
-          const hasResetPriority = getCharMode(currentMode) ? !!w.charQueuedAt : !!w.queuedAt;
-          const resetTag = hasResetPriority
-            ? ` <span class="preview-queued">queued</span><button class="preview-dismiss-btn" data-hanzi="${w.hanzi}">✕</button>`
-            : '';
+          const resetTag = `<button class="preview-dismiss-btn" data-hanzi="${w.hanzi}">✕</button>`;
           const checked = previewSelected.has(w.hanzi) ? 'checked' : '';
           return `<label class="preview-word"><input type="checkbox" class="preview-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${rankSpan}${cats}${resetTag}</label>`;
         })
@@ -1457,7 +1473,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
         e.preventDefault();
         e.stopPropagation();
         const hanzi = (btn as HTMLButtonElement).dataset.hanzi!;
-        await clearWordQueued(hanzi, getCharMode(currentMode));
+        await clearWordQueued(hanzi, characterMode);
         loadPreviewPage(previewOffset);
       });
     });

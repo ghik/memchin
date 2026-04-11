@@ -277,18 +277,19 @@ router.get('/due-count', (req, res) => {
 
 router.get('/stats', (req, res) => {
   const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
-  const charModes = new Set(
-    req.query.charModes ? (req.query.charModes as string).split(',') : []
-  );
   const modes: PracticeMode[] = [
     'hanzi2pinyin',
     'english2hanzi',
     'english2pinyin',
   ];
-  const stats = modes.map((mode) => ({
-    mode,
-    ...getStats(mode, categories, charModes.has(mode)),
-  }));
+  const stats = modes.flatMap((mode) =>
+    [false, true].map((characterMode) => ({
+      mode,
+      characterMode,
+      ...getStats(mode, categories, characterMode),
+      newWordsCount: getNewWordsCount(mode, categories, characterMode),
+    }))
+  );
   res.json(stats);
 });
 
