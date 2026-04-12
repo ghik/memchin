@@ -416,11 +416,11 @@ function renderStats(stats: Stats[]) {
       const browseBtn = `<button class="mode-browse-btn${browseMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}">Browse</button>`;
       const presets = [5, 10, 20, 30, 50];
       const modeCount = getModeWordCount(s.mode, cm);
-      const isCustom = !presets.includes(modeCount);
-      const countPresets = presets
-        .map((n) => `<button class="count-preset${n === modeCount ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" data-count="${n}">${n}</button>`)
-        .join('') +
-        `<input type="number" class="count-input${isCustom ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" value="${modeCount}" min="1" max="999">`;
+      const countPresets =
+        `<input type="number" class="count-input" data-mode="${s.mode}" data-charmode="${cm}" value="${modeCount}" min="1" max="999">` +
+        presets
+        .map((n) => `<button class="count-preset" data-mode="${s.mode}" data-charmode="${cm}" data-count="${n}">${n}</button>`)
+        .join('');
       const label = `${MODE_LABELS[s.mode] ?? s.mode} <span class="mode-card-scope">(${cm ? 'characters' : 'words'})</span>`;
       const collapsed = getCardCollapsed(cardKey);
       return `
@@ -593,14 +593,9 @@ function renderStats(stats: Stats[]) {
   // Count preset buttons and input (per-card)
   function updateModeCount(mode: PracticeMode, cm: boolean, count: number) {
     setModeWordCount(mode, cm, count);
-    const presets = [5, 10, 20, 30, 50];
     const card = statsDiv.querySelector(`.mode-card[data-mode="${mode}"][data-charmode="${cm}"]`)!;
-    card.querySelectorAll('.count-preset').forEach((b) => {
-      b.classList.toggle('active', (b as HTMLElement).dataset.count === String(count));
-    });
     const input = card.querySelector('.count-input') as HTMLInputElement;
     input.value = String(count);
-    input.classList.toggle('active', !presets.includes(count));
   }
 
   statsDiv.querySelectorAll('.count-preset').forEach((btn) => {
@@ -1167,7 +1162,9 @@ function editCurrentWord() {
   ensureCurated();
   renderChips(categoryChips, categoryValues, removeCategoryChip);
   editingExistingWord = true;
-  queueAsNewCb.checked = question.bucket === null;
+  const alreadyQueued = Boolean(word.queuedAt) || question.bucket !== null;
+  queueAsNewCb.checked = !alreadyQueued;
+  setQueueAsNewDisabled(alreadyQueued);
   addWordBtn.textContent = 'Save';
   addWordStatus.classList.add('hidden');
   performHanziLookup(word.hanzi);
@@ -1756,6 +1753,11 @@ const addWordStatus = document.getElementById('add-word-status')!;
 const queueAsNewCb = document.getElementById('queue-as-new-cb') as HTMLInputElement;
 const queueAsNewLabel = document.getElementById('queue-as-new-label')!;
 
+function setQueueAsNewDisabled(disabled: boolean) {
+  queueAsNewCb.disabled = disabled;
+  queueAsNewLabel.classList.toggle('disabled', disabled);
+};
+
 let englishValues: string[] = [];
 let categoryValues: string[] = [];
 let allCategoriesList: string[] = [];
@@ -1992,7 +1994,9 @@ async function performHanziLookup(hanzi: string) {
 
     if (existing) {
       editingExistingWord = true;
-      queueAsNewCb.checked = maxBucket === null;
+      const alreadyQueued = Boolean(existing.queuedAt) || maxBucket !== null;
+      queueAsNewCb.checked = !alreadyQueued;
+      setQueueAsNewDisabled(alreadyQueued);
       addWordBtn.textContent = 'Save';
       resetProgressBtn.classList.remove('hidden');
       addPinyinInput.value = existing.pinyin;
@@ -2011,6 +2015,7 @@ async function performHanziLookup(hanzi: string) {
     } else {
       editingExistingWord = false;
       queueAsNewCb.checked = true;
+      setQueueAsNewDisabled(false);
       addWordBtn.textContent = 'Add';
       resetProgressBtn.classList.add('hidden');
       addPinyinInput.value = '';
@@ -2084,6 +2089,7 @@ addHanziInput.addEventListener('input', () => {
     wordBreakdown.classList.add('hidden');
     editingExistingWord = false;
     queueAsNewCb.checked = true;
+    setQueueAsNewDisabled(false);
     addWordBtn.textContent = 'Add';
     resetProgressBtn.classList.add('hidden');
     return;
