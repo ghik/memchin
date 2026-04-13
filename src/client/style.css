@@ -402,12 +402,6 @@ body.dark .preview-queued {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: opacity 0.15s;
-}
-
-.stats.loading {
-  opacity: 0.4;
-  pointer-events: none;
 }
 
 .mode-card {
@@ -415,12 +409,6 @@ body.dark .preview-queued {
   background: var(--surface-2);
   border: 1px solid var(--border-2);
   border-radius: 8px;
-  transition: opacity 0.15s;
-}
-
-.mode-card.loading {
-  opacity: 0.4;
-  pointer-events: none;
 }
 
 .mode-card-header {

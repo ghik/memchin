@@ -634,16 +634,11 @@ function renderStats(stats: Stats[]) {
 }
 
 async function reloadStats() {
-  const timer = setTimeout(() => statsDiv.classList.add('loading'), 100);
   try {
     const stats = await getStats(getSelectedCategories());
-    clearTimeout(timer);
     renderStats(stats);
   } catch (error) {
-    clearTimeout(timer);
     console.error('Failed to reload stats:', error);
-  } finally {
-    statsDiv.classList.remove('loading');
   }
 }
 
