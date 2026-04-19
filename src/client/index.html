@@ -10,8 +10,9 @@
   <div id="app">
     <nav class="sidebar">
       <h2 class="sidebar-title">Memchin</h2>
-      <a class="nav-item active" data-view="practice">Practice</a>
-      <a class="nav-item" data-view="add-word">Add Word</a>
+      <a class="nav-item active" data-view="practice" href="/">Practice</a>
+      <a class="nav-item" data-view="search" href="/explore">Explore</a>
+      <a class="nav-item" data-view="add-word" href="/add">Add Word</a>
     </nav>
     <div class="main-content">
       <label class="theme-toggle" id="theme-toggle" title="Toggle dark mode">
@@ -77,6 +78,36 @@
         </div>
 
         <button id="restart-btn" class="primary-btn">Practice Again</button>
+      </div>
+
+      <div id="search-screen" class="screen">
+        <div id="search-inputs">
+          <div class="search-field">
+            <label class="search-label">Hanzi</label>
+            <input type="text" id="search-hanzi" autocomplete="off">
+            <div class="match-mode-group" id="hanzi-mode-group">
+              <button class="match-mode-btn" data-mode="prefix">prefix</button>
+              <button class="match-mode-btn active" data-mode="contains">contains</button>
+              <button class="match-mode-btn" data-mode="suffix">suffix</button>
+              <button class="match-mode-btn" data-mode="exact">exact</button>
+            </div>
+          </div>
+          <div class="search-field">
+            <label class="search-label">Pinyin</label>
+            <input type="text" id="search-pinyin" autocomplete="off">
+            <div class="match-mode-group" id="pinyin-mode-group">
+              <button class="match-mode-btn" data-mode="prefix">prefix</button>
+              <button class="match-mode-btn active" data-mode="contains">contains</button>
+              <button class="match-mode-btn" data-mode="suffix">suffix</button>
+              <button class="match-mode-btn" data-mode="exact">exact</button>
+            </div>
+          </div>
+          <div class="search-field">
+            <label class="search-label">English</label>
+            <input type="text" id="search-english" autocomplete="off">
+          </div>
+        </div>
+        <div id="search-results"></div>
       </div>
 
       <div id="add-word-screen" class="screen">

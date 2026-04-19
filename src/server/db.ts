@@ -1,8 +1,17 @@
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import fs from 'fs';
 import path from 'path';
-import type { ContainingWord, Example, PracticeMode, Progress, Word } from '../shared/types.js';
+import type { ContainingWord, Example, MatchMode, PracticeMode, Progress, Word } from '../shared/types.js';
 import { MAX_BUCKET } from './services/srs.js';
+import {
+  splitPinyin,
+  stripTones,
+  splitPinyinQuery,
+  getSyllableTone,
+  pinyinCandidateIndices,
+  syllableMatchesToken,
+} from '../shared/pinyin.js';
+import type { PinyinToken } from '../shared/pinyin.js';
 
 const dbPath = path.join(process.env.HOME!, 'Dropbox/memchin/memchin.db');
 const dataDir = path.dirname(dbPath);
@@ -529,6 +538,46 @@ export function getUnqueuedWordsCount(
 }
 
 
+/**
+ * Among new (queued, not yet learned) words, find those already learned in other modes.
+ * In character mode, finds characters that appear in words learned in any word mode.
+ */
+export function getLearnedElsewhere(
+  mode: PracticeMode,
+  categories: string[],
+  characterMode: boolean
+): string[] {
+  const f = getWordFilters(mode, categories, characterMode);
+  // Base: queued as new, not yet learned in current mode
+  const base = `${f.queueColumn} IS NOT NULL ${f.wordFilter}
+    AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)`;
+  if (characterMode) {
+    // Characters that appear in words learned in any word mode
+    return queryRows(
+      `SELECT DISTINCT w.hanzi FROM words w
+       WHERE ${base}
+       AND EXISTS (
+         SELECT 1 FROM words w2
+         JOIN progress p2 ON w2.hanzi = p2.hanzi
+         WHERE p2.bucket IS NOT NULL AND p2.character_mode_only = 0
+         AND INSTR(w2.hanzi, w.hanzi) > 0
+       )`,
+      [...categories, mode],
+      (row) => row.hanzi as string
+    );
+  }
+  // Words learned in any other mode
+  return queryRows(
+    `SELECT DISTINCT w.hanzi FROM words w
+     WHERE ${base}
+     AND EXISTS (
+       SELECT 1 FROM progress p2 WHERE p2.hanzi = w.hanzi AND p2.mode != ? AND p2.bucket IS NOT NULL
+     )`,
+    [...categories, mode, mode],
+    (row) => row.hanzi as string
+  );
+}
+
 export function getNewWordsCount(
   mode: PracticeMode,
   categories: string[],
@@ -618,6 +667,108 @@ export function getLearnedWordsContaining(hanzi: string): ContainingWord[] {
     [hanzi],
     (row) => ({ hanzi: row.hanzi, pinyin: row.pinyin, english: JSON.parse(row.english) })
   );
+}
+
+export interface SearchQuery {
+  hanzi?: string;
+  hanziMode?: MatchMode;
+  pinyin?: string;
+  pinyinMode?: MatchMode;
+  english?: string;
+}
+
+export function searchLearnedWords(query: SearchQuery, limit = 50): { word: Word; progress: Progress[] }[] {
+  const hanzi = query.hanzi?.trim() ?? '';
+  const hanziMode: MatchMode = query.hanziMode ?? 'contains';
+  const english = query.english?.trim().toLowerCase() ?? '';
+  const pinyin = query.pinyin?.trim() ?? '';
+  const pinyinMode: MatchMode = query.pinyinMode ?? 'contains';
+
+  if (!hanzi && !english && !pinyin) {
+    return [];
+  }
+
+  const pinyinTokens = pinyin ? splitPinyinQuery(pinyin) : [];
+
+  const words = queryWords(
+    `SELECT w.* FROM words w
+     WHERE EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.bucket IS NOT NULL)`,
+    []
+  );
+
+  const matched: { word: Word; progress: Progress[] }[] = [];
+  for (const word of words) {
+    if (matched.length >= limit) {
+      break;
+    }
+    if (matchesSearch(word, hanzi, hanziMode, english, pinyinTokens, pinyinMode)) {
+      const progress = queryRows(
+        'SELECT * FROM progress WHERE hanzi = ?',
+        [word.hanzi],
+        rowToProgress
+      );
+      matched.push({ word, progress });
+    }
+  }
+  matched.sort((a, b) => {
+    const lenA = [...a.word.hanzi].length;
+    const lenB = [...b.word.hanzi].length;
+    if (lenA !== lenB) {
+      return lenA - lenB;
+    }
+    const rankA = a.word.wordFrequencyRank ?? Infinity;
+    const rankB = b.word.wordFrequencyRank ?? Infinity;
+    return rankA - rankB;
+  });
+  return matched;
+}
+
+function hanziMatchesSearch(wordHanzi: string, query: string, mode: MatchMode): boolean {
+  switch (mode) {
+    case 'prefix':
+      return wordHanzi.startsWith(query);
+    case 'suffix':
+      return wordHanzi.endsWith(query);
+    case 'exact':
+      return wordHanzi === query;
+    default:
+      return wordHanzi.includes(query);
+  }
+}
+
+function matchesSearch(
+  word: Word,
+  hanzi: string,
+  hanziMode: MatchMode,
+  english: string,
+  pinyinTokens: PinyinToken[],
+  pinyinMode: MatchMode
+): boolean {
+  if (hanzi && !hanziMatchesSearch(word.hanzi, hanzi, hanziMode)) {
+    return false;
+  }
+  if (english) {
+    const q = english.toLowerCase();
+    const matches = word.english.some((e) => {
+      const lower = e.toLowerCase();
+      const re = new RegExp(`\\b${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+      return re.test(lower);
+    });
+    if (!matches) {
+      return false;
+    }
+  }
+  if (pinyinTokens.length > 0) {
+    const syllables = splitPinyin(word.pinyin).split(' ');
+    const candidates = pinyinCandidateIndices(syllables.length, pinyinTokens.length, pinyinMode);
+    const found = candidates.some((i) =>
+      pinyinTokens.every((tok, j) => syllableMatchesToken(syllables[i + j], tok))
+    );
+    if (!found) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Category operations

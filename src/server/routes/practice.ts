@@ -29,7 +29,7 @@ import {
   isHanziSynonym,
   saveDb,
 } from '../db.js';
-import { setQueuedAt, setCharQueuedAt } from '../db.js';
+import { getLearnedElsewhere, setQueuedAt, setCharQueuedAt } from '../db.js';
 import { updateProgress } from '../services/srs.js';
 import {
   hanziMatches,
@@ -37,7 +37,7 @@ import {
   normalizePinyin,
   pinyinMatches,
   toNumberedPinyin,
-} from '../services/pinyin.js';
+} from '../../shared/pinyin.js';
 import { decomposeWord } from '../services/ids.js';
 import { assessPronunciation, isSpeechAssessAvailable } from '../services/speech-assess.js';
 
@@ -259,7 +259,8 @@ router.get('/preview', (req, res) => {
 
   const words = getNewWords(mode, limit, categories, characterMode, offset).map(enrichWord);
   const total = getNewWordsCount(mode, categories, characterMode);
-  res.json({ words, total });
+  const learnedElsewhere = getLearnedElsewhere(mode, categories, characterMode);
+  res.json({ words, total, learnedElsewhere });
 });
 
 router.get('/due-count', (req, res) => {

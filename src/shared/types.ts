@@ -8,7 +8,7 @@ export interface CharacterInfo {
   hanzi: string;
   traditional?: string;
   pinyin: string;
-  meaning: string;
+  meaning: string[];
   components: CharacterInfo[];
 }
 
@@ -141,3 +141,10 @@ export interface SpeechAssessResponse {
   accuracyScore: number;
   synonym?: string; // if the best match was a synonym, which one
 }
+
+export interface SearchResult {
+  word: Word;
+  progress: Progress[];
+}
+
+export type MatchMode = 'prefix' | 'contains' | 'suffix' | 'exact';

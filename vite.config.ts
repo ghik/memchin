@@ -8,6 +8,7 @@ const CERTS_DIR = path.join(__dirname, 'certs');
 
 export default defineConfig({
   root: 'src/client',
+  appType: 'spa',
   server: {
     host: true,
     port: 5173,

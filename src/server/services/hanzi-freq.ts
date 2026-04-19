@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as cheerio from 'cheerio';
-import { numberedToToneMarked } from './pinyin.js';
+import { numberedToToneMarked } from '../../shared/pinyin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const hanziFreqPath = path.join(__dirname, '../../../sources/hanzi_frequency.html');

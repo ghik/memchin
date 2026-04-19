@@ -1,18 +1,30 @@
 import type {
   CharacterInfo,
+  MatchMode,
   PracticeMode,
   PracticeQuestion,
+  Progress,
+  SearchResult,
   WordProgress,
   CedictEntry,
   Word,
 } from './services.js';
 import type { Example, Stats } from '../shared/types.js';
-import { toNumberedPinyin, validatePinyin } from '../shared/pinyin.js';
+import {
+  toNumberedPinyin,
+  validatePinyin,
+  stripTones,
+  splitPinyinQuery,
+  pinyinCandidateIndices,
+  syllableMatchesToken,
+} from '../shared/pinyin.js';
+import type { PinyinToken } from '../shared/pinyin.js';
 import {
   addHanziSynonym,
   addWord,
   assessSpeech,
   browseUnqueuedWords,
+  searchWords,
   clearWordQueued,
   completePractice,
   getCategories,
@@ -33,6 +45,13 @@ const startScreen = document.getElementById('start-screen')!;
 const practiceScreen = document.getElementById('practice-screen')!;
 const resultScreen = document.getElementById('result-screen')!;
 const addWordScreen = document.getElementById('add-word-screen')!;
+const searchScreen = document.getElementById('search-screen')!;
+const searchHanziInput = document.getElementById('search-hanzi') as HTMLInputElement;
+const searchPinyinInput = document.getElementById('search-pinyin') as HTMLInputElement;
+const searchEnglishInput = document.getElementById('search-english') as HTMLInputElement;
+const searchResultsDiv = document.getElementById('search-results')!;
+const hanziModeGroup = document.getElementById('hanzi-mode-group')!;
+const pinyinModeGroup = document.getElementById('pinyin-mode-group')!;
 
 const statsDiv = document.getElementById('stats')!;
 
@@ -70,10 +89,25 @@ themeCheckbox.addEventListener('change', () => {
 
 // Sidebar nav
 const navItems = document.querySelectorAll('.nav-item');
-let currentView: 'practice' | 'add-word' = 'practice';
+let currentView: 'practice' | 'search' | 'add-word' = 'practice';
 let lastPracticeScreen: HTMLElement = startScreen;
 
-function showView(view: 'practice' | 'add-word') {
+const VIEW_PATHS: Record<string, 'practice' | 'search' | 'add-word'> = {
+  '/': 'practice',
+  '/explore': 'search',
+  '/add': 'add-word',
+};
+const PATH_FOR_VIEW: Record<string, string> = {
+  'practice': '/',
+  'search': '/explore',
+  'add-word': '/add',
+};
+
+function viewFromPath(): 'practice' | 'search' | 'add-word' {
+  return VIEW_PATHS[location.pathname] ?? 'practice';
+}
+
+function showView(view: 'practice' | 'search' | 'add-word', push = true) {
   currentView = view;
 
   // Update nav active state
@@ -86,19 +120,95 @@ function showView(view: 'practice' | 'add-word') {
   practiceScreen.classList.remove('active');
   resultScreen.classList.remove('active');
   addWordScreen.classList.remove('active');
+  searchScreen.classList.remove('active');
 
   if (view === 'practice') {
     lastPracticeScreen.classList.add('active');
+  } else if (view === 'search') {
+    searchScreen.classList.add('active');
+    searchHanziInput.focus();
+    restoreSearchFromUrl();
   } else if (view === 'add-word') {
     addWordScreen.classList.add('active');
     ensureCurated();
     renderChips(categoryChips, categoryValues, removeCategoryChip);
   }
+
+  if (push) {
+    const url = view === 'search' ? buildSearchUrl() : PATH_FOR_VIEW[view];
+    if (location.pathname + location.search !== url) {
+      history.pushState(null, '', url);
+    }
+  }
 }
 
+function buildSearchUrl(): string {
+  const params = new URLSearchParams();
+  const h = searchHanziInput.value.trim();
+  const p = searchPinyinInput.value.trim();
+  const e = searchEnglishInput.value.trim();
+  if (h) {
+    params.set('hanzi', h);
+  }
+  if (hanziMode !== 'contains') {
+    params.set('hanziMode', hanziMode);
+  }
+  if (p) {
+    params.set('pinyin', p);
+  }
+  if (pinyinMode !== 'contains') {
+    params.set('pinyinMode', pinyinMode);
+  }
+  if (e) {
+    params.set('english', e);
+  }
+  const qs = params.toString();
+  return '/explore' + (qs ? '?' + qs : '');
+}
+
+function restoreSearchFromUrl(): void {
+  const params = new URLSearchParams(location.search);
+  const h = params.get('hanzi') ?? '';
+  const p = params.get('pinyin') ?? '';
+  const e = params.get('english') ?? '';
+  const hm = params.get('hanziMode');
+  const pm = params.get('pinyinMode');
+  searchHanziInput.value = h;
+  searchPinyinInput.value = p;
+  searchEnglishInput.value = e;
+  if (hm && ['prefix', 'contains', 'suffix', 'exact'].includes(hm)) {
+    hanziMode = hm as MatchMode;
+    hanziModeGroup.querySelectorAll('.match-mode-btn').forEach((b) =>
+      b.classList.toggle('active', (b as HTMLElement).dataset.mode === hm));
+  }
+  if (pm && ['prefix', 'contains', 'suffix', 'exact'].includes(pm)) {
+    pinyinMode = pm as MatchMode;
+    pinyinModeGroup.querySelectorAll('.match-mode-btn').forEach((b) =>
+      b.classList.toggle('active', (b as HTMLElement).dataset.mode === pm));
+  }
+  if (h || p || e) {
+    triggerSearch(true);
+  }
+}
+
+function updateSearchUrl(): void {
+  if (currentView === 'search') {
+    const url = buildSearchUrl();
+    if (location.pathname + location.search !== url) {
+      history.pushState(null, '', url);
+    }
+  }
+}
+
+window.addEventListener('popstate', () => {
+  const view = viewFromPath();
+  showView(view, false);
+});
+
 navItems.forEach((item) => {
-  item.addEventListener('click', () => {
-    const view = (item as HTMLElement).dataset.view as 'practice' | 'add-word';
+  item.addEventListener('click', (e) => {
+    e.preventDefault();
+    const view = (item as HTMLElement).dataset.view as 'practice' | 'search' | 'add-word';
     if (view === 'practice') {
       returnToPractice = false;
       cancelEditBtn.classList.add('hidden');
@@ -133,11 +243,13 @@ function parseCardKey(key: string): { mode: PracticeMode; cm: boolean } {
   }
   return { mode: key as PracticeMode, cm: false };
 }
-function getModeWordCount(mode: PracticeMode, charMode: boolean): number {
-  return savedWordCounts[modeKey(mode, charMode)] ?? 10;
+function getModeWordCount(mode: PracticeMode, charMode: boolean, selection?: string): number {
+  const key = selection ? `${modeKey(mode, charMode)}:${selection}` : modeKey(mode, charMode);
+  return savedWordCounts[key] ?? 10;
 }
-function setModeWordCount(mode: PracticeMode, charMode: boolean, count: number) {
-  savedWordCounts[modeKey(mode, charMode)] = count;
+function setModeWordCount(mode: PracticeMode, charMode: boolean, count: number, selection?: string) {
+  const key = selection ? `${modeKey(mode, charMode)}:${selection}` : modeKey(mode, charMode);
+  savedWordCounts[key] = count;
   localStorage.setItem('wordCounts', JSON.stringify(savedWordCounts));
 }
 
@@ -390,7 +502,41 @@ async function loadStats() {
   }
 }
 
-function renderStats(stats: Stats[]) {
+const BUCKET_LABELS = ['now', '5m', '30m', '4h', '1d', '3d', '7d', '14d', '30d'];
+
+function makeBucketTimings(s: Stats): string {
+  return s.buckets.map((_, i) => `<span class="bucket-timing">${BUCKET_LABELS[i] ?? ''}</span>`).join('');
+}
+
+function makeBucketBar(s: Stats): string {
+  return s.buckets.map((count, i) => {
+    const due = s.dueBuckets[i] || 0;
+    const dueLabel = due > 0 ? `<span class="bucket-due">${due}</span> ` : '';
+    return `<span class="bucket-count" title="Bucket ${i}: ${count} total, ${due} due">${dueLabel}${count}</span>`;
+  }).join('');
+}
+
+function updateStatsInPlace(stats: Stats[]): void {
+  for (const s of stats) {
+    const card = statsDiv.querySelector(`.mode-card[data-key="${modeKey(s.mode, s.characterMode)}"]`);
+    if (!card) {
+      return;
+    }
+    card.querySelector('.mode-card-stats')!.textContent = `${s.learned} learned, ${s.mastered} mastered`;
+    card.querySelector('.bucket-timings')!.innerHTML = makeBucketTimings(s);
+    card.querySelector('.bucket-bar')!.innerHTML = makeBucketBar(s);
+    const dueBtn = card.querySelector('.due-mode-btn') as HTMLButtonElement;
+    dueBtn.textContent = `${s.dueForReview} due`;
+    dueBtn.disabled = s.dueForReview === 0;
+    dueBtn.dataset.count = String(s.dueForReview);
+    const previewBtn = card.querySelector('.mode-preview-btn') as HTMLButtonElement;
+    previewBtn.textContent = `${s.newWordsCount} new`;
+    previewBtn.disabled = s.newWordsCount === 0;
+  }
+  latestStats = stats;
+}
+
+async function renderStats(stats: Stats[]) {
   stats = [...stats].sort((a, b) => {
     const mi = ALL_MODES.indexOf(a.mode) - ALL_MODES.indexOf(b.mode);
     if (mi !== 0) return mi;
@@ -400,27 +546,26 @@ function renderStats(stats: Stats[]) {
     .map((s) => {
       const cm = s.characterMode;
       const cardKey = modeKey(s.mode, cm);
-      const BUCKET_LABELS = ['now', '5m', '30m', '4h', '1d', '3d', '7d', '14d', '30d'];
-      const bucketTimings = s.buckets
-        .map((_, i) => `<span class="bucket-timing">${BUCKET_LABELS[i] ?? ''}</span>`)
-        .join('');
-      const bucketBar = s.buckets
-        .map((count, i) => {
-          const due = s.dueBuckets[i] || 0;
-          const dueLabel = due > 0 ? `<span class="bucket-due">${due}</span> ` : '';
-          return `<span class="bucket-count" title="Bucket ${i}: ${count} total, ${due} due">${dueLabel}${count}</span>`;
-        })
-        .join('');
+      const bucketTimings = makeBucketTimings(s);
+      const bucketBar = makeBucketBar(s);
       const dueBtn = `<button class="due-mode-btn" data-mode="${s.mode}" data-charmode="${cm}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
       const previewBtn = `<button class="mode-preview-btn${previewMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" ${s.newWordsCount === 0 ? 'disabled' : ''}>${s.newWordsCount} new</button>`;
       const browseBtn = `<button class="mode-browse-btn${browseMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}">Browse</button>`;
       const presets = [5, 10, 20, 30, 50];
-      const modeCount = getModeWordCount(s.mode, cm);
-      const countPresets =
-        `<input type="number" class="count-input" data-mode="${s.mode}" data-charmode="${cm}" value="${modeCount}" min="1" max="999">` +
-        presets
-        .map((n) => `<button class="count-preset" data-mode="${s.mode}" data-charmode="${cm}" data-count="${n}">${n}</button>`)
-        .join('');
+      const reviewCount = getModeWordCount(s.mode, cm, 'review');
+      const randomCount = getModeWordCount(s.mode, cm, 'random');
+      const actionRow = (sel: string, btnClass: string, label: string, count: number, extra = '') => {
+        return `<div class="mode-card-actions action-row-${sel}">
+          <span class="action-btn-combo ${btnClass}">
+            <button class="${btnClass} action-btn-label" data-mode="${s.mode}" data-charmode="${cm}">${label}</button>
+            <input type="number" class="count-input" data-mode="${s.mode}" data-charmode="${cm}" data-sel="${sel}" value="${count}" min="1" max="999">
+          </span>
+          ${presets.map((n) => `<button class="count-preset" data-mode="${s.mode}" data-charmode="${cm}" data-sel="${sel}" data-count="${n}">${n}</button>`).join('')}
+          ${extra}
+        </div>`;
+      };
+      const reviewRow = actionRow('review', 'mode-review-btn', 'Review', reviewCount, dueBtn);
+      const randomRow = actionRow('random', 'mode-random-btn', 'Random', randomCount);
       const label = `${MODE_LABELS[s.mode] ?? s.mode} <span class="mode-card-scope">(${cm ? 'characters' : 'words'})</span>`;
       const collapsed = getCardCollapsed(cardKey);
       return `
@@ -433,12 +578,10 @@ function renderStats(stats: Stats[]) {
           <div class="mode-card-body-inner">
           <div class="bucket-timings">${bucketTimings}</div>
           <div class="bucket-bar">${bucketBar}</div>
-          <div class="mode-card-options">
-            <div class="mode-card-count">${countPresets}</div>
-          </div>
+          ${reviewRow}
+          ${randomRow}
           <div class="mode-card-actions">
-            ${browseBtn}${previewBtn}${dueBtn}<button class="mode-review-btn" data-mode="${s.mode}" data-charmode="${cm}">Review</button>
-            <button class="mode-random-btn" data-mode="${s.mode}" data-charmode="${cm}">Random</button>
+            ${browseBtn}${previewBtn}
           </div>
           <div class="preview-section hidden" data-key="${cardKey}"></div>
           <div class="browse-section hidden" data-key="${cardKey}"></div>
@@ -466,54 +609,42 @@ function renderStats(stats: Stats[]) {
     return (el as HTMLElement).dataset.charmode === 'true';
   }
 
-  // Review-only buttons
-  statsDiv.querySelectorAll('.mode-review-btn').forEach((btn) => {
+  // Review buttons
+  statsDiv.querySelectorAll('.mode-review-btn.action-btn-label').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      const cm = cardCharMode(btn);
       currentMode = mode;
-      characterMode = cardCharMode(btn);
+      characterMode = cm;
       localStorage.setItem('mode', mode);
       handleStart(undefined, 'review');
     });
   });
 
-  // Random review buttons
-  statsDiv.querySelectorAll('.mode-random-btn').forEach((btn) => {
+  // Random buttons
+  statsDiv.querySelectorAll('.mode-random-btn.action-btn-label').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
+      const cm = cardCharMode(btn);
       currentMode = mode;
-      characterMode = cardCharMode(btn);
+      characterMode = cm;
       localStorage.setItem('mode', mode);
       handleStart(undefined, 'random');
     });
   });
 
-  // Due buttons
+
+
+  // Due buttons — review all due words
   statsDiv.querySelectorAll('.due-mode-btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
-      const count = parseInt((btn as HTMLElement).dataset.count!);
       const cm = cardCharMode(btn);
+      const count = parseInt((btn as HTMLElement).dataset.count!);
       currentMode = mode;
       characterMode = cm;
       localStorage.setItem('mode', mode);
-
-      try {
-        const response = await startPractice(count, mode, 'review', getSelectedCategories(), cm);
-        questions = shuffle(response.questions);
-        allQuestions = [...questions];
-        currentIndex = 0;
-        results.clear();
-        incorrectThisRound = [];
-        roundNumber = 1;
-        newWords.clear();
-
-        showScreen(practiceScreen);
-        showQuestion();
-        saveSession();
-      } catch (error) {
-        alert(error instanceof Error ? error.message : 'Failed to start practice');
-      }
+      handleStart(undefined, 'review', count);
     });
   });
 
@@ -590,19 +721,27 @@ function renderStats(stats: Stats[]) {
     });
   });
 
-  // Count preset buttons and input (per-card)
-  function updateModeCount(mode: PracticeMode, cm: boolean, count: number) {
-    setModeWordCount(mode, cm, count);
+  // Count inputs and preset buttons
+  function updateModeCount(mode: PracticeMode, cm: boolean, sel: string, count: number) {
+    setModeWordCount(mode, cm, count, sel);
     const card = statsDiv.querySelector(`.mode-card[data-mode="${mode}"][data-charmode="${cm}"]`)!;
-    const input = card.querySelector('.count-input') as HTMLInputElement;
+    const input = card.querySelector(`.count-input[data-sel="${sel}"]`) as HTMLInputElement;
     input.value = String(count);
+    const btnClass = sel === 'review' ? '.mode-review-btn' : '.mode-random-btn';
+    const mainBtn = card.querySelector(btnClass) as HTMLButtonElement;
+    mainBtn.textContent = `${sel === 'review' ? 'Review' : 'Random'} ${count}`;
   }
 
   statsDiv.querySelectorAll('.count-preset').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = (btn as HTMLElement).dataset.mode as PracticeMode;
       const cm = cardCharMode(btn);
-      updateModeCount(mode, cm, parseInt((btn as HTMLElement).dataset.count!));
+      const sel = (btn as HTMLElement).dataset.sel!;
+      const count = parseInt((btn as HTMLElement).dataset.count!);
+      currentMode = mode;
+      characterMode = cm;
+      localStorage.setItem('mode', mode);
+      handleStart(undefined, sel === 'review' ? 'review' : 'random', count);
     });
   });
 
@@ -613,30 +752,42 @@ function renderStats(stats: Stats[]) {
     input.addEventListener('change', () => {
       const mode = (input as HTMLElement).dataset.mode as PracticeMode;
       const cm = cardCharMode(input);
-      updateModeCount(mode, cm, parseInt((input as HTMLInputElement).value) || 10);
+      const sel = (input as HTMLElement).dataset.sel!;
+      updateModeCount(mode, cm, sel, parseInt((input as HTMLInputElement).value) || 10);
     });
   });
 
   // Restore open preview/browse sections after re-render
   // Use the key to restore currentMode/characterMode correctly regardless of what was last clicked
+  const pending: Promise<void>[] = [];
   if (previewMode) {
     const parsed = parseCardKey(previewMode);
     currentMode = parsed.mode;
     characterMode = parsed.cm;
-    loadPreviewPage(previewOffset);
+    pending.push(loadPreviewPage(previewOffset));
   }
   if (browseMode) {
     const parsed = parseCardKey(browseMode);
     currentMode = parsed.mode;
     characterMode = parsed.cm;
-    loadBrowsePage(browseOffset);
+    pending.push(loadBrowsePage(browseOffset));
   }
+  await Promise.all(pending);
 }
 
 async function reloadStats() {
   try {
     const stats = await getStats(getSelectedCategories());
-    renderStats(stats);
+    const sorted = [...stats].sort((a, b) => {
+      const mi = ALL_MODES.indexOf(a.mode) - ALL_MODES.indexOf(b.mode);
+      if (mi !== 0) return mi;
+      return (a.characterMode ? 1 : 0) - (b.characterMode ? 1 : 0);
+    });
+    if (statsDiv.querySelector('.mode-card')) {
+      updateStatsInPlace(sorted);
+    } else {
+      await renderStats(stats);
+    }
   } catch (error) {
     console.error('Failed to reload stats:', error);
   }
@@ -647,8 +798,8 @@ function getSelectedCategories(): string[] {
 }
 
 // Start practice
-async function handleStart(hanziList?: string[], wordSelection: string = 'review') {
-  const count = getModeWordCount(currentMode, characterMode);
+async function handleStart(hanziList?: string[], wordSelection: string = 'review', countOverride?: number) {
+  const count = countOverride ?? getModeWordCount(currentMode, characterMode, wordSelection);
 
   try {
     const selectedCategories = getSelectedCategories();
@@ -693,8 +844,7 @@ function clickableHanzi(hanzi: string, className: string): string {
 }
 
 function formatTranslations(english: string[]): string {
-  const chips = english.map((t) => `<span class="translation-chip">${t}</span>`).join('');
-  return `<span class="translation-chips">${chips}</span>`;
+  return `<span class="translations">${english.map((t) => `<span class="translation-item">${t}</span>`).join('<span class="english-sep"> • </span>')}</span>`;
 }
 
 // Format example hints for question (varies by mode)
@@ -722,26 +872,30 @@ function formatExampleAnswers(examples: Example[]): string {
 function showQuestion() {
   const question = questions[currentIndex];
   const word = question.word;
-  const bucketLabel = question.bucket === null ? 'new' : `B${question.bucket}`;
-
-  const ranks =
-    [
-      word.wordFrequencyRank != null ? `word #${word.wordFrequencyRank}` : null,
-      word.hanziFrequencyRank != null ? `char #${word.hanziFrequencyRank}` : null,
-    ]
-      .filter(Boolean)
-      .join(', ') || '?';
-  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length} (${bucketLabel}, ${ranks})`;
+  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
 
   // Show example hints alongside the question
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
     // english->X mode: show english prompt, no clickable hanzi
     const translationsHtml = formatTranslations(word.english);
-    if (word.examples.length > 0) {
-      promptDiv.innerHTML = `${translationsHtml}<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
-    } else {
-      promptDiv.innerHTML = translationsHtml;
+    let promptHtml = translationsHtml;
+
+    // Show categories
+    if (word.categories.length > 0) {
+      const cats = word.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ');
+      promptHtml += `<div class="prompt-categories">${cats}</div>`;
     }
+
+    // Show frequency rank
+    const rank = characterMode ? word.hanziFrequencyRank : word.wordFrequencyRank;
+    if (rank != null) {
+      promptHtml += `<div class="prompt-rank">rank #${rank}</div>`;
+    }
+
+    if (word.examples.length > 0) {
+      promptHtml += `<div class="example-hint">${formatExampleHints(word.examples)}</div>`;
+    }
+    promptDiv.innerHTML = promptHtml;
   } else {
     // hanzi->X modes: show clickable hanzi prompt
     const clickablePrompt = clickableHanzi(word.hanzi, 'prompt-hanzi');
@@ -801,7 +955,7 @@ function formatTreeNodes(nodes: CharacterInfo[], isRoot: boolean): string {
       const hanziSpan = node.traditional
         ? `<span class="${hanziClass} tree-has-traditional">${node.hanzi}<span class="tree-traditional">${node.traditional}</span></span>`
         : `<span class="${hanziClass}">${node.hanzi}</span>`;
-      const label = `${hanziSpan} <span class="tree-pinyin">${node.pinyin}</span> <span class="tree-meaning">${node.meaning}</span>`;
+      const label = `${hanziSpan} <span class="tree-pinyin">${node.pinyin}</span> <span class="tree-meaning">${formatTranslations(node.meaning)}</span>`;
       if (node.components.length > 0) {
         return `<li class="tree-node"><details><summary>${label}</summary><ul class="tree-children">${formatTreeNodes(node.components, false)}</ul></details></li>`;
       }
@@ -1171,6 +1325,28 @@ function editCurrentWord() {
   addPinyinInput.focus();
 }
 
+function editWordFromSearch(word: Word) {
+  addHanziInput.value = word.hanzi;
+  addPinyinInput.value = word.pinyin;
+  englishValues = [...word.english];
+  renderEnglishList();
+  categoryValues = [...word.categories];
+  ensureCurated();
+  renderChips(categoryChips, categoryValues, removeCategoryChip);
+  editingExistingWord = true;
+  const alreadyQueued = Boolean(word.queuedAt);
+  queueAsNewCb.checked = !alreadyQueued;
+  setQueueAsNewDisabled(alreadyQueued);
+  addWordBtn.textContent = 'Save';
+  addWordStatus.classList.add('hidden');
+  performHanziLookup(word.hanzi);
+  returnToSearch = true;
+  cancelEditBtn.classList.remove('hidden');
+  resetProgressBtn.classList.remove('hidden');
+  showView('add-word');
+  addPinyinInput.focus();
+}
+
 // Event listeners
 const quitBtn = document.getElementById('quit-btn')!;
 
@@ -1324,10 +1500,15 @@ answerInput.addEventListener('keyup', (e) => {
 });
 
 cancelEditBtn.addEventListener('click', () => {
-  returnToPractice = false;
   cancelEditBtn.classList.add('hidden');
   resetProgressBtn.classList.add('hidden');
-  showView('practice');
+  if (returnToSearch) {
+    returnToSearch = false;
+    showView('search');
+  } else {
+    returnToPractice = false;
+    showView('practice');
+  }
 });
 
 resetProgressBtn.addEventListener('click', async () => {
@@ -1447,7 +1628,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     ? setTimeout(() => { triggerBtn.textContent = 'Loading…'; }, 100)
     : null;
   try {
-    const { words, total } = await previewNewWords(
+    const { words, total, learnedElsewhere } = await previewNewWords(
       currentMode,
       getSelectedCategories(),
       characterMode,
@@ -1455,6 +1636,14 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       offset
     );
     previewTotal = total;
+
+    const learnedSet = new Set(learnedElsewhere);
+    const selectLearnedLabel = characterMode
+      ? `Select ${learnedElsewhere.length} from word mode`
+      : `Select ${learnedElsewhere.length} from other modes`;
+    const selectLearnedHtml = learnedElsewhere.length > 0
+      ? `<label class="preview-select-all"><input type="checkbox" class="select-learned-cb"> ${selectLearnedLabel}</label>`
+      : '';
 
     if (total === 0) {
       section.innerHTML = '<p class="preview-empty">No new words available.</p>';
@@ -1474,7 +1663,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       `</div>`;
 
     section.innerHTML =
-      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label><button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
+      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label>${selectLearnedHtml}<button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
       words
         .map((w) => {
           const ranks = [
@@ -1553,6 +1742,28 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     section.querySelector('.preview-next')!.addEventListener('click', () => {
       loadPreviewPage(previewOffset + PREVIEW_PAGE_SIZE);
     });
+
+    // Select learned elsewhere handler
+    const selectLearnedCb = section.querySelector('.select-learned-cb') as HTMLInputElement | null;
+    if (selectLearnedCb) {
+      selectLearnedCb.checked = pageHanzis.filter((h) => learnedSet.has(h)).every((h) => previewSelected.has(h));
+      selectLearnedCb.addEventListener('change', () => {
+        const checked = selectLearnedCb.checked;
+        section.querySelectorAll('.preview-checkbox').forEach((cb) => {
+          const input = cb as HTMLInputElement;
+          if (learnedSet.has(input.dataset.hanzi!)) {
+            input.checked = checked;
+            if (checked) {
+              previewSelected.add(input.dataset.hanzi!);
+            } else {
+              previewSelected.delete(input.dataset.hanzi!);
+            }
+          }
+        });
+        selectAllCb.checked = pageHanzis.every((h) => previewSelected.has(h));
+        updatePracticeSelectedBtn();
+      });
+    }
 
     updatePracticeSelectedBtn();
     section.classList.remove('hidden');
@@ -1759,6 +1970,7 @@ let allCategoriesList: string[] = [];
 let lookupTimer: ReturnType<typeof setTimeout> | null = null;
 let editingExistingWord = false;
 let returnToPractice = false;
+let returnToSearch = false;
 
 function ensureCurated() {
   if (!categoryValues.includes('curated')) {
@@ -2183,8 +2395,12 @@ addWordBtn.addEventListener('click', async () => {
     // Reload stats and categories
     loadStats();
 
-    // Return to practice if editing from practice screen
-    if (returnToPractice) {
+    // Return to origin screen if editing from practice or search
+    if (returnToSearch) {
+      returnToSearch = false;
+      cancelEditBtn.classList.add('hidden');
+      showView('search');
+    } else if (returnToPractice) {
       returnToPractice = false;
       cancelEditBtn.classList.add('hidden');
       showView('practice');
@@ -2204,9 +2420,337 @@ function showAddWordStatus(message: string, type: 'success' | 'error') {
   setTimeout(() => addWordStatus.classList.add('hidden'), 5000);
 }
 
+// Search screen
+const MODE_SHORT: Record<string, string> = {
+  hanzi2pinyin: 'hanzi→pinyin',
+  english2pinyin: 'english→pinyin',
+  english2hanzi: 'english→hanzi',
+};
+
+function formatDue(nextEligible: string | null): string {
+  if (nextEligible === null) {
+    return '—';
+  }
+  const diff = new Date(nextEligible).getTime() - Date.now();
+  if (diff <= 0) {
+    return 'now';
+  }
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 60) {
+    return `${mins}m`;
+  }
+  const hours = Math.floor(diff / 3_600_000);
+  if (hours < 24) {
+    return `${hours}h`;
+  }
+  const days = Math.floor(diff / 86_400_000);
+  return `${days}d`;
+}
+
+function formatWordDetail(word: Word, progress: Progress[]): string {
+  let html = `<div class="search-detail-top">
+    ${clickableHanzi(word.hanzi, 'answer-hanzi')}
+    <span class="answer-pinyin">${word.pinyin}</span>
+    <span class="answer-english">${formatTranslations(word.english)}</span>
+  </div>`;
+
+  if (word.categories.length > 0) {
+    const cats = word.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ');
+    html += `<div class="answer-categories">${cats}</div>`;
+  }
+
+  const progressByMode = new Map(progress.map((p) => [p.mode, p]));
+  const progressParts = (['hanzi2pinyin', 'english2pinyin', 'english2hanzi'] as const).map((mode) => {
+    const p = progressByMode.get(mode);
+    const label = MODE_SHORT[mode];
+    if (!p || p.bucket === null) {
+      return `<span class="search-progress-item search-progress-none">${label}: —</span>`;
+    }
+    return `<span class="search-progress-item">${label}: bucket ${p.bucket} <span class="search-due-time">${formatDue(p.nextEligible)}</span></span>`;
+  });
+  html += `<div class="search-progress">${progressParts.join('')}</div>`;
+
+  if (word.examples.length > 0) {
+    html += `<div class="example-sentence">${formatExampleAnswers(word.examples)}</div>`;
+  }
+
+  if (word.breakdown && word.breakdown.length > 0) {
+    html += formatBreakdown(word.breakdown);
+  }
+
+  html += `<div class="search-detail-actions">
+    <button class="search-edit-btn edit-word-btn">Edit word</button>
+  </div>`;
+
+  return html;
+}
+
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let expandedSearchEl: HTMLElement | null = null;
+let originalResultOrder: HTMLElement[] = [];
+let hanziMode: MatchMode = 'contains';
+let pinyinMode: MatchMode = 'contains';
+
+function insertRelatedDuplicates(anchor: HTMLElement) {
+  removeRelatedDuplicates();
+  const hanzi = anchor.dataset.hanzi!;
+  let insertAfter = anchor;
+  for (const el of originalResultOrder) {
+    if (el === anchor) {
+      continue;
+    }
+    if (el.dataset.hanzi!.includes(hanzi)) {
+      const clone = el.cloneNode(true) as HTMLElement;
+      clone.classList.add('search-result-duplicate');
+      clone.querySelector('.search-detail')?.classList.add('hidden');
+      insertAfter.after(clone);
+      insertAfter = clone;
+    }
+  }
+}
+
+function removeRelatedDuplicates() {
+  searchResultsDiv.querySelectorAll('.search-result-duplicate').forEach((el) => el.remove());
+}
+
+function initModeGroup(group: HTMLElement, getCurrent: () => MatchMode, setCurrent: (m: MatchMode) => void) {
+  group.querySelectorAll<HTMLButtonElement>('.match-mode-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode as MatchMode;
+      setCurrent(mode);
+      group.querySelectorAll('.match-mode-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      triggerSearch();
+    });
+  });
+}
+
+initModeGroup(hanziModeGroup, () => hanziMode, (m) => { hanziMode = m; });
+initModeGroup(pinyinModeGroup, () => pinyinMode, (m) => { pinyinMode = m; });
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function highlightHanzi(text: string, query: string, mode: MatchMode): string {
+  if (!query) {
+    return escapeHtml(text);
+  }
+  let idx: number;
+  switch (mode) {
+    case 'prefix':
+      idx = text.startsWith(query) ? 0 : -1;
+      break;
+    case 'suffix':
+      idx = text.endsWith(query) ? text.length - query.length : -1;
+      break;
+    case 'exact':
+      idx = text === query ? 0 : -1;
+      break;
+    default:
+      idx = text.indexOf(query);
+  }
+  if (idx === -1) {
+    return escapeHtml(text);
+  }
+  return (
+    escapeHtml(text.slice(0, idx)) +
+    `<mark class="search-match">${escapeHtml(text.slice(idx, idx + query.length))}</mark>` +
+    escapeHtml(text.slice(idx + query.length))
+  );
+}
+
+function highlightPinyin(pinyin: string, pinyinQuery: string, mode: MatchMode): string {
+  if (!pinyinQuery) {
+    return escapeHtml(pinyin);
+  }
+  const tokens = splitPinyinQuery(pinyinQuery.trim()).filter((t) => t.base.length > 0);
+  if (tokens.length === 0) {
+    return escapeHtml(pinyin);
+  }
+  const syllables = pinyin.split(' ');
+  const candidates = pinyinCandidateIndices(syllables.length, tokens.length, mode);
+
+  let matchStart = -1;
+  for (const i of candidates) {
+    if (i >= 0 && tokens.every((tok, j) => syllableMatchesToken(syllables[i + j], tok))) {
+      matchStart = i;
+      break;
+    }
+  }
+  if (matchStart === -1) {
+    return escapeHtml(pinyin);
+  }
+  const matchEnd = matchStart + tokens.length;
+  const before = syllables.slice(0, matchStart).map(escapeHtml).join(' ');
+  const matched = syllables.slice(matchStart, matchEnd).map(escapeHtml).join(' ');
+  const after = syllables.slice(matchEnd).map(escapeHtml).join(' ');
+  const parts = [];
+  if (before) {
+    parts.push(before);
+  }
+  parts.push(`<mark class="search-match">${matched}</mark>`);
+  if (after) {
+    parts.push(after);
+  }
+  return parts.join(' ');
+}
+
+function highlightEnglish(english: string[], englishQuery: string): string {
+  const sep = '<span class="english-sep"> • </span>';
+  if (!englishQuery) {
+    return english.map(escapeHtml).join(sep);
+  }
+  const q = englishQuery.toLowerCase();
+  const qEscaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`\\b${qEscaped}`, 'gi');
+  return english.map((def) => {
+    let result = '';
+    let lastIndex = 0;
+    for (const m of def.matchAll(re)) {
+      result += escapeHtml(def.slice(lastIndex, m.index));
+      result += `<mark class="search-match">${escapeHtml(def.slice(m.index, m.index + q.length))}</mark>`;
+      lastIndex = m.index + q.length;
+    }
+    result += escapeHtml(def.slice(lastIndex));
+    return result;
+  }).join(sep);
+}
+
+function renderSearchResults(
+  results: SearchResult[],
+  hanziQ: string,
+  pinyinQ: string,
+  englishQ: string
+) {
+  if (results.length === 0) {
+    searchResultsDiv.innerHTML = '<p class="search-empty">No results.</p>';
+    return;
+  }
+  const header = `<div class="search-results-header">
+    <span class="search-col-focus"></span>
+    <span class="search-col-hanzi">Hanzi</span>
+    <span class="search-col-pinyin">Pinyin</span>
+    <span class="search-col-english">English</span>
+    <span class="search-rank-col">Word</span>
+    <span class="search-rank-col">Char</span>
+  </div>`;
+
+  searchResultsDiv.innerHTML = header + results
+    .map((r) => {
+      const hanziHtml = highlightHanzi(r.word.hanzi, hanziQ, hanziMode);
+      const pinyinHtml = highlightPinyin(r.word.pinyin, pinyinQ, pinyinMode);
+      const englishHtml = highlightEnglish(r.word.english, englishQ);
+      const wordRank = r.word.wordFrequencyRank != null ? `#${r.word.wordFrequencyRank}` : '—';
+      const charRank = r.word.hanziFrequencyRank != null ? `#${r.word.hanziFrequencyRank}` : '—';
+      return `<div class="search-result" data-hanzi="${escapeHtml(r.word.hanzi)}">
+      <div class="search-result-summary">
+        <span class="search-col-focus"><button class="search-focus-btn" data-hanzi="${escapeHtml(r.word.hanzi)}"></button></span>
+        <span class="search-hanzi">${hanziHtml}</span>
+        <span class="preview-pinyin">${pinyinHtml}</span>
+        <span class="preview-english">${englishHtml}</span>
+        <span class="search-rank-col" title="Word frequency rank">${wordRank}</span>
+        <span class="search-rank-col" title="Character frequency rank">${charRank}</span>
+      </div>
+      <div class="search-detail hidden">${formatWordDetail(r.word, r.progress)}</div>
+    </div>`;
+    })
+    .join('');
+
+  originalResultOrder = Array.from(searchResultsDiv.querySelectorAll<HTMLElement>('.search-result'));
+
+  searchResultsDiv.querySelectorAll<HTMLElement>('.search-result').forEach((el) => {
+    el.querySelector('.search-result-summary')!.addEventListener('click', () => {
+      const detail = el.querySelector('.search-detail') as HTMLElement;
+      if (expandedSearchEl === el) {
+        detail.classList.add('hidden');
+        el.classList.remove('search-result-expanded');
+        removeRelatedDuplicates();
+        expandedSearchEl = null;
+      } else {
+        if (expandedSearchEl) {
+          expandedSearchEl.querySelector('.search-detail')?.classList.add('hidden');
+          expandedSearchEl.classList.remove('search-result-expanded');
+        }
+        detail.classList.remove('hidden');
+        el.classList.add('search-result-expanded');
+        insertRelatedDuplicates(el);
+        expandedSearchEl = el;
+      }
+    });
+
+
+    el.querySelector('.search-focus-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const hanzi = (e.currentTarget as HTMLElement).dataset.hanzi!;
+      searchHanziInput.value = hanzi;
+      searchPinyinInput.value = '';
+      searchEnglishInput.value = '';
+      triggerSearch(true);
+    });
+
+    el.querySelector('.search-edit-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const hanzi = (el as HTMLElement).dataset.hanzi!;
+      const result = results.find((r) => r.word.hanzi === hanzi);
+      if (result) {
+        editWordFromSearch(result.word);
+      }
+    });
+  });
+}
+
+async function executeSearch() {
+  const hanziQ = searchHanziInput.value.trim();
+  const pinyinQ = searchPinyinInput.value.trim();
+  const englishQ = searchEnglishInput.value.trim();
+  updateSearchUrl();
+  if (!hanziQ && !pinyinQ && !englishQ) {
+    searchResultsDiv.innerHTML = '';
+    expandedSearchEl = null;
+    return;
+  }
+  try {
+    const results = await searchWords(hanziQ, hanziMode, pinyinQ, pinyinMode, englishQ);
+    expandedSearchEl = null;
+    renderSearchResults(results, hanziQ, pinyinQ, englishQ);
+  } catch (error) {
+    console.error('Search failed:', error);
+  }
+}
+
+function triggerSearch(immediate = false) {
+  if (searchDebounceTimer !== null) {
+    clearTimeout(searchDebounceTimer);
+  }
+  if (immediate) {
+    executeSearch();
+    return;
+  }
+  searchDebounceTimer = setTimeout(() => {
+    executeSearch();
+  }, 300);
+}
+
+for (const input of [searchHanziInput, searchPinyinInput, searchEnglishInput]) {
+  input.addEventListener('input', () => {
+    for (const other of [searchHanziInput, searchPinyinInput, searchEnglishInput]) {
+      if (other !== input) {
+        other.value = '';
+      }
+    }
+    triggerSearch();
+  });
+}
+
 // Initialize
 if (!restoreSession()) {
-  showScreen(startScreen);
+  const initialView = viewFromPath();
+  if (initialView === 'practice') {
+    showScreen(startScreen);
+  } else {
+    showView(initialView, false);
+  }
 }
 loadStats();
 setInterval(() => {

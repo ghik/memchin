@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import type { CharacterInfo } from '../../shared/types.js';
 import { filterDefinitions, filterEntries, loadCedict } from './cedict.js';
-import { stripTones } from './pinyin.js';
+import { stripTones } from '../../shared/pinyin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const idsPath = path.join(__dirname, '../../../sources/ids.txt');
@@ -333,13 +333,13 @@ function lookupChar(char: string, pinyinHint?: string): CharacterInfo {
 
   const entry = matched[0];
   if (!entry) {
-    return { hanzi: char, pinyin: '', meaning: '', components: [] };
+    return { hanzi: char, pinyin: '', meaning: [], components: [] };
   }
   return {
     hanzi: char,
     traditional: entry.traditional !== char ? entry.traditional : undefined,
     pinyin: entry.pinyin,
-    meaning: filterDefinitions(entry.definitions).join(' / '),
+    meaning: filterDefinitions(entry.definitions),
     components: [],
   };
 }

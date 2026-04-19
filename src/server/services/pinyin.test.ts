@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { splitPinyin, toNumberedPinyin, normalizePinyin, normalizePinyinInput, pinyinMatches } from './pinyin.js';
+import { splitPinyin, toNumberedPinyin, normalizePinyin, normalizePinyinInput, pinyinMatches } from '../../shared/pinyin.js';
 
 describe('toNumberedPinyin', () => {
   it('converts single syllable with tone 1', () => {

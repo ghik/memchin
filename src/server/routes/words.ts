@@ -10,6 +10,7 @@ import {
   invalidateWordCache,
   deleteProgress,
   resetProgressBucket,
+  searchLearnedWords,
   setQueuedAt,
   setCharQueuedAt,
   clearQueuedAt,
@@ -17,7 +18,7 @@ import {
   updateWordExamples,
 } from '../db.js';
 import { lookupFiltered } from '../services/cedict.js';
-import { normalizePinyinInput } from '../services/pinyin.js';
+import { normalizePinyinInput, splitPinyin } from '../../shared/pinyin.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
 import { generateSpeech } from '../services/tts.js';
 import { decomposeWord } from '../services/ids.js';
@@ -47,6 +48,26 @@ router.get('/', (req, res) => {
 router.get('/count', (req, res) => {
   const count = getWordCount();
   res.json({ count });
+});
+
+router.get('/search', (req, res) => {
+  const validMode = (v: unknown) =>
+    ['prefix', 'contains', 'suffix', 'exact'].includes(v as string) ? (v as import('../../shared/types.js').MatchMode) : undefined;
+  const query = {
+    hanzi: (req.query.hanzi as string ?? '').trim(),
+    hanziMode: validMode(req.query.hanziMode),
+    pinyin: (req.query.pinyin as string ?? '').trim(),
+    pinyinMode: validMode(req.query.pinyinMode),
+    english: (req.query.english as string ?? '').trim(),
+  };
+  const results = searchLearnedWords(query).map(({ word, progress }) => {
+    const pinyin = splitPinyin(word.pinyin);
+    return {
+      word: { ...word, pinyin, breakdown: decomposeWord(word.hanzi, word.pinyin) },
+      progress,
+    };
+  });
+  res.json(results);
 });
 
 router.get('/lookup/:hanzi', (req, res) => {

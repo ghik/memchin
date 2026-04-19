@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { CedictEntry } from '../../shared/types.js';
-import { numberedToToneMarked } from './pinyin.js';
+import { numberedToToneMarked } from '../../shared/pinyin.js';
 
 export type { CedictEntry } from '../../shared/types.js';
 

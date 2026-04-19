@@ -4,9 +4,12 @@ import type {
   CharacterInfo,
   CompleteResponse,
   LookupResponse,
+  MatchMode,
   PracticeMode,
   PracticeQuestion,
   PracticeResult,
+  Progress,
+  SearchResult,
   SpeechAssessResponse,
   StartResponse,
   Stats,
@@ -17,8 +20,11 @@ import type {
 export type {
   CedictEntry,
   CharacterInfo,
+  MatchMode,
   PracticeMode,
   PracticeQuestion,
+  Progress,
+  SearchResult,
   Word,
   WordProgress,
 } from '../shared/types.js';
@@ -130,7 +136,7 @@ export function previewNewWords(
   characterMode: boolean,
   limit: number,
   offset: number
-): Promise<{ words: Word[]; total: number }> {
+): Promise<{ words: Word[]; total: number; learnedElsewhere: string[] }> {
   const params = new URLSearchParams({
     mode,
     limit: String(limit),
@@ -213,6 +219,28 @@ export function resetWordProgress(hanzi: string, mode?: string): Promise<void> {
 
 export function resetWordBucket(hanzi: string, mode: string, toCharacterModeOnly = false): Promise<void> {
   return apiPost(`/words/${encodeURIComponent(hanzi)}/reset-bucket`, { mode, toCharacterModeOnly });
+}
+
+export function searchWords(
+  hanzi: string,
+  hanziMode: MatchMode,
+  pinyin: string,
+  pinyinMode: MatchMode,
+  english: string
+): Promise<SearchResult[]> {
+  const params = new URLSearchParams();
+  if (hanzi) {
+    params.set('hanzi', hanzi);
+    params.set('hanziMode', hanziMode);
+  }
+  if (pinyin) {
+    params.set('pinyin', pinyin);
+    params.set('pinyinMode', pinyinMode);
+  }
+  if (english) {
+    params.set('english', english);
+  }
+  return apiGet(`/words/search?${params}`);
 }
 
 export async function assessSpeech(audio: ArrayBuffer, hanzi: string): Promise<SpeechAssessResponse> {
