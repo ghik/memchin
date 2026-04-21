@@ -442,22 +442,25 @@ function filterCategoryList() {
 }
 
 function sortCategoryList() {
-  const items = [
-    ...Array.from(categorySelected.children),
-    ...Array.from(categoryList.children),
-  ] as HTMLElement[];
-  const checked = items.filter((el) => (el.querySelector('input') as HTMLInputElement).checked);
-  const unchecked = items.filter((el) => !(el.querySelector('input') as HTMLInputElement).checked);
-  unchecked.sort((a, b) =>
-    (a.querySelector('input') as HTMLInputElement).value.localeCompare(
-      (b.querySelector('input') as HTMLInputElement).value,
-    ),
-  );
-  for (const item of checked) {
-    categorySelected.appendChild(item);
-  }
-  for (const item of unchecked) {
-    categoryList.appendChild(item);
+  // Rebuild the selected-categories section from clones
+  categorySelected.innerHTML = '';
+  for (const item of Array.from(categoryList.children) as HTMLElement[]) {
+    const checkbox = item.querySelector('input') as HTMLInputElement;
+    if (checkbox.checked) {
+      const clone = document.createElement('label');
+      clone.className = 'category-item';
+      const cloneCb = document.createElement('input');
+      cloneCb.type = 'checkbox';
+      cloneCb.value = checkbox.value;
+      cloneCb.checked = true;
+      cloneCb.addEventListener('change', () => {
+        checkbox.checked = false;
+        toggleCategory(cloneCb.value, false);
+      });
+      clone.appendChild(cloneCb);
+      clone.appendChild(document.createTextNode(checkbox.value));
+      categorySelected.appendChild(clone);
+    }
   }
   filterCategoryList();
 }
@@ -529,11 +532,21 @@ function updateStatsInPlace(stats: Stats[]): void {
     dueBtn.textContent = `${s.dueForReview} due`;
     dueBtn.disabled = s.dueForReview === 0;
     dueBtn.dataset.count = String(s.dueForReview);
+    dueBtn.classList.toggle('filtered', selectedCategories.size > 0);
     const previewBtn = card.querySelector('.mode-preview-btn') as HTMLButtonElement;
     previewBtn.textContent = `${s.newWordsCount} new`;
     previewBtn.disabled = s.newWordsCount === 0;
+    previewBtn.classList.toggle('filtered', selectedCategories.size > 0);
   }
   latestStats = stats;
+
+  // Reload open browse/preview sections with updated filters
+  if (browseMode) {
+    loadBrowsePage(0);
+  }
+  if (previewMode) {
+    loadPreviewPage(0);
+  }
 }
 
 async function renderStats(stats: Stats[]) {
@@ -548,8 +561,9 @@ async function renderStats(stats: Stats[]) {
       const cardKey = modeKey(s.mode, cm);
       const bucketTimings = makeBucketTimings(s);
       const bucketBar = makeBucketBar(s);
-      const dueBtn = `<button class="due-mode-btn" data-mode="${s.mode}" data-charmode="${cm}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
-      const previewBtn = `<button class="mode-preview-btn${previewMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" ${s.newWordsCount === 0 ? 'disabled' : ''}>${s.newWordsCount} new</button>`;
+      const filtered = selectedCategories.size > 0 ? ' filtered' : '';
+      const dueBtn = `<button class="due-mode-btn${filtered}" data-mode="${s.mode}" data-charmode="${cm}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
+      const previewBtn = `<button class="mode-preview-btn${filtered}${previewMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" ${s.newWordsCount === 0 ? 'disabled' : ''}>${s.newWordsCount} new</button>`;
       const browseBtn = `<button class="mode-browse-btn${browseMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}">Browse</button>`;
       const presets = [5, 10, 20, 30, 50];
       const reviewCount = getModeWordCount(s.mode, cm, 'review');
@@ -1897,8 +1911,10 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
       updateBrowseActionBtns();
     });
 
-    section.querySelector('.browse-practice-btn')!.addEventListener('click', () => {
-      handleStart([...browseSelected]);
+    section.querySelector('.browse-practice-btn')!.addEventListener('click', async () => {
+      const hanzis = [...browseSelected];
+      await queueWords(hanzis, characterMode);
+      handleStart(hanzis);
     });
 
     section.querySelector('.browse-queue-btn')!.addEventListener('click', async () => {

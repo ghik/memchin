@@ -365,6 +365,11 @@ router.post('/queue-words', (req, res) => {
       setCharQueuedAt(hanzi);
     } else {
       setQueuedAt(hanzi);
+      for (const char of hanzi) {
+        if (getWordByHanzi(char)) {
+          setCharQueuedAt(char);
+        }
+      }
     }
   }
   saveDb();

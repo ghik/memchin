@@ -662,6 +662,11 @@ body.dark .preview-queued {
   background: var(--btn-preview-bg-hover);
 }
 
+.due-mode-btn.filtered::after,
+.mode-preview-btn.filtered::after {
+  content: ' *';
+}
+
 .mode-browse-btn {
   background: var(--btn-browse-bg);
   color: var(--btn-browse-color);
