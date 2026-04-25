@@ -265,6 +265,8 @@ let allQuestions: PracticeQuestion[] = []; // original question list for results
 let incorrectThisRound: PracticeQuestion[] = [];
 let roundNumber = 1;
 let submitBlocked = false;
+let nextBlocked = false;
+let nextBlockedTimer: ReturnType<typeof setTimeout> | null = null;
 let newWords: Set<string> = new Set(); // words that were new (bucket null) and shown answer on first round
 let characterMode = false; // whether current session uses character mode
 
@@ -578,7 +580,7 @@ async function renderStats(stats: Stats[]) {
           ${extra}
         </div>`;
       };
-      const reviewRow = actionRow('review', 'mode-review-btn', 'Review', reviewCount, dueBtn);
+      const reviewRow = actionRow('review', 'mode-review-btn', 'Review', reviewCount);
       const randomRow = actionRow('random', 'mode-random-btn', 'Random', randomCount);
       const label = `${MODE_LABELS[s.mode] ?? s.mode} <span class="mode-card-scope">(${cm ? 'characters' : 'words'})</span>`;
       const collapsed = getCardCollapsed(cardKey);
@@ -592,10 +594,12 @@ async function renderStats(stats: Stats[]) {
           <div class="mode-card-body-inner">
           <div class="bucket-timings">${bucketTimings}</div>
           <div class="bucket-bar">${bucketBar}</div>
-          ${reviewRow}
-          ${randomRow}
+          <div class="mode-card-actions-pair">
+            ${reviewRow}
+            ${randomRow}
+          </div>
           <div class="mode-card-actions">
-            ${browseBtn}${previewBtn}
+            ${browseBtn}${previewBtn}${dueBtn}
           </div>
           <div class="preview-section hidden" data-key="${cardKey}"></div>
           <div class="browse-section hidden" data-key="${cardKey}"></div>
@@ -1134,6 +1138,13 @@ function showFinalFeedback(question: PracticeQuestion, type: 'correct' | 'incorr
   skipBtn.classList.add('hidden');
   practiceActions.classList.remove('hidden');
   answerInput.disabled = true;
+  if (type === 'incorrect') {
+    nextBlocked = true;
+    if (nextBlockedTimer !== null) {
+      clearTimeout(nextBlockedTimer);
+    }
+    nextBlockedTimer = setTimeout(() => { nextBlocked = false; nextBlockedTimer = null; }, 1000);
+  }
   saveSession();
 }
 
@@ -1587,7 +1598,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     if (resultScreen.classList.contains('active')) {
       handleRestart();
-    } else if (!practiceActions.classList.contains('hidden')) {
+    } else if (!practiceActions.classList.contains('hidden') && !nextBlocked) {
       handleNext();
     }
   }

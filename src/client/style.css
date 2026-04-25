@@ -539,8 +539,14 @@ body.dark .preview-queued {
 .action-row-random {
   gap: 4px;
 }
-.mode-card-actions .due-mode-btn {
-  margin-left: 4px;
+.mode-card-actions-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 6px;
+}
+.mode-card-actions-pair > .mode-card-actions {
+  margin-top: 0;
 }
 
 
