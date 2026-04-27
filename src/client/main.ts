@@ -31,8 +31,11 @@ import {
   getStats,
   getWordCount,
   lookupHanzi,
+  makeProgressCharOnly,
   previewNewWords,
   queueWords,
+  regenerateAudio,
+  regenerateExamples,
   resetWordBucket,
   resetWordProgress,
   startPractice,
@@ -67,7 +70,37 @@ const practiceActions = document.getElementById('practice-actions')!;
 const editWordBtn = document.getElementById('edit-word-btn')!;
 const resetWordBtn = document.getElementById('reset-word-btn')!;
 const cancelEditBtn = document.getElementById('cancel-edit-btn') as HTMLButtonElement;
+const regenAudioBtn = document.getElementById('regen-audio-btn') as HTMLButtonElement;
+const regenExamplesBtn = document.getElementById('regen-examples-btn') as HTMLButtonElement;
+const makeCharOnlyBtn = document.getElementById('make-char-only-btn') as HTMLButtonElement;
 const resetProgressBtn = document.getElementById('reset-progress-btn') as HTMLButtonElement;
+const editOnlyBtns: HTMLButtonElement[] = [
+  cancelEditBtn,
+  resetProgressBtn,
+  regenAudioBtn,
+  regenExamplesBtn,
+  makeCharOnlyBtn,
+];
+
+function setEditOnlyButtonsVisible(visible: boolean): void {
+  for (const btn of editOnlyBtns) {
+    btn.classList.toggle('hidden', !visible);
+  }
+  if (!visible) {
+    setProgressActionsEnabled(false, false);
+  }
+}
+
+function setProgressActionsEnabled(hasProgress: boolean, isSingleChar: boolean): void {
+  resetProgressBtn.disabled = !hasProgress;
+  makeCharOnlyBtn.disabled = !hasProgress || !isSingleChar;
+}
+
+function isSingleHanzi(s: string): boolean {
+  // Count Unicode code points, not UTF-16 units, so CJK chars in the
+  // supplementary plane (e.g. CJK Extension B) still count as one character.
+  return [...s].length === 1;
+}
 const resultStatsDiv = document.getElementById('result-stats')!;
 const mistakesSection = document.getElementById('mistakes-section')!;
 const mistakesList = document.getElementById('mistakes-list')!;
@@ -432,6 +465,10 @@ function toggleCategory(cat: string, checked: boolean) {
   }
   localStorage.setItem('selectedCategories', JSON.stringify([...selectedCategories]));
   sortCategoryList();
+  // Filter change can shrink the result set — drop back to page 0 so we don't
+  // land past the new last page.
+  browseOffset = 0;
+  previewOffset = 0;
   reloadStats();
 }
 
@@ -542,12 +579,12 @@ function updateStatsInPlace(stats: Stats[]): void {
   }
   latestStats = stats;
 
-  // Reload open browse/preview sections with updated filters
+  // Reload open browse/preview sections with the user's current page intact.
   if (browseMode) {
-    loadBrowsePage(0);
+    loadBrowsePage(browseOffset);
   }
   if (previewMode) {
-    loadPreviewPage(0);
+    loadPreviewPage(previewOffset);
   }
 }
 
@@ -849,9 +886,12 @@ async function handleStart(hanziList?: string[], wordSelection: string = 'review
 }
 
 // Audio playback
+const audioCacheBust = new Map<string, number>();
 function playAudio(hanzi: string, auto: boolean = false) {
   if (auto && !autoplayCheckbox.checked) return;
-  const audio = new Audio(`/audio/${encodeURIComponent(hanzi)}.mp3`);
+  const v = audioCacheBust.get(hanzi);
+  const url = `/audio/${encodeURIComponent(hanzi)}.mp3${v ? `?v=${v}` : ''}`;
+  const audio = new Audio(url);
   audio.play().catch((err) => console.warn('Audio playback failed:', err));
 }
 
@@ -1344,8 +1384,7 @@ function editCurrentWord() {
   performHanziLookup(word.hanzi);
 
   returnToPractice = true;
-  cancelEditBtn.classList.remove('hidden');
-  resetProgressBtn.classList.remove('hidden');
+  setEditOnlyButtonsVisible(true);
   showView('add-word');
   addPinyinInput.focus();
 }
@@ -1366,8 +1405,7 @@ function editWordFromSearch(word: Word) {
   addWordStatus.classList.add('hidden');
   performHanziLookup(word.hanzi);
   returnToSearch = true;
-  cancelEditBtn.classList.remove('hidden');
-  resetProgressBtn.classList.remove('hidden');
+  setEditOnlyButtonsVisible(true);
   showView('add-word');
   addPinyinInput.focus();
 }
@@ -1525,14 +1563,17 @@ answerInput.addEventListener('keyup', (e) => {
 });
 
 cancelEditBtn.addEventListener('click', () => {
-  cancelEditBtn.classList.add('hidden');
-  resetProgressBtn.classList.add('hidden');
+  setEditOnlyButtonsVisible(false);
   if (returnToSearch) {
     returnToSearch = false;
     showView('search');
-  } else {
+  } else if (returnToPractice) {
     returnToPractice = false;
     showView('practice');
+  } else {
+    addHanziInput.value = '';
+    addHanziInput.dispatchEvent(new Event('input'));
+    addHanziInput.focus();
   }
 });
 
@@ -1542,6 +1583,7 @@ resetProgressBtn.addEventListener('click', async () => {
 
   try {
     await resetWordProgress(hanzi);
+    setProgressActionsEnabled(false, isSingleHanzi(hanzi));
     showAddWordStatus(`Progress reset for "${hanzi}"`, 'success');
 
     if (returnToPractice) {
@@ -1559,8 +1601,7 @@ resetProgressBtn.addEventListener('click', async () => {
       if (currentIndex < -1) currentIndex = -1;
 
       returnToPractice = false;
-      cancelEditBtn.classList.add('hidden');
-      resetProgressBtn.classList.add('hidden');
+      setEditOnlyButtonsVisible(false);
 
       if (questions.length === 0) {
         // No questions left — finish the session
@@ -1572,6 +1613,79 @@ resetProgressBtn.addEventListener('click', async () => {
     }
   } catch (error) {
     showAddWordStatus(error instanceof Error ? error.message : 'Failed to reset progress', 'error');
+  }
+});
+
+async function withButtonBusy<T>(btn: HTMLButtonElement, busyLabel: string, fn: () => Promise<T>): Promise<T | undefined> {
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = busyLabel;
+  try {
+    return await fn();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+regenAudioBtn.addEventListener('click', async () => {
+  const hanzi = addHanziInput.value.trim();
+  if (!hanzi) {
+    return;
+  }
+  try {
+    const updated = await withButtonBusy(regenAudioBtn, 'Regenerating…', () => regenerateAudio(hanzi));
+    const stamp = Date.now();
+    audioCacheBust.set(hanzi, stamp);
+    for (const ex of updated?.examples ?? []) {
+      audioCacheBust.set(ex.hanzi, stamp);
+    }
+    showAddWordStatus(`Regenerated audio for "${hanzi}"`, 'success');
+  } catch (error) {
+    showAddWordStatus(error instanceof Error ? error.message : 'Failed to regenerate audio', 'error');
+  }
+});
+
+makeCharOnlyBtn.addEventListener('click', async () => {
+  const hanzi = addHanziInput.value.trim();
+  if (!hanzi) {
+    return;
+  }
+  if (!isSingleHanzi(hanzi)) {
+    showAddWordStatus('Char-only progress only applies to single characters', 'error');
+    return;
+  }
+  try {
+    const { changed } = await withButtonBusy(makeCharOnlyBtn, 'Updating…', () => makeProgressCharOnly(hanzi)) ?? { changed: 0 };
+    makeCharOnlyBtn.disabled = true;
+    if (changed > 0) {
+      showAddWordStatus(`Marked ${changed} progress row${changed === 1 ? '' : 's'} char-only for "${hanzi}"`, 'success');
+    } else {
+      showAddWordStatus(`No word-mode progress to convert for "${hanzi}"`, 'success');
+    }
+    loadStats();
+  } catch (error) {
+    showAddWordStatus(error instanceof Error ? error.message : 'Failed to convert progress', 'error');
+  }
+});
+
+regenExamplesBtn.addEventListener('click', async () => {
+  const hanzi = addHanziInput.value.trim();
+  if (!hanzi) {
+    return;
+  }
+  try {
+    const updated = await withButtonBusy(regenExamplesBtn, 'Regenerating…', () => regenerateExamples(hanzi));
+    if (updated) {
+      for (const q of [...questions, ...allQuestions, ...incorrectThisRound]) {
+        if (q.word.hanzi === hanzi) {
+          q.word.examples = updated.examples;
+        }
+      }
+    }
+    showAddWordStatus(`Regenerated examples for "${hanzi}"`, 'success');
+  } catch (error) {
+    showAddWordStatus(error instanceof Error ? error.message : 'Failed to regenerate examples', 'error');
   }
 });
 
@@ -1611,6 +1725,7 @@ let previewSelected = new Set<string>();
 let previewOffset = 0;
 let previewTotal = 0;
 let previewMode: string | null = null; // composite key from modeKey()
+let previewReverse = localStorage.getItem('previewReverse') === 'true';
 
 // Browse unqueued words
 let browseSelected = new Set<string>();
@@ -1658,7 +1773,8 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       getSelectedCategories(),
       characterMode,
       PREVIEW_PAGE_SIZE,
-      offset
+      offset,
+      previewReverse
     );
     previewTotal = total;
 
@@ -1687,8 +1803,12 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       `<button class="preview-next secondary-btn" ${hasNext ? '' : 'disabled'}>Next</button>` +
       `</div>`;
 
+    const reverseHtml = `<div class="preview-sort-toggle" role="group" aria-label="Sort order">
+      <button class="preview-sort-opt${previewReverse ? '' : ' active'}" data-order="oldest">Oldest first</button>
+      <button class="preview-sort-opt${previewReverse ? ' active' : ''}" data-order="newest">Newest first</button>
+    </div>`;
     section.innerHTML =
-      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label>${selectLearnedHtml}<button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
+      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label>${selectLearnedHtml}${reverseHtml}<button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
       words
         .map((w) => {
           const ranks = [
@@ -1766,6 +1886,19 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     });
     section.querySelector('.preview-next')!.addEventListener('click', () => {
       loadPreviewPage(previewOffset + PREVIEW_PAGE_SIZE);
+    });
+
+    // Order toggle (segmented)
+    section.querySelectorAll('.preview-sort-opt').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const wantReverse = (btn as HTMLElement).dataset.order === 'newest';
+        if (wantReverse === previewReverse) {
+          return;
+        }
+        previewReverse = wantReverse;
+        localStorage.setItem('previewReverse', String(previewReverse));
+        loadPreviewPage(0);
+      });
     });
 
     // Select learned elsewhere handler
@@ -2232,7 +2365,8 @@ async function performHanziLookup(hanzi: string) {
       queueAsNewCb.checked = !alreadyQueued;
       setQueueAsNewDisabled(alreadyQueued);
       addWordBtn.textContent = 'Save';
-      resetProgressBtn.classList.remove('hidden');
+      setEditOnlyButtonsVisible(true);
+      setProgressActionsEnabled(maxBucket !== null, isSingleHanzi(existing.hanzi));
       addPinyinInput.value = existing.pinyin;
       englishValues = [...existing.english];
       renderEnglishList();
@@ -2251,7 +2385,7 @@ async function performHanziLookup(hanzi: string) {
       queueAsNewCb.checked = true;
       setQueueAsNewDisabled(false);
       addWordBtn.textContent = 'Add';
-      resetProgressBtn.classList.add('hidden');
+      setEditOnlyButtonsVisible(false);
       addPinyinInput.value = '';
       addEnglishInput.value = '';
       addCategoriesInput.value = '';
@@ -2325,7 +2459,7 @@ addHanziInput.addEventListener('input', () => {
     queueAsNewCb.checked = true;
     setQueueAsNewDisabled(false);
     addWordBtn.textContent = 'Add';
-    resetProgressBtn.classList.add('hidden');
+    setEditOnlyButtonsVisible(false);
     return;
   }
   lookupTimer = setTimeout(() => performHanziLookup(hanzi), 300);
@@ -2417,7 +2551,7 @@ addWordBtn.addEventListener('click', async () => {
     cedictEntries.classList.add('hidden');
     wordInfoDiv.classList.add('hidden');
     wordBreakdown.classList.add('hidden');
-    resetProgressBtn.classList.add('hidden');
+    setEditOnlyButtonsVisible(false);
 
     // Reload stats and categories
     loadStats();
@@ -2425,11 +2559,9 @@ addWordBtn.addEventListener('click', async () => {
     // Return to origin screen if editing from practice or search
     if (returnToSearch) {
       returnToSearch = false;
-      cancelEditBtn.classList.add('hidden');
       showView('search');
     } else if (returnToPractice) {
       returnToPractice = false;
-      cancelEditBtn.classList.add('hidden');
       showView('practice');
     }
   } catch (error) {
@@ -2670,7 +2802,9 @@ function renderSearchResults(
       const englishHtml = highlightEnglish(r.word.english, englishQ);
       const wordRank = r.word.wordFrequencyRank != null ? `#${r.word.wordFrequencyRank}` : '—';
       const charRank = r.word.hanziFrequencyRank != null ? `#${r.word.hanziFrequencyRank}` : '—';
-      return `<div class="search-result" data-hanzi="${escapeHtml(r.word.hanzi)}">
+      const queuedClass = r.queued ? ' search-result-queued' : '';
+      const queuedTitle = r.queued ? ' title="Queued for practice, not yet learned"' : '';
+      return `<div class="search-result${queuedClass}" data-hanzi="${escapeHtml(r.word.hanzi)}"${queuedTitle}>
       <div class="search-result-summary">
         <span class="search-col-focus"><button class="search-focus-btn" data-hanzi="${escapeHtml(r.word.hanzi)}"></button></span>
         <span class="search-hanzi">${hanziHtml}</span>

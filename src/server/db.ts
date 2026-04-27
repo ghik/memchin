@@ -336,6 +336,21 @@ export function deleteProgress(hanzi: string, mode?: string): void {
   saveDb();
 }
 
+/**
+ * Mark all progress rows for a hanzi as character-mode-only, preserving bucket
+ * values. Use this to convert word-mode progress on a single-character "word"
+ * into character-only progress without losing mastery level.
+ */
+export function setAllProgressCharacterOnly(hanzi: string): number {
+  db.run(
+    'UPDATE progress SET character_mode_only = 1 WHERE hanzi = ? AND character_mode_only = 0',
+    [hanzi]
+  );
+  const changes = db.getRowsModified();
+  saveDb();
+  return changes;
+}
+
 export function resetProgressBucket(hanzi: string, mode: string, toCharacterModeOnly = false): void {
   if (toCharacterModeOnly) {
     db.run(
@@ -467,15 +482,17 @@ function queryNewWords(
   categories: string[],
   characterMode: boolean,
   count: number,
-  offset: number = 0
+  offset: number = 0,
+  reverse: boolean = false
 ): Word[] {
   const f = getWordFilters(mode, categories, characterMode);
+  const direction = reverse ? 'DESC' : 'ASC';
   return queryWords(
     `
       SELECT w.* FROM words w
       WHERE ${f.queueColumn} IS NOT NULL ${f.wordFilter}
       AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)
-      ORDER BY ${f.queueColumn} ASC LIMIT ? OFFSET ?
+      ORDER BY ${f.queueColumn} ${direction} LIMIT ? OFFSET ?
   `,
     [...categories, mode, count, offset]
   );
@@ -496,9 +513,10 @@ export function getNewWords(
   count: number,
   categories: string[],
   characterMode: boolean,
-  offset: number = 0
+  offset: number = 0,
+  reverse: boolean = false
 ): Word[] {
-  return queryNewWords(mode, categories, characterMode, count, offset);
+  return queryNewWords(mode, categories, characterMode, count, offset, reverse);
 }
 
 export function getUnqueuedWords(
@@ -708,6 +726,48 @@ export function searchLearnedWords(query: SearchQuery, limit = 50): { word: Word
         rowToProgress
       );
       matched.push({ word, progress });
+    }
+  }
+  matched.sort((a, b) => {
+    const lenA = [...a.word.hanzi].length;
+    const lenB = [...b.word.hanzi].length;
+    if (lenA !== lenB) {
+      return lenA - lenB;
+    }
+    const rankA = a.word.wordFrequencyRank ?? Infinity;
+    const rankB = b.word.wordFrequencyRank ?? Infinity;
+    return rankA - rankB;
+  });
+  return matched;
+}
+
+export function searchQueuedWords(query: SearchQuery, limit = 50): { word: Word }[] {
+  const hanzi = query.hanzi?.trim() ?? '';
+  const hanziMode: MatchMode = query.hanziMode ?? 'contains';
+  const english = query.english?.trim().toLowerCase() ?? '';
+  const pinyin = query.pinyin?.trim() ?? '';
+  const pinyinMode: MatchMode = query.pinyinMode ?? 'contains';
+
+  if (!hanzi && !english && !pinyin) {
+    return [];
+  }
+
+  const pinyinTokens = pinyin ? splitPinyinQuery(pinyin) : [];
+
+  const words = queryWords(
+    `SELECT w.* FROM words w
+     WHERE (w.queued_at IS NOT NULL OR w.char_queued_at IS NOT NULL)
+       AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.bucket IS NOT NULL)`,
+    []
+  );
+
+  const matched: { word: Word }[] = [];
+  for (const word of words) {
+    if (matched.length >= limit) {
+      break;
+    }
+    if (matchesSearch(word, hanzi, hanziMode, english, pinyinTokens, pinyinMode)) {
+      matched.push({ word });
     }
   }
   matched.sort((a, b) => {

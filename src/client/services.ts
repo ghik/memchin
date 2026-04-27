@@ -135,7 +135,8 @@ export function previewNewWords(
   categories: string[],
   characterMode: boolean,
   limit: number,
-  offset: number
+  offset: number,
+  reverse: boolean = false
 ): Promise<{ words: Word[]; total: number; learnedElsewhere: string[] }> {
   const params = new URLSearchParams({
     mode,
@@ -144,6 +145,7 @@ export function previewNewWords(
     characterMode: String(characterMode),
   });
   if (categories.length > 0) params.set('categories', categories.join(','));
+  if (reverse) params.set('reverse', 'true');
   return apiGet(`/practice/preview?${params}`);
 }
 
@@ -210,6 +212,18 @@ export function addWord(
   queueAsNew: boolean
 ): Promise<Word> {
   return apiPost('/words', { hanzi, pinyin, english, categories, queueAsNew });
+}
+
+export function makeProgressCharOnly(hanzi: string): Promise<{ ok: boolean; changed: number }> {
+  return apiPost(`/words/${encodeURIComponent(hanzi)}/make-char-only`, {});
+}
+
+export function regenerateAudio(hanzi: string): Promise<Word> {
+  return apiPost(`/words/${encodeURIComponent(hanzi)}/regenerate-audio`, {});
+}
+
+export function regenerateExamples(hanzi: string): Promise<Word> {
+  return apiPost(`/words/${encodeURIComponent(hanzi)}/regenerate-examples`, {});
 }
 
 export function resetWordProgress(hanzi: string, mode?: string): Promise<void> {

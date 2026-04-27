@@ -269,6 +269,35 @@ export function normalizePinyin(input: string): string {
   return toNumberedPinyin(input.toLowerCase().trim()).replace(/[^a-z0-9]/g, '');
 }
 
+/**
+ * Convert tone-marked pinyin to the format expected by Google Cloud TTS SSML
+ * `<phoneme alphabet="pinyin" ph="...">` — space-separated syllables with an
+ * explicit tone digit (5 for neutral) and ü written as v.
+ * e.g. "zhōng guó" -> "zhong1 guo2", "de" -> "de5", "lǜ" -> "lv4"
+ */
+export function toSsmlPinyin(pinyin: string): string {
+  return splitPinyin(pinyin.toLowerCase())
+    .split(/\s+/)
+    .filter((s) => s.length > 0)
+    .map((syllable) => {
+      let tone = 5;
+      let result = '';
+      for (const char of syllable) {
+        const entry = TONE_TO_NUMBER[char];
+        if (entry) {
+          result += entry[0];
+          tone = entry[1];
+        } else if (char === 'ü') {
+          result += 'v';
+        } else {
+          result += char;
+        }
+      }
+      return result + tone;
+    })
+    .join(' ');
+}
+
 export function pinyinMatches(input: string, expected: string): boolean {
   return normalizePinyin(input) === normalizePinyin(expected);
 }

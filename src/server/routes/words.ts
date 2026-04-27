@@ -11,6 +11,8 @@ import {
   deleteProgress,
   resetProgressBucket,
   searchLearnedWords,
+  searchQueuedWords,
+  setAllProgressCharacterOnly,
   setQueuedAt,
   setCharQueuedAt,
   clearQueuedAt,
@@ -20,7 +22,7 @@ import {
 import { lookupFiltered } from '../services/cedict.js';
 import { normalizePinyinInput, splitPinyin } from '../../shared/pinyin.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
-import { generateSpeech } from '../services/tts.js';
+import { deleteAudio, generateSpeech } from '../services/tts.js';
 import { decomposeWord } from '../services/ids.js';
 import { lookupChar, loadWordFrequencyData } from '../services/hanzi-freq.js';
 import type { Example } from '../../shared/types.js';
@@ -60,14 +62,23 @@ router.get('/search', (req, res) => {
     pinyinMode: validMode(req.query.pinyinMode),
     english: (req.query.english as string ?? '').trim(),
   };
-  const results = searchLearnedWords(query).map(({ word, progress }) => {
+  const learned = searchLearnedWords(query).map(({ word, progress }) => {
     const pinyin = splitPinyin(word.pinyin);
     return {
       word: { ...word, pinyin, breakdown: decomposeWord(word.hanzi, word.pinyin) },
       progress,
+      queued: false,
     };
   });
-  res.json(results);
+  const queued = searchQueuedWords(query).map(({ word }) => {
+    const pinyin = splitPinyin(word.pinyin);
+    return {
+      word: { ...word, pinyin, breakdown: decomposeWord(word.hanzi, word.pinyin) },
+      progress: [],
+      queued: true,
+    };
+  });
+  res.json([...learned, ...queued]);
 });
 
 router.get('/lookup/:hanzi', (req, res) => {
@@ -128,8 +139,15 @@ router.post('/', async (req, res) => {
     const chars = [...hanzi];
     const charsAdded: { hanzi: string; pinyin: string; english: string[]; wordFrequencyRank?: number }[] = [];
     if (chars.length > 1) {
+      const wordSyllables = normalizedPinyin.split(/\s+/);
+      const cjkRegex = /[一-鿿㐀-䶿]/;
       const charsToAdd = [];
+      let syllableIdx = 0;
       for (const char of chars) {
+        if (!cjkRegex.test(char)) {
+          continue;
+        }
+        const charPinyin = wordSyllables[syllableIdx++];
         if (getWordByHanzi(char)) {
           continue;
         }
@@ -139,7 +157,7 @@ router.post('/', async (req, res) => {
         }
         charsToAdd.push({
           hanzi: char,
-          pinyin: charInfo.pinyin,
+          pinyin: charPinyin ?? charInfo.pinyin,
           english: charInfo.english,
           hskLevel: 0,
           wordFrequencyRank: freq.get(char),
@@ -165,9 +183,9 @@ router.post('/', async (req, res) => {
     ]);
     const examples = exampleMap.get(hanzi) || [];
     updateWordExamples(hanzi, examples);
-    await generateSpeech(hanzi);
+    await generateSpeech(hanzi, normalizedPinyin);
     for (const ex of examples) {
-      await generateSpeech(ex.hanzi);
+      await generateSpeech(ex.hanzi, ex.pinyin);
     }
 
     // Generate examples and audio for auto-added characters
@@ -179,10 +197,10 @@ router.post('/', async (req, res) => {
         const charExamples = charExampleMap.get(w.hanzi) || [];
         updateWordExamples(w.hanzi, charExamples);
         for (const ex of charExamples) {
-          await generateSpeech(ex.hanzi);
+          await generateSpeech(ex.hanzi, ex.pinyin);
         }
       }
-      await generateSpeech(w.hanzi);
+      await generateSpeech(w.hanzi, w.pinyin);
     }
 
     invalidateWordCache();
@@ -250,6 +268,69 @@ router.post('/:hanzi/reset-bucket', (req, res) => {
   }
   resetProgressBucket(hanzi, mode, toCharacterModeOnly);
   res.json({ ok: true });
+});
+
+router.post('/:hanzi/make-char-only', (req, res) => {
+  try {
+    const hanzi = decodeURIComponent(req.params.hanzi);
+    const existing = getWordByHanzi(hanzi);
+    if (!existing) {
+      return res.status(404).json({ error: `Word "${hanzi}" not found` });
+    }
+    if ([...hanzi].length !== 1) {
+      return res.status(400).json({ error: 'Only single-character entries can be marked character-only' });
+    }
+    const changed = setAllProgressCharacterOnly(hanzi);
+    invalidateWordCache();
+    res.json({ ok: true, changed });
+  } catch (error) {
+    console.error('Failed to mark progress char-only:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to mark progress char-only' });
+  }
+});
+
+router.post('/:hanzi/regenerate-audio', async (req, res) => {
+  try {
+    const hanzi = decodeURIComponent(req.params.hanzi);
+    const existing = getWordByHanzi(hanzi);
+    if (!existing) {
+      return res.status(404).json({ error: `Word "${hanzi}" not found` });
+    }
+    deleteAudio(existing.hanzi);
+    await generateSpeech(existing.hanzi, existing.pinyin);
+    for (const ex of existing.examples ?? []) {
+      deleteAudio(ex.hanzi);
+      await generateSpeech(ex.hanzi, ex.pinyin);
+    }
+    res.json(existing);
+  } catch (error) {
+    console.error('Failed to regenerate audio:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to regenerate audio' });
+  }
+});
+
+router.post('/:hanzi/regenerate-examples', async (req, res) => {
+  try {
+    const hanzi = decodeURIComponent(req.params.hanzi);
+    const existing = getWordByHanzi(hanzi);
+    if (!existing) {
+      return res.status(404).json({ error: `Word "${hanzi}" not found` });
+    }
+    const exampleMap = await generateExamples([
+      { hanzi: existing.hanzi, pinyin: existing.pinyin, english: existing.english, hskLevel: existing.hskLevel },
+    ]);
+    const examples = exampleMap.get(existing.hanzi) ?? [];
+    updateWordExamples(existing.hanzi, examples);
+    invalidateWordCache();
+    for (const ex of examples) {
+      await generateSpeech(ex.hanzi, ex.pinyin);
+    }
+    const word = getWordByHanzi(hanzi);
+    res.json(word);
+  } catch (error) {
+    console.error('Failed to regenerate examples:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to regenerate examples' });
+  }
 });
 
 router.post('/:hanzi/clear-queued', (req, res) => {

@@ -293,7 +293,8 @@ body.dark input[type="checkbox"] {
   gap: 8px;
 }
 
-.preview-select-all {
+.preview-select-all,
+.preview-toggle {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -301,6 +302,38 @@ body.dark input[type="checkbox"] {
   color: var(--text-3);
   cursor: pointer;
   font-weight: normal;
+}
+
+.preview-sort-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.preview-sort-opt {
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-3);
+  background: var(--surface-3);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.preview-sort-opt + .preview-sort-opt {
+  border-left: 1px solid var(--border);
+}
+
+.preview-sort-opt:hover:not(.active) {
+  background: var(--border-2);
+}
+
+.preview-sort-opt.active {
+  background: var(--accent);
+  color: #fff;
+  cursor: default;
 }
 
 .preview-word {
@@ -1583,14 +1616,72 @@ body.dark .chip-remove {
   background: var(--surface-2);
 }
 
+.add-word-aux-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: stretch;
+}
+
+.aux-btn {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--text-3);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  box-sizing: border-box;
+  white-space: nowrap;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.aux-btn:hover:not(:disabled) {
+  background: var(--border-2);
+}
+
+.aux-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .add-word-actions {
   display: flex;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 8px;
+  align-items: stretch;
+  justify-content: flex-end;
 }
 
-.add-word-actions .primary-btn {
-  flex: 1;
+.add-word-actions .primary-btn,
+.add-word-actions .cancel-btn {
+  width: auto;
+  flex: 0 0 auto;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.add-word-actions .cancel-btn {
+  color: var(--text-3);
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+}
+
+.add-word-actions .cancel-btn:hover {
+  background: var(--border-2);
 }
 
 .danger-btn {
@@ -1914,6 +2005,18 @@ mark.search-match {
 
 .search-result-expanded > .search-result-summary {
   background: color-mix(in srgb, var(--border) 30%, var(--surface-3));
+}
+
+.search-result-queued > .search-result-summary {
+  background: color-mix(in srgb, #d4880f 8%, transparent);
+}
+
+.search-result-queued > .search-result-summary:hover {
+  background: color-mix(in srgb, #d4880f 14%, transparent);
+}
+
+.search-result-queued.search-result-expanded > .search-result-summary {
+  background: color-mix(in srgb, #d4880f 14%, var(--surface-3));
 }
 
 .search-result-duplicate {

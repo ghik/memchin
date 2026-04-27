@@ -249,6 +249,7 @@ router.get('/preview', (req, res) => {
   const offset = parseInt(req.query.offset as string) || 0;
   const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
   const characterMode = req.query.characterMode === 'true';
+  const reverse = req.query.reverse === 'true';
 
   if (
     !mode ||
@@ -257,7 +258,7 @@ router.get('/preview', (req, res) => {
     return res.status(400).json({ error: 'Valid mode is required' });
   }
 
-  const words = getNewWords(mode, limit, categories, characterMode, offset).map(enrichWord);
+  const words = getNewWords(mode, limit, categories, characterMode, offset, reverse).map(enrichWord);
   const total = getNewWordsCount(mode, categories, characterMode);
   const learnedElsewhere = getLearnedElsewhere(mode, categories, characterMode);
   res.json({ words, total, learnedElsewhere });

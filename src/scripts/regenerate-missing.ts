@@ -17,18 +17,18 @@ async function main() {
   const allWords = getAllWords();
 
   const needExamples: { hanzi: string; pinyin: string; english: string[]; hskLevel: number }[] = [];
-  const needAudio = new Set<string>();
+  const needAudio = new Map<string, string>(); // hanzi -> pinyin
 
   for (const [, word] of allWords) {
     if (!word.examples || word.examples.length === 0) {
       needExamples.push({ hanzi: word.hanzi, pinyin: word.pinyin, english: word.english, hskLevel: word.hskLevel });
     }
     if (!audioExists(word.hanzi)) {
-      needAudio.add(word.hanzi);
+      needAudio.set(word.hanzi, word.pinyin);
     }
     for (const ex of word.examples || []) {
       if (!audioExists(ex.hanzi)) {
-        needAudio.add(ex.hanzi);
+        needAudio.set(ex.hanzi, ex.pinyin);
       }
     }
   }
@@ -49,7 +49,7 @@ async function main() {
             updateWordExamples(w.hanzi, examples);
             for (const ex of examples) {
               if (!audioExists(ex.hanzi)) {
-                needAudio.add(ex.hanzi);
+                needAudio.set(ex.hanzi, ex.pinyin);
               }
             }
           }
@@ -63,9 +63,9 @@ async function main() {
 
   if (needAudio.size > 0) {
     console.log(`\nGenerating audio for ${needAudio.size} items...`);
-    for (const hanzi of needAudio) {
+    for (const [hanzi, pinyin] of needAudio) {
       try {
-        await generateSpeech(hanzi);
+        await generateSpeech(hanzi, pinyin);
         console.log(`  ${hanzi}`);
       } catch (error) {
         console.error(`  Failed to generate audio for ${hanzi}:`, error);

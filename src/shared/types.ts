@@ -145,6 +145,7 @@ export interface SpeechAssessResponse {
 export interface SearchResult {
   word: Word;
   progress: Progress[];
+  queued?: boolean;
 }
 
 export type MatchMode = 'prefix' | 'contains' | 'suffix' | 'exact';

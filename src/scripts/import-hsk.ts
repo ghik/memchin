@@ -183,9 +183,9 @@ async function importWords(start?: number, end?: number): Promise<void> {
     // Generate audio only for words that don't have it
     for (const word of words.filter((w) => !audioExists(w.hanzi))) {
       try {
-        await generateSpeech(word.hanzi);
+        await generateSpeech(word.hanzi, word.pinyin);
         for (const ex of word.examples) {
-          await generateSpeech(ex.hanzi);
+          await generateSpeech(ex.hanzi, ex.pinyin);
         }
       } catch (error) {
         console.error(`Failed to generate audio for "${word.hanzi}":`, error);
