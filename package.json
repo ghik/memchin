@@ -9,6 +9,7 @@
     "build": "tsc && vite build",
     "import-hsk": "tsx src/scripts/import-hsk.ts",
     "import-hsk3-bands": "tsx src/scripts/import-hsk3-bands.ts",
+    "import-mandarinspot": "tsx src/scripts/import-mandarinspot.ts",
     "hsk-to-json": "tsx src/scripts/hsk-to-json.ts",
     "add-missing-chars": "tsx src/scripts/add-missing-chars.ts",
     "regenerate-missing": "tsx src/scripts/regenerate-missing.ts",

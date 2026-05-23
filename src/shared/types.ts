@@ -29,6 +29,11 @@ export interface Word extends WordCore {
   manual: boolean;
   queuedAt?: string;
   charQueuedAt?: string;
+  mandarinspotTranslation?: {
+    pinyin: string[];
+    defs: string[];
+    traditional?: string;
+  };
 }
 
 export type PracticeMode = 'hanzi2pinyin' | 'english2hanzi' | 'english2pinyin';
@@ -112,11 +117,11 @@ export interface Stats {
   characterMode: boolean;
   totalWords: number;
   learned: number;
-  mastered: number;
   dueForReview: number;
   newWordsCount: number;
   buckets: number[]; // count of words in each bucket (index = bucket number)
   dueBuckets: number[]; // count of due words in each bucket
+  dueByDay: number[]; // count of words due each day for next 7 days in server local time (index 0 = today, includes overdue)
 }
 
 export interface LookupResponse {

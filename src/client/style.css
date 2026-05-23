@@ -447,6 +447,16 @@ body.dark .preview-queued {
   font-size: 13px;
 }
 
+.page-size-select {
+  font-size: 13px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
 .stats {
   margin-top: 0;
   display: flex;
@@ -654,6 +664,22 @@ body.dark .preview-queued {
 .bucket-due {
   color: #d4880f;
   font-weight: 600;
+}
+
+.forecast-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-4);
+}
+
+.bucket-bar.forecast-bar {
+  margin-bottom: 6px;
+}
+
+.forecast-count.forecast-empty {
+  color: var(--text-5);
+  opacity: 0.55;
 }
 
 .mode-preview-btn,

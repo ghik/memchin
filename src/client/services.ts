@@ -174,6 +174,14 @@ export function queueWords(hanzis: string[], characterMode: boolean): Promise<{ 
   return apiPost('/practice/queue-words', { hanzis, characterMode });
 }
 
+export function learnNow(
+  hanzis: string[],
+  mode: PracticeMode,
+  characterMode: boolean
+): Promise<{ ok: boolean }> {
+  return apiPost('/practice/learn-now', { hanzis, mode, characterMode });
+}
+
 export function getCategories(): Promise<string[]> {
   return apiGet('/categories');
 }

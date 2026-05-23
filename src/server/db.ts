@@ -87,6 +87,10 @@ export async function initDb(): Promise<void> {
     db.run('ALTER TABLE words ADD COLUMN char_queued_at TEXT');
   }
 
+  if (!columns.includes('mandarinspot_translation')) {
+    db.run('ALTER TABLE words ADD COLUMN mandarinspot_translation TEXT');
+  }
+
   // Clear char_queued_at for any chars that have already been practiced (cleanup for bad migrations)
   db.run(`
     UPDATE words SET char_queued_at = NULL
@@ -617,10 +621,10 @@ export function getStats(
 ): {
   totalWords: number;
   learned: number;
-  mastered: number;
   dueForReview: number;
   buckets: number[];
   dueBuckets: number[];
+  dueByDay: number[];
 } {
   const f = getWordFilters(mode, categories, characterMode);
   const baseJoin = `FROM words w JOIN progress p ON w.hanzi = p.hanzi WHERE p.mode = ? AND p.bucket IS NOT NULL ${f.wordFilter}`;
@@ -631,10 +635,6 @@ export function getStats(
     categories
   );
   const learned = queryCount(`SELECT COUNT(*) as cnt ${baseJoin}`, baseParams);
-  const mastered = queryCount(
-    `SELECT COUNT(*) as cnt ${baseJoin} AND p.bucket >= ${MAX_BUCKET}`,
-    baseParams
-  );
   const dueForReview = queryCount(
     `SELECT COUNT(*) as cnt ${baseJoin} AND p.next_eligible <= datetime('now')`,
     baseParams
@@ -658,7 +658,25 @@ export function getStats(
     dueBuckets[row.bucket as number] = row.cnt as number;
   }
 
-  return { totalWords, learned, mastered, dueForReview, buckets, dueBuckets };
+  // Words due in the next 7 days, bucketed by calendar day in server-local time.
+  // Overdue items (dayOffset < 0) collapse into today (index 0).
+  const dueByDay = new Array(7).fill(0);
+  for (const row of queryRows(
+    `SELECT
+       CAST(julianday(date(p.next_eligible, 'localtime')) - julianday(date('now', 'localtime')) AS INTEGER) AS dayOffset,
+       COUNT(*) as cnt
+     ${baseJoin} AND date(p.next_eligible, 'localtime') < date('now', '+7 days', 'localtime')
+     GROUP BY dayOffset`,
+    baseParams,
+    (r) => r
+  )) {
+    const offset = Math.max(0, row.dayOffset as number);
+    if (offset < 7) {
+      dueByDay[offset] += row.cnt as number;
+    }
+  }
+
+  return { totalWords, learned, dueForReview, buckets, dueBuckets, dueByDay };
 }
 
 export function getDueCount(
@@ -880,7 +898,27 @@ function rowToWord(row: any): Word {
     manual: Boolean(row.manual),
     queuedAt: row.queued_at ?? undefined,
     charQueuedAt: row.char_queued_at ?? undefined,
+    mandarinspotTranslation: row.mandarinspot_translation
+      ? JSON.parse(row.mandarinspot_translation)
+      : undefined,
   };
+}
+
+export interface MandarinspotTranslation {
+  pinyin: string[];
+  defs: string[];
+  traditional?: string;
+}
+
+export function setMandarinspotTranslation(
+  hanzi: string,
+  value: MandarinspotTranslation | null
+): void {
+  db.run('UPDATE words SET mandarinspot_translation = ? WHERE hanzi = ?', [
+    value ? JSON.stringify(value) : null,
+    hanzi,
+  ]);
+  allWords = null;
 }
 
 function rowToProgress(row: any): Progress {

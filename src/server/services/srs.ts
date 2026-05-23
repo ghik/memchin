@@ -11,7 +11,8 @@ const BUCKET_DELAYS_MINUTES = [
   3 * 24 * 60, // 3 day
   7 * 24 * 60, // 7 days
   14 * 24 * 60, // 14 days
-  30 * 24 * 60, // 30 days (mastered)
+  30 * 24 * 60, // 30 days
+  60 * 24 * 60, // 60 days
 ];
 
 export const MAX_BUCKET = BUCKET_DELAYS_MINUTES.length - 1;

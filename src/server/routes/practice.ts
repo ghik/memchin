@@ -29,8 +29,8 @@ import {
   isHanziSynonym,
   saveDb,
 } from '../db.js';
-import { getLearnedElsewhere, setQueuedAt, setCharQueuedAt } from '../db.js';
-import { updateProgress } from '../services/srs.js';
+import { getLearnedElsewhere, setQueuedAt, setCharQueuedAt, upsertProgress } from '../db.js';
+import { calculateNextEligible, updateProgress } from '../services/srs.js';
 import {
   hanziMatches,
   lastNeutralToneMismatch,
@@ -372,6 +372,35 @@ router.post('/queue-words', (req, res) => {
         }
       }
     }
+  }
+  saveDb();
+  res.json({ ok: true });
+});
+
+router.post('/learn-now', (req, res) => {
+  const { hanzis, mode, characterMode } = req.body as {
+    hanzis: string[];
+    mode: PracticeMode;
+    characterMode: boolean;
+  };
+  if (!Array.isArray(hanzis) || hanzis.length === 0) {
+    return res.status(400).json({ error: 'hanzis array is required' });
+  }
+  if (!mode || !['hanzi2pinyin', 'english2hanzi', 'english2pinyin'].includes(mode)) {
+    return res.status(400).json({ error: 'Valid mode is required' });
+  }
+  for (const hanzi of hanzis) {
+    if (characterMode) {
+      setCharQueuedAt(hanzi);
+    } else {
+      setQueuedAt(hanzi);
+      for (const char of hanzi) {
+        if (getWordByHanzi(char)) {
+          setCharQueuedAt(char);
+        }
+      }
+    }
+    upsertProgress(hanzi, mode, 0, calculateNextEligible(0), characterMode);
   }
   saveDb();
   res.json({ ok: true });

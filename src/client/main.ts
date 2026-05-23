@@ -30,6 +30,7 @@ import {
   getCategories,
   getStats,
   getWordCount,
+  learnNow,
   lookupHanzi,
   makeProgressCharOnly,
   previewNewWords,
@@ -157,6 +158,7 @@ function showView(view: 'practice' | 'search' | 'add-word', push = true) {
 
   if (view === 'practice') {
     lastPracticeScreen.classList.add('active');
+    reloadStats();
   } else if (view === 'search') {
     searchScreen.classList.add('active');
     searchHanziInput.focus();
@@ -236,6 +238,18 @@ function updateSearchUrl(): void {
 window.addEventListener('popstate', () => {
   const view = viewFromPath();
   showView(view, false);
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentView === 'practice') {
+    reloadStats();
+  }
+});
+
+window.addEventListener('focus', () => {
+  if (currentView === 'practice') {
+    reloadStats();
+  }
 });
 
 navItems.forEach((item) => {
@@ -544,7 +558,8 @@ async function loadStats() {
   }
 }
 
-const BUCKET_LABELS = ['now', '5m', '30m', '4h', '1d', '3d', '7d', '14d', '30d'];
+const BUCKET_LABELS = ['now', '5m', '30m', '4h', '1d', '3d', '7d', '14d', '30d', '60d'];
+const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function makeBucketTimings(s: Stats): string {
   return s.buckets.map((_, i) => `<span class="bucket-timing">${BUCKET_LABELS[i] ?? ''}</span>`).join('');
@@ -558,15 +573,39 @@ function makeBucketBar(s: Stats): string {
   }).join('');
 }
 
+function makeForecastTimings(): string {
+  const today = new Date();
+  const labels: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    labels.push(i === 0 ? 'today' : WEEKDAY_LABELS[d.getDay()]);
+  }
+  return labels.map((l) => `<span class="bucket-timing">${l}</span>`).join('');
+}
+
+function makeForecastBar(s: Stats): string {
+  const today = new Date();
+  return (s.dueByDay ?? []).map((count, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + i);
+    const dayLabel = i === 0 ? 'today' : d.toDateString();
+    const cls = count > 0 ? 'bucket-count forecast-count' : 'bucket-count forecast-count forecast-empty';
+    return `<span class="${cls}" title="${dayLabel}: ${count} due">${count}</span>`;
+  }).join('');
+}
+
 function updateStatsInPlace(stats: Stats[]): void {
   for (const s of stats) {
     const card = statsDiv.querySelector(`.mode-card[data-key="${modeKey(s.mode, s.characterMode)}"]`);
     if (!card) {
       return;
     }
-    card.querySelector('.mode-card-stats')!.textContent = `${s.learned} learned, ${s.mastered} mastered`;
+    card.querySelector('.mode-card-stats')!.textContent = `${s.learned} learned`;
     card.querySelector('.bucket-timings')!.innerHTML = makeBucketTimings(s);
     card.querySelector('.bucket-bar')!.innerHTML = makeBucketBar(s);
+    card.querySelector('.forecast-timings')!.innerHTML = makeForecastTimings();
+    card.querySelector('.forecast-bar')!.innerHTML = makeForecastBar(s);
     const dueBtn = card.querySelector('.due-mode-btn') as HTMLButtonElement;
     dueBtn.textContent = `${s.dueForReview} due`;
     dueBtn.disabled = s.dueForReview === 0;
@@ -600,11 +639,13 @@ async function renderStats(stats: Stats[]) {
       const cardKey = modeKey(s.mode, cm);
       const bucketTimings = makeBucketTimings(s);
       const bucketBar = makeBucketBar(s);
+      const forecastTimings = makeForecastTimings();
+      const forecastBar = makeForecastBar(s);
       const filtered = selectedCategories.size > 0 ? ' filtered' : '';
       const dueBtn = `<button class="due-mode-btn${filtered}" data-mode="${s.mode}" data-charmode="${cm}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
       const previewBtn = `<button class="mode-preview-btn${filtered}${previewMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" ${s.newWordsCount === 0 ? 'disabled' : ''}>${s.newWordsCount} new</button>`;
       const browseBtn = `<button class="mode-browse-btn${browseMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}">Browse</button>`;
-      const presets = [5, 10, 20, 30, 50];
+      const presets = [10, 20, 30, 40, 50];
       const reviewCount = getModeWordCount(s.mode, cm, 'review');
       const randomCount = getModeWordCount(s.mode, cm, 'random');
       const actionRow = (sel: string, btnClass: string, label: string, count: number, extra = '') => {
@@ -625,10 +666,13 @@ async function renderStats(stats: Stats[]) {
       <div class="mode-card${collapsed ? ' collapsed' : ''}" data-mode="${s.mode}" data-charmode="${cm}" data-key="${cardKey}">
         <div class="mode-card-header">
           <strong>${label}</strong>
-          <span class="mode-card-stats">${s.learned} learned, ${s.mastered} mastered</span>
+          <span class="mode-card-stats">${s.learned} learned</span>
         </div>
         <div class="mode-card-body">
           <div class="mode-card-body-inner">
+          <div class="forecast-label">Due in next 7 days</div>
+          <div class="bucket-timings forecast-timings">${forecastTimings}</div>
+          <div class="bucket-bar forecast-bar">${forecastBar}</div>
           <div class="bucket-timings">${bucketTimings}</div>
           <div class="bucket-bar">${bucketBar}</div>
           <div class="mode-card-actions-pair">
@@ -1719,8 +1763,37 @@ document.addEventListener('keydown', (e) => {
 });
 
 
+// Pagination helpers shared by preview/browse
+function paginationHtml(offset: number, count: number, total: number): string {
+  const pageStart = offset + 1;
+  const pageEnd = offset + count;
+  const hasPrev = offset > 0;
+  const hasNext = pageEnd < total;
+  const pageSizeOpts = PAGE_SIZE_OPTIONS.map((n) =>
+    `<option value="${n}"${n === pageSize ? ' selected' : ''}>${n} per page</option>`
+  ).join('');
+  return `<div class="preview-pagination">` +
+    `<button class="pagination-prev secondary-btn" ${hasPrev ? '' : 'disabled'}>Prev</button>` +
+    `<span class="preview-page-info">${pageStart}–${pageEnd} of ${total}</span>` +
+    `<button class="pagination-next secondary-btn" ${hasNext ? '' : 'disabled'}>Next</button>` +
+    `<select class="page-size-select">${pageSizeOpts}</select>` +
+    `</div>`;
+}
+
+function bindPagination(section: Element, onPrev: () => void, onNext: () => void, onPageSize: (size: number) => void): void {
+  section.querySelectorAll('.pagination-prev').forEach((b) => b.addEventListener('click', () => onPrev()));
+  section.querySelectorAll('.pagination-next').forEach((b) => b.addEventListener('click', () => onNext()));
+  section.querySelectorAll('.page-size-select').forEach((sel) => {
+    sel.addEventListener('change', () => onPageSize(parseInt((sel as HTMLSelectElement).value, 10)));
+  });
+}
+
 // Preview new words
-const PREVIEW_PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+let pageSize: number = (() => {
+  const stored = parseInt(localStorage.getItem('pageSize') ?? '20', 10);
+  return (PAGE_SIZE_OPTIONS as readonly number[]).includes(stored) ? stored : 20;
+})();
 let previewSelected = new Set<string>();
 let previewOffset = 0;
 let previewTotal = 0;
@@ -1736,11 +1809,17 @@ let browseMode: string | null = null;
 function updatePracticeSelectedBtn() {
   const section = getPreviewSection();
   if (!section) return;
-  const btn = section.querySelector('.practice-selected-btn') as HTMLButtonElement | null;
-  if (!btn) return;
   const count = previewSelected.size;
-  btn.disabled = count === 0;
-  btn.textContent = count === 0 ? 'Practice selected' : `Practice ${count} selected`;
+  const practiceBtn = section.querySelector('.practice-selected-btn') as HTMLButtonElement | null;
+  if (practiceBtn) {
+    practiceBtn.disabled = count === 0;
+    practiceBtn.textContent = count === 0 ? 'Practice selected' : `Practice ${count} selected`;
+  }
+  const learnBtn = section.querySelector('.preview-learn-now-btn') as HTMLButtonElement | null;
+  if (learnBtn) {
+    learnBtn.disabled = count === 0;
+    learnBtn.textContent = count === 0 ? 'Mark as known' : `Mark ${count} as known`;
+  }
 }
 
 function getPreviewSection(): HTMLElement | null {
@@ -1772,7 +1851,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       currentMode,
       getSelectedCategories(),
       characterMode,
-      PREVIEW_PAGE_SIZE,
+      pageSize,
       offset,
       previewReverse
     );
@@ -1792,23 +1871,14 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       return;
     }
 
-    const pageStart = offset + 1;
-    const pageEnd = offset + words.length;
-    const hasPrev = offset > 0;
-    const hasNext = offset + words.length < total;
-
-    const paginationHtml = `<div class="preview-pagination">` +
-      `<button class="preview-prev secondary-btn" ${hasPrev ? '' : 'disabled'}>Prev</button>` +
-      `<span class="preview-page-info">${pageStart}–${pageEnd} of ${total}</span>` +
-      `<button class="preview-next secondary-btn" ${hasNext ? '' : 'disabled'}>Next</button>` +
-      `</div>`;
-
+    const pagerHtml = paginationHtml(offset, words.length, total);
     const reverseHtml = `<div class="preview-sort-toggle" role="group" aria-label="Sort order">
       <button class="preview-sort-opt${previewReverse ? '' : ' active'}" data-order="oldest">Oldest first</button>
       <button class="preview-sort-opt${previewReverse ? ' active' : ''}" data-order="newest">Newest first</button>
     </div>`;
     section.innerHTML =
-      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label>${selectLearnedHtml}${reverseHtml}<button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
+      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label>${selectLearnedHtml}${reverseHtml}<button class="preview-learn-now-btn primary-btn" disabled>Mark as known</button><button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
+      pagerHtml +
       words
         .map((w) => {
           const ranks = [
@@ -1827,7 +1897,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
           return `<label class="preview-word"><input type="checkbox" class="preview-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${rankSpan}${cats}${resetTag}</label>`;
         })
         .join('') +
-      paginationHtml;
+      pagerHtml;
 
     // Checkbox handlers
     const pageHanzis = words.map((w) => w.hanzi);
@@ -1850,23 +1920,34 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     });
 
     // Select all handler
-    selectAllCb.addEventListener('change', (e) => {
+    selectAllCb.addEventListener('change', async (e) => {
       const checked = (e.target as HTMLInputElement).checked;
-      section.querySelectorAll('.preview-checkbox').forEach((cb) => {
-        const input = cb as HTMLInputElement;
-        input.checked = checked;
-        if (checked) {
-          previewSelected.add(input.dataset.hanzi!);
-        } else {
-          previewSelected.delete(input.dataset.hanzi!);
-        }
-      });
+      if (checked) {
+        const { words: allWords } = await previewNewWords(currentMode, getSelectedCategories(), characterMode, previewTotal, 0, previewReverse);
+        allWords.forEach((w) => previewSelected.add(w.hanzi));
+        section.querySelectorAll('.preview-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = true; });
+      } else {
+        previewSelected.clear();
+        section.querySelectorAll('.preview-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = false; });
+      }
       updatePracticeSelectedBtn();
     });
 
     // Practice selected handler
     section.querySelector('.practice-selected-btn')!.addEventListener('click', () => {
       handleStart([...previewSelected]);
+    });
+
+    // Learn now handler (adds selected words directly to bucket 0)
+    section.querySelector('.preview-learn-now-btn')!.addEventListener('click', async () => {
+      const hanzis = [...previewSelected];
+      if (hanzis.length === 0) {
+        return;
+      }
+      await learnNow(hanzis, currentMode, characterMode);
+      previewSelected.clear();
+      await loadPreviewPage(previewOffset);
+      reloadStats();
     });
 
     // Dismiss (clear reset priority) handlers
@@ -1880,13 +1961,12 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       });
     });
 
-    // Pagination handlers
-    section.querySelector('.preview-prev')!.addEventListener('click', () => {
-      loadPreviewPage(Math.max(0, previewOffset - PREVIEW_PAGE_SIZE));
-    });
-    section.querySelector('.preview-next')!.addEventListener('click', () => {
-      loadPreviewPage(previewOffset + PREVIEW_PAGE_SIZE);
-    });
+    bindPagination(
+      section,
+      () => loadPreviewPage(Math.max(0, previewOffset - pageSize)),
+      () => loadPreviewPage(previewOffset + pageSize),
+      (size) => { pageSize = size; localStorage.setItem('pageSize', String(size)); loadPreviewPage(0); },
+    );
 
     // Order toggle (segmented)
     section.querySelectorAll('.preview-sort-opt').forEach((btn) => {
@@ -1904,19 +1984,17 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     // Select learned elsewhere handler
     const selectLearnedCb = section.querySelector('.select-learned-cb') as HTMLInputElement | null;
     if (selectLearnedCb) {
-      selectLearnedCb.checked = pageHanzis.filter((h) => learnedSet.has(h)).every((h) => previewSelected.has(h));
+      selectLearnedCb.checked = learnedElsewhere.length > 0 && learnedElsewhere.every((h) => previewSelected.has(h));
       selectLearnedCb.addEventListener('change', () => {
         const checked = selectLearnedCb.checked;
+        if (checked) {
+          learnedElsewhere.forEach((h) => previewSelected.add(h));
+        } else {
+          learnedElsewhere.forEach((h) => previewSelected.delete(h));
+        }
         section.querySelectorAll('.preview-checkbox').forEach((cb) => {
           const input = cb as HTMLInputElement;
-          if (learnedSet.has(input.dataset.hanzi!)) {
-            input.checked = checked;
-            if (checked) {
-              previewSelected.add(input.dataset.hanzi!);
-            } else {
-              previewSelected.delete(input.dataset.hanzi!);
-            }
-          }
+          input.checked = previewSelected.has(input.dataset.hanzi!);
         });
         selectAllCb.checked = pageHanzis.every((h) => previewSelected.has(h));
         updatePracticeSelectedBtn();
@@ -1960,6 +2038,7 @@ function updateBrowseActionBtns() {
   const count = browseSelected.size;
   const practiceBtn = section.querySelector('.browse-practice-btn') as HTMLButtonElement | null;
   const queueBtn = section.querySelector('.browse-queue-btn') as HTMLButtonElement | null;
+  const learnBtn = section.querySelector('.browse-learn-now-btn') as HTMLButtonElement | null;
   if (practiceBtn) {
     practiceBtn.disabled = count === 0;
     practiceBtn.textContent = count === 0 ? 'Practice selected' : `Practice ${count} selected`;
@@ -1967,6 +2046,10 @@ function updateBrowseActionBtns() {
   if (queueBtn) {
     queueBtn.disabled = count === 0;
     queueBtn.textContent = count === 0 ? 'Queue selected' : `Queue ${count} selected`;
+  }
+  if (learnBtn) {
+    learnBtn.disabled = count === 0;
+    learnBtn.textContent = count === 0 ? 'Mark as known' : `Mark ${count} as known`;
   }
 }
 
@@ -1983,7 +2066,7 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
       currentMode,
       getSelectedCategories(),
       characterMode,
-      PREVIEW_PAGE_SIZE,
+      pageSize,
       offset
     );
     browseTotal = total;
@@ -1994,21 +2077,14 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
       return;
     }
 
-    const pageStart = offset + 1;
-    const pageEnd = offset + words.length;
-    const hasPrev = offset > 0;
-    const hasNext = offset + words.length < total;
-
-    const paginationHtml = `<div class="preview-pagination">` +
-      `<button class="browse-prev secondary-btn" ${hasPrev ? '' : 'disabled'}>Prev</button>` +
-      `<span class="preview-page-info">${pageStart}–${pageEnd} of ${total}</span>` +
-      `<button class="browse-next secondary-btn" ${hasNext ? '' : 'disabled'}>Next</button>` +
-      `</div>`;
+    const pagerHtml = paginationHtml(offset, words.length, total);
 
     section.innerHTML =
       `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="browse-select-all-cb"> Select all</label>` +
       `<div class="browse-action-btns"><button class="browse-queue-btn primary-btn" disabled>Queue selected</button>` +
+      `<button class="browse-learn-now-btn primary-btn" disabled>Mark as known</button>` +
       `<button class="browse-practice-btn primary-btn" disabled>Practice selected</button></div></div>` +
+      pagerHtml +
       words.map((w) => {
         const ranks = [
           w.wordFrequencyRank != null ? `word #${w.wordFrequencyRank}` : null,
@@ -2021,7 +2097,7 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
         const checked = browseSelected.has(w.hanzi) ? 'checked' : '';
         return `<label class="preview-word"><input type="checkbox" class="browse-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${rankSpan}${cats}</label>`;
       }).join('') +
-      paginationHtml;
+      pagerHtml;
 
     const pageHanzis = words.map((w) => w.hanzi);
     const selectAllCb = section.querySelector('.browse-select-all-cb') as HTMLInputElement;
@@ -2041,17 +2117,16 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
       });
     });
 
-    selectAllCb.addEventListener('change', (e) => {
+    selectAllCb.addEventListener('change', async (e) => {
       const checked = (e.target as HTMLInputElement).checked;
-      section.querySelectorAll('.browse-checkbox').forEach((cb) => {
-        const input = cb as HTMLInputElement;
-        input.checked = checked;
-        if (checked) {
-          browseSelected.add(input.dataset.hanzi!);
-        } else {
-          browseSelected.delete(input.dataset.hanzi!);
-        }
-      });
+      if (checked) {
+        const { words: allWords } = await browseUnqueuedWords(currentMode, getSelectedCategories(), characterMode, browseTotal, 0);
+        allWords.forEach((w) => browseSelected.add(w.hanzi));
+        section.querySelectorAll('.browse-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = true; });
+      } else {
+        browseSelected.clear();
+        section.querySelectorAll('.browse-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = false; });
+      }
       updateBrowseActionBtns();
     });
 
@@ -2069,12 +2144,23 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
       reloadStats();
     });
 
-    section.querySelector('.browse-prev')!.addEventListener('click', () => {
-      loadBrowsePage(Math.max(0, browseOffset - PREVIEW_PAGE_SIZE));
+    section.querySelector('.browse-learn-now-btn')!.addEventListener('click', async () => {
+      const hanzis = [...browseSelected];
+      if (hanzis.length === 0) {
+        return;
+      }
+      await learnNow(hanzis, currentMode, characterMode);
+      browseSelected.clear();
+      loadBrowsePage(browseOffset);
+      reloadStats();
     });
-    section.querySelector('.browse-next')!.addEventListener('click', () => {
-      loadBrowsePage(browseOffset + PREVIEW_PAGE_SIZE);
-    });
+
+    bindPagination(
+      section,
+      () => loadBrowsePage(Math.max(0, browseOffset - pageSize)),
+      () => loadBrowsePage(browseOffset + pageSize),
+      (size) => { pageSize = size; localStorage.setItem('pageSize', String(size)); loadBrowsePage(0); },
+    );
 
     updateBrowseActionBtns();
     section.classList.remove('hidden');
