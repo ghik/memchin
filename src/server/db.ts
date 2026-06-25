@@ -91,6 +91,10 @@ export async function initDb(): Promise<void> {
     db.run('ALTER TABLE words ADD COLUMN mandarinspot_translation TEXT');
   }
 
+  if (!columns.includes('polish')) {
+    db.run('ALTER TABLE words ADD COLUMN polish TEXT');
+  }
+
   // Clear char_queued_at for any chars that have already been practiced (cleanup for bad migrations)
   db.run(`
     UPDATE words SET char_queued_at = NULL
@@ -204,6 +208,7 @@ export interface WordToInsert {
   hanzi: string;
   pinyin: string;
   english: string[];
+  polish?: string[];
   hskLevel: number;
   wordFrequencyRank?: number;
   hanziFrequencyRank?: number;
@@ -217,8 +222,8 @@ export function insertWords(words: WordToInsert[]): void {
   for (const word of words) {
     db.run(
       `
-          INSERT INTO words (hanzi, pinyin, english, hsk_level, examples, translatable, rank, hanzi_rank, categories, manual)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO words (hanzi, pinyin, english, polish, hsk_level, examples, translatable, rank, hanzi_rank, categories, manual)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(hanzi) DO UPDATE SET
             pinyin = excluded.pinyin,
             english = excluded.english,
@@ -234,6 +239,7 @@ export function insertWords(words: WordToInsert[]): void {
         word.hanzi,
         word.pinyin,
         JSON.stringify(word.english),
+        JSON.stringify(word.polish ?? []),
         word.hskLevel,
         JSON.stringify(word.examples),
         word.translatable ? 1 : 0,
@@ -251,11 +257,13 @@ export function updateWord(
   hanzi: string,
   pinyin: string,
   english: string[],
+  polish: string[],
   categories: string[]
 ): void {
-  db.run('UPDATE words SET pinyin = ?, english = ?, categories = ? WHERE hanzi = ?', [
+  db.run('UPDATE words SET pinyin = ?, english = ?, polish = ?, categories = ? WHERE hanzi = ?', [
     pinyin,
     JSON.stringify(english),
+    JSON.stringify(polish),
     JSON.stringify(categories),
     hanzi,
   ]);
@@ -355,6 +363,20 @@ export function setAllProgressCharacterOnly(hanzi: string): number {
   return changes;
 }
 
+/**
+ * Inverse of setAllProgressCharacterOnly: clear the character-mode-only flag
+ * so existing char-mode progress also counts as word-mode progress.
+ */
+export function setAllProgressWordMode(hanzi: string): number {
+  db.run(
+    'UPDATE progress SET character_mode_only = 0 WHERE hanzi = ? AND character_mode_only = 1',
+    [hanzi]
+  );
+  const changes = db.getRowsModified();
+  saveDb();
+  return changes;
+}
+
 export function resetProgressBucket(hanzi: string, mode: string, toCharacterModeOnly = false): void {
   if (toCharacterModeOnly) {
     db.run(
@@ -408,6 +430,7 @@ interface WordFilters {
 function getWordFilters(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean
 ): WordFilters {
   const wordParts: string[] = [];
@@ -419,6 +442,12 @@ function getWordFilters(
   if (categories.length > 0) {
     wordParts.push(
       `AND EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${categories.map(() => '?').join(',')}))`
+    );
+  }
+
+  if (excludedCategories.length > 0) {
+    wordParts.push(
+      `AND NOT EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${excludedCategories.map(() => '?').join(',')}))`
     );
   }
 
@@ -463,12 +492,13 @@ function queryWords(sql: string, params: any[]): Word[] {
 function queryReviewWords(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean,
   count: number,
   dueOnly: boolean,
   random: boolean
 ): Word[] {
-  const f = getWordFilters(mode, categories, characterMode);
+  const f = getWordFilters(mode, categories, excludedCategories, characterMode);
   const dueFilter = dueOnly ? "AND p.next_eligible <= datetime('now')" : '';
   const orderBy = random ? 'RANDOM()' : 'p.next_eligible ASC';
   return queryWords(
@@ -477,19 +507,20 @@ function queryReviewWords(
       WHERE p.mode = ? AND p.bucket IS NOT NULL ${dueFilter} ${f.wordFilter}
       ORDER BY ${orderBy} LIMIT ?
   `,
-    [mode, ...categories, count]
+    [mode, ...categories, ...excludedCategories, count]
   );
 }
 
 function queryNewWords(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean,
   count: number,
   offset: number = 0,
   reverse: boolean = false
 ): Word[] {
-  const f = getWordFilters(mode, categories, characterMode);
+  const f = getWordFilters(mode, categories, excludedCategories, characterMode);
   const direction = reverse ? 'DESC' : 'ASC';
   return queryWords(
     `
@@ -498,7 +529,7 @@ function queryNewWords(
       AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)
       ORDER BY ${f.queueColumn} ${direction} LIMIT ? OFFSET ?
   `,
-    [...categories, mode, count, offset]
+    [...categories, ...excludedCategories, mode, count, offset]
   );
 }
 
@@ -506,31 +537,34 @@ export function getWordsForReview(
   mode: PracticeMode,
   count: number,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean,
   random: boolean
 ): Word[] {
-  return queryReviewWords(mode, categories, characterMode, count, false, random);
+  return queryReviewWords(mode, categories, excludedCategories, characterMode, count, false, random);
 }
 
 export function getNewWords(
   mode: PracticeMode,
   count: number,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean,
   offset: number = 0,
   reverse: boolean = false
 ): Word[] {
-  return queryNewWords(mode, categories, characterMode, count, offset, reverse);
+  return queryNewWords(mode, categories, excludedCategories, characterMode, count, offset, reverse);
 }
 
 export function getUnqueuedWords(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean,
   count: number,
   offset: number = 0
 ): Word[] {
-  const f = getWordFilters(mode, categories, characterMode);
+  const f = getWordFilters(mode, categories, excludedCategories, characterMode);
   const rankCol = characterMode ? 'w.hanzi_rank' : 'w.rank';
   return queryWords(
     `
@@ -539,23 +573,24 @@ export function getUnqueuedWords(
       AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)
       ORDER BY CASE WHEN ${rankCol} IS NULL THEN 1 ELSE 0 END, ${rankCol} ASC LIMIT ? OFFSET ?
     `,
-    [...categories, mode, count, offset]
+    [...categories, ...excludedCategories, mode, count, offset]
   );
 }
 
 export function getUnqueuedWordsCount(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean
 ): number {
-  const f = getWordFilters(mode, categories, characterMode);
+  const f = getWordFilters(mode, categories, excludedCategories, characterMode);
   return queryCount(
     `
       SELECT COUNT(*) as cnt FROM words w
       WHERE ${f.queueColumn} IS NULL ${f.wordFilter}
       AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)
     `,
-    [...categories, mode]
+    [...categories, ...excludedCategories, mode]
   );
 }
 
@@ -567,9 +602,10 @@ export function getUnqueuedWordsCount(
 export function getLearnedElsewhere(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean
 ): string[] {
-  const f = getWordFilters(mode, categories, characterMode);
+  const f = getWordFilters(mode, categories, excludedCategories, characterMode);
   // Base: queued as new, not yet learned in current mode
   const base = `${f.queueColumn} IS NOT NULL ${f.wordFilter}
     AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)`;
@@ -584,7 +620,7 @@ export function getLearnedElsewhere(
          WHERE p2.bucket IS NOT NULL AND p2.character_mode_only = 0
          AND INSTR(w2.hanzi, w.hanzi) > 0
        )`,
-      [...categories, mode],
+      [...categories, ...excludedCategories, mode],
       (row) => row.hanzi as string
     );
   }
@@ -595,7 +631,7 @@ export function getLearnedElsewhere(
      AND EXISTS (
        SELECT 1 FROM progress p2 WHERE p2.hanzi = w.hanzi AND p2.mode != ? AND p2.bucket IS NOT NULL
      )`,
-    [...categories, mode, mode],
+    [...categories, ...excludedCategories, mode, mode],
     (row) => row.hanzi as string
   );
 }
@@ -603,13 +639,14 @@ export function getLearnedElsewhere(
 export function getNewWordsCount(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean
 ): number {
-  const f = getWordFilters(mode, categories, characterMode);
+  const f = getWordFilters(mode, categories, excludedCategories, characterMode);
   return queryCount(
     `SELECT COUNT(*) as cnt FROM words w WHERE ${f.queueColumn} IS NOT NULL ${f.wordFilter}
      AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = w.hanzi AND p.mode = ? AND p.bucket IS NOT NULL)`,
-    [...categories, mode]
+    [...categories, ...excludedCategories, mode]
   );
 }
 
@@ -617,6 +654,7 @@ export function getNewWordsCount(
 export function getStats(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean
 ): {
   totalWords: number;
@@ -626,13 +664,13 @@ export function getStats(
   dueBuckets: number[];
   dueByDay: number[];
 } {
-  const f = getWordFilters(mode, categories, characterMode);
+  const f = getWordFilters(mode, categories, excludedCategories, characterMode);
   const baseJoin = `FROM words w JOIN progress p ON w.hanzi = p.hanzi WHERE p.mode = ? AND p.bucket IS NOT NULL ${f.wordFilter}`;
-  const baseParams = [mode, ...categories];
+  const baseParams = [mode, ...categories, ...excludedCategories];
 
   const totalWords = queryCount(
     `SELECT COUNT(*) as cnt FROM words w WHERE 1=1 ${f.wordFilter}`,
-    categories
+    [...categories, ...excludedCategories]
   );
   const learned = queryCount(`SELECT COUNT(*) as cnt ${baseJoin}`, baseParams);
   const dueForReview = queryCount(
@@ -682,14 +720,15 @@ export function getStats(
 export function getDueCount(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean
 ): number {
-  const f = getWordFilters(mode, categories, characterMode);
+  const f = getWordFilters(mode, categories, excludedCategories, characterMode);
   return queryCount(
     `
       SELECT COUNT(*) as cnt FROM words w JOIN progress p ON w.hanzi = p.hanzi
       WHERE p.mode = ? AND p.next_eligible <= datetime('now') ${f.wordFilter}   `,
-    [mode, ...categories]
+    [mode, ...categories, ...excludedCategories]
   );
 }
 
@@ -889,6 +928,7 @@ function rowToWord(row: any): Word {
     hanzi: row.hanzi,
     pinyin: (row.pinyin as string).toLowerCase(),
     english: JSON.parse(row.english),
+    polish: row.polish ? JSON.parse(row.polish) : [],
     hskLevel: row.hsk_level,
     wordFrequencyRank: row.rank ?? undefined,
     hanziFrequencyRank: row.hanzi_rank ?? undefined,

@@ -80,6 +80,7 @@ export function startPractice(
   mode: PracticeMode,
   wordSelection: string,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean,
   hanziList?: string[]
 ): Promise<StartResponse> {
@@ -88,6 +89,7 @@ export function startPractice(
     mode,
     wordSelection,
     categories,
+    excludedCategories,
     characterMode,
     hanziList,
   });
@@ -109,9 +111,10 @@ export function completePractice(
   return apiPost('/practice/complete', { mode, results, characterMode });
 }
 
-export function getStats(categories: string[]): Promise<Stats[]> {
+export function getStats(categories: string[], excludedCategories: string[]): Promise<Stats[]> {
   const params = new URLSearchParams();
   if (categories.length > 0) params.set('categories', categories.join(','));
+  if (excludedCategories.length > 0) params.set('excludedCategories', excludedCategories.join(','));
   return apiGet(`/practice/stats?${params}`);
 }
 
@@ -122,10 +125,12 @@ export function addHanziSynonym(hanzi: string, synonymHanzi: string): Promise<vo
 export async function getDueCount(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean
 ): Promise<number> {
   const params = new URLSearchParams({ mode, characterMode: String(characterMode) });
   if (categories.length > 0) params.set('categories', categories.join(','));
+  if (excludedCategories.length > 0) params.set('excludedCategories', excludedCategories.join(','));
   const data = await apiGet<{ count: number }>(`/practice/due-count?${params}`);
   return data.count;
 }
@@ -133,6 +138,7 @@ export async function getDueCount(
 export function previewNewWords(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean,
   limit: number,
   offset: number,
@@ -145,6 +151,7 @@ export function previewNewWords(
     characterMode: String(characterMode),
   });
   if (categories.length > 0) params.set('categories', categories.join(','));
+  if (excludedCategories.length > 0) params.set('excludedCategories', excludedCategories.join(','));
   if (reverse) params.set('reverse', 'true');
   return apiGet(`/practice/preview?${params}`);
 }
@@ -156,6 +163,7 @@ export function clearWordQueued(hanzi: string, characterMode: boolean): Promise<
 export function browseUnqueuedWords(
   mode: PracticeMode,
   categories: string[],
+  excludedCategories: string[],
   characterMode: boolean,
   limit: number,
   offset: number
@@ -167,6 +175,7 @@ export function browseUnqueuedWords(
     characterMode: String(characterMode),
   });
   if (categories.length > 0) params.set('categories', categories.join(','));
+  if (excludedCategories.length > 0) params.set('excludedCategories', excludedCategories.join(','));
   return apiGet(`/practice/unqueued?${params}`);
 }
 
@@ -195,12 +204,14 @@ export function updateWord(
   hanzi: string,
   pinyin: string,
   english: string[],
+  polish: string[],
   categories: string[],
   queueAsNew: boolean
 ): Promise<Word> {
   return apiPut(`/words/${encodeURIComponent(hanzi)}`, {
     pinyin,
     english,
+    polish,
     categories,
     queueAsNew,
   });
@@ -216,14 +227,19 @@ export function addWord(
   hanzi: string,
   pinyin: string,
   english: string[],
+  polish: string[],
   categories: string[],
   queueAsNew: boolean
 ): Promise<Word> {
-  return apiPost('/words', { hanzi, pinyin, english, categories, queueAsNew });
+  return apiPost('/words', { hanzi, pinyin, english, polish, categories, queueAsNew });
 }
 
 export function makeProgressCharOnly(hanzi: string): Promise<{ ok: boolean; changed: number }> {
   return apiPost(`/words/${encodeURIComponent(hanzi)}/make-char-only`, {});
+}
+
+export function makeProgressWordMode(hanzi: string): Promise<{ ok: boolean; changed: number }> {
+  return apiPost(`/words/${encodeURIComponent(hanzi)}/make-word-mode`, {});
 }
 
 export function regenerateAudio(hanzi: string): Promise<Word> {

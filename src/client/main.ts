@@ -33,6 +33,7 @@ import {
   learnNow,
   lookupHanzi,
   makeProgressCharOnly,
+  makeProgressWordMode,
   previewNewWords,
   queueWords,
   regenerateAudio,
@@ -74,6 +75,7 @@ const cancelEditBtn = document.getElementById('cancel-edit-btn') as HTMLButtonEl
 const regenAudioBtn = document.getElementById('regen-audio-btn') as HTMLButtonElement;
 const regenExamplesBtn = document.getElementById('regen-examples-btn') as HTMLButtonElement;
 const makeCharOnlyBtn = document.getElementById('make-char-only-btn') as HTMLButtonElement;
+const makeWordModeBtn = document.getElementById('make-word-mode-btn') as HTMLButtonElement;
 const resetProgressBtn = document.getElementById('reset-progress-btn') as HTMLButtonElement;
 const editOnlyBtns: HTMLButtonElement[] = [
   cancelEditBtn,
@@ -81,6 +83,7 @@ const editOnlyBtns: HTMLButtonElement[] = [
   regenAudioBtn,
   regenExamplesBtn,
   makeCharOnlyBtn,
+  makeWordModeBtn,
 ];
 
 function setEditOnlyButtonsVisible(visible: boolean): void {
@@ -95,6 +98,7 @@ function setEditOnlyButtonsVisible(visible: boolean): void {
 function setProgressActionsEnabled(hasProgress: boolean, isSingleChar: boolean): void {
   resetProgressBtn.disabled = !hasProgress;
   makeCharOnlyBtn.disabled = !hasProgress || !isSingleChar;
+  makeWordModeBtn.disabled = !hasProgress || !isSingleChar;
 }
 
 function isSingleHanzi(s: string): boolean {
@@ -109,7 +113,9 @@ const restartBtn = document.getElementById('restart-btn')!;
 const categoryList = document.getElementById('category-list')!;
 const categorySelected = document.getElementById('category-selected')!;
 const categorySearch = document.getElementById('category-search') as HTMLInputElement;
-const autoplayCheckbox = document.getElementById('autoplay-audio') as HTMLInputElement;
+const muteCheckbox = document.getElementById('mute-checkbox') as HTMLInputElement;
+const audioVolumeInput = document.getElementById('audio-volume') as HTMLInputElement;
+const audioVolumeValue = document.getElementById('audio-volume-value')!;
 
 // Dark mode toggle
 const themeCheckbox = document.getElementById('theme-checkbox') as HTMLInputElement;
@@ -265,10 +271,27 @@ navItems.forEach((item) => {
 });
 
 // Load preferences from localStorage
-autoplayCheckbox.checked = localStorage.getItem('autoplayAudio') !== 'false';
-autoplayCheckbox.addEventListener('change', () => {
-  localStorage.setItem('autoplayAudio', String(autoplayCheckbox.checked));
+muteCheckbox.checked = localStorage.getItem('audioMuted') === 'true';
+muteCheckbox.addEventListener('change', () => {
+  localStorage.setItem('audioMuted', String(muteCheckbox.checked));
 });
+
+let audioVolume = (() => {
+  const stored = parseInt(localStorage.getItem('audioVolume') ?? '100', 10);
+  return Number.isFinite(stored) ? Math.min(100, Math.max(0, stored)) : 100;
+})();
+audioVolumeInput.value = String(audioVolume);
+audioVolumeValue.textContent = `${audioVolume}%`;
+audioVolumeInput.addEventListener('input', () => {
+  audioVolume = parseInt(audioVolumeInput.value, 10);
+  audioVolumeValue.textContent = `${audioVolume}%`;
+  localStorage.setItem('audioVolume', String(audioVolume));
+  if (muteCheckbox.checked) {
+    muteCheckbox.checked = false;
+    localStorage.setItem('audioMuted', 'false');
+  }
+});
+
 categorySearch.addEventListener('input', filterCategoryList);
 const ALL_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2pinyin', 'english2hanzi'];
 
@@ -470,20 +493,68 @@ const savedCategories = localStorage.getItem('selectedCategories');
 let selectedCategories: Set<string> = savedCategories
   ? new Set(JSON.parse(savedCategories))
   : new Set();
+const savedExcludedCategories = localStorage.getItem('excludedCategories');
+let excludedCategories: Set<string> = savedExcludedCategories
+  ? new Set(JSON.parse(savedExcludedCategories))
+  : new Set();
+
+function persistCategoryFilters(): void {
+  localStorage.setItem('selectedCategories', JSON.stringify([...selectedCategories]));
+  localStorage.setItem('excludedCategories', JSON.stringify([...excludedCategories]));
+}
+
+function hasCategoryFilter(): boolean {
+  return selectedCategories.size > 0 || excludedCategories.size > 0;
+}
 
 function toggleCategory(cat: string, checked: boolean) {
   if (checked) {
     selectedCategories.add(cat);
+    excludedCategories.delete(cat);
   } else {
     selectedCategories.delete(cat);
   }
-  localStorage.setItem('selectedCategories', JSON.stringify([...selectedCategories]));
+  persistCategoryFilters();
+  refreshCategoryItemStates();
   sortCategoryList();
   // Filter change can shrink the result set — drop back to page 0 so we don't
   // land past the new last page.
   browseOffset = 0;
   previewOffset = 0;
   reloadStats();
+}
+
+function excludeCategory(cat: string): void {
+  if (excludedCategories.has(cat)) {
+    excludedCategories.delete(cat);
+  } else {
+    excludedCategories.add(cat);
+    if (selectedCategories.delete(cat)) {
+      // Reflect the unchecked state in the master list checkbox.
+      const cb = categoryList.querySelector<HTMLInputElement>(
+        `input[type="checkbox"][value="${CSS.escape(cat)}"]`
+      );
+      if (cb) {
+        cb.checked = false;
+      }
+    }
+  }
+  persistCategoryFilters();
+  refreshCategoryItemStates();
+  sortCategoryList();
+  browseOffset = 0;
+  previewOffset = 0;
+  reloadStats();
+}
+
+function refreshCategoryItemStates(): void {
+  for (const item of Array.from(categoryList.children) as HTMLElement[]) {
+    const cb = item.querySelector('input') as HTMLInputElement | null;
+    if (!cb) {
+      continue;
+    }
+    item.classList.toggle('excluded', excludedCategories.has(cb.value));
+  }
 }
 
 function filterCategoryList() {
@@ -495,23 +566,45 @@ function filterCategoryList() {
 }
 
 function sortCategoryList() {
-  // Rebuild the selected-categories section from clones
+  // Rebuild the selected-categories section from clones (included + excluded)
   categorySelected.innerHTML = '';
   for (const item of Array.from(categoryList.children) as HTMLElement[]) {
     const checkbox = item.querySelector('input') as HTMLInputElement;
+    const value = checkbox.value;
     if (checkbox.checked) {
       const clone = document.createElement('label');
       clone.className = 'category-item';
       const cloneCb = document.createElement('input');
       cloneCb.type = 'checkbox';
-      cloneCb.value = checkbox.value;
+      cloneCb.value = value;
       cloneCb.checked = true;
       cloneCb.addEventListener('change', () => {
         checkbox.checked = false;
-        toggleCategory(cloneCb.value, false);
+        toggleCategory(value, false);
       });
       clone.appendChild(cloneCb);
-      clone.appendChild(document.createTextNode(checkbox.value));
+      clone.appendChild(document.createTextNode(value));
+      clone.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        excludeCategory(value);
+      });
+      categorySelected.appendChild(clone);
+    } else if (excludedCategories.has(value)) {
+      const clone = document.createElement('label');
+      clone.className = 'category-item excluded';
+      const cloneCb = document.createElement('input');
+      cloneCb.type = 'checkbox';
+      cloneCb.value = value;
+      cloneCb.checked = false;
+      clone.appendChild(cloneCb);
+      clone.appendChild(document.createTextNode(value));
+      // Clicking the chip (or its checkbox) removes the exclusion.
+      const remove = (e: Event) => {
+        e.preventDefault();
+        excludeCategory(value);
+      };
+      clone.addEventListener('click', remove);
+      clone.addEventListener('contextmenu', remove);
       categorySelected.appendChild(clone);
     }
   }
@@ -522,7 +615,7 @@ function sortCategoryList() {
 async function loadStats() {
   try {
     const [stats, totalWords, categories] = await Promise.all([
-      getStats(getSelectedCategories()),
+      getStats(getSelectedCategories(), getExcludedCategories()),
       getWordCount(),
       getCategories(),
     ]);
@@ -534,6 +627,9 @@ async function loadStats() {
     for (const cat of categories) {
       const label = document.createElement('label');
       label.className = 'category-item';
+      if (excludedCategories.has(cat)) {
+        label.classList.add('excluded');
+      }
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = cat;
@@ -541,6 +637,10 @@ async function loadStats() {
       checkbox.addEventListener('change', () => toggleCategory(cat, checkbox.checked));
       label.appendChild(checkbox);
       label.appendChild(document.createTextNode(cat));
+      label.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        excludeCategory(cat);
+      });
       categoryList.appendChild(label);
     }
     sortCategoryList();
@@ -602,19 +702,19 @@ function updateStatsInPlace(stats: Stats[]): void {
       return;
     }
     card.querySelector('.mode-card-stats')!.textContent = `${s.learned} learned`;
-    card.querySelector('.bucket-timings')!.innerHTML = makeBucketTimings(s);
-    card.querySelector('.bucket-bar')!.innerHTML = makeBucketBar(s);
+    card.querySelector('.bucket-timings:not(.forecast-timings)')!.innerHTML = makeBucketTimings(s);
+    card.querySelector('.bucket-bar:not(.forecast-bar)')!.innerHTML = makeBucketBar(s);
     card.querySelector('.forecast-timings')!.innerHTML = makeForecastTimings();
     card.querySelector('.forecast-bar')!.innerHTML = makeForecastBar(s);
     const dueBtn = card.querySelector('.due-mode-btn') as HTMLButtonElement;
     dueBtn.textContent = `${s.dueForReview} due`;
     dueBtn.disabled = s.dueForReview === 0;
     dueBtn.dataset.count = String(s.dueForReview);
-    dueBtn.classList.toggle('filtered', selectedCategories.size > 0);
+    dueBtn.classList.toggle('filtered', hasCategoryFilter());
     const previewBtn = card.querySelector('.mode-preview-btn') as HTMLButtonElement;
     previewBtn.textContent = `${s.newWordsCount} new`;
     previewBtn.disabled = s.newWordsCount === 0;
-    previewBtn.classList.toggle('filtered', selectedCategories.size > 0);
+    previewBtn.classList.toggle('filtered', hasCategoryFilter());
   }
   latestStats = stats;
 
@@ -641,7 +741,7 @@ async function renderStats(stats: Stats[]) {
       const bucketBar = makeBucketBar(s);
       const forecastTimings = makeForecastTimings();
       const forecastBar = makeForecastBar(s);
-      const filtered = selectedCategories.size > 0 ? ' filtered' : '';
+      const filtered = hasCategoryFilter() ? ' filtered' : '';
       const dueBtn = `<button class="due-mode-btn${filtered}" data-mode="${s.mode}" data-charmode="${cm}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
       const previewBtn = `<button class="mode-preview-btn${filtered}${previewMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" ${s.newWordsCount === 0 ? 'disabled' : ''}>${s.newWordsCount} new</button>`;
       const browseBtn = `<button class="mode-browse-btn${browseMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}">Browse</button>`;
@@ -827,7 +927,7 @@ async function renderStats(stats: Stats[]) {
     const input = card.querySelector(`.count-input[data-sel="${sel}"]`) as HTMLInputElement;
     input.value = String(count);
     const btnClass = sel === 'review' ? '.mode-review-btn' : '.mode-random-btn';
-    const mainBtn = card.querySelector(btnClass) as HTMLButtonElement;
+    const mainBtn = card.querySelector(`${btnClass}.action-btn-label`) as HTMLButtonElement;
     mainBtn.textContent = `${sel === 'review' ? 'Review' : 'Random'} ${count}`;
   }
 
@@ -876,7 +976,7 @@ async function renderStats(stats: Stats[]) {
 
 async function reloadStats() {
   try {
-    const stats = await getStats(getSelectedCategories());
+    const stats = await getStats(getSelectedCategories(), getExcludedCategories());
     const sorted = [...stats].sort((a, b) => {
       const mi = ALL_MODES.indexOf(a.mode) - ALL_MODES.indexOf(b.mode);
       if (mi !== 0) return mi;
@@ -896,17 +996,23 @@ function getSelectedCategories(): string[] {
   return Array.from(selectedCategories);
 }
 
+function getExcludedCategories(): string[] {
+  return Array.from(excludedCategories);
+}
+
 // Start practice
 async function handleStart(hanziList?: string[], wordSelection: string = 'review', countOverride?: number) {
   const count = countOverride ?? getModeWordCount(currentMode, characterMode, wordSelection);
 
   try {
     const selectedCategories = getSelectedCategories();
+    const excludedCategoriesList = getExcludedCategories();
     const response = await startPractice(
       count,
       currentMode,
       wordSelection,
       selectedCategories,
+      excludedCategoriesList,
       characterMode,
       hanziList
     );
@@ -931,11 +1037,15 @@ async function handleStart(hanziList?: string[], wordSelection: string = 'review
 
 // Audio playback
 const audioCacheBust = new Map<string, number>();
-function playAudio(hanzi: string, auto: boolean = false) {
-  if (auto && !autoplayCheckbox.checked) return;
+function playAudio(hanzi: string) {
+  if (muteCheckbox.checked) {
+    return;
+  }
   const v = audioCacheBust.get(hanzi);
   const url = `/audio/${encodeURIComponent(hanzi)}.mp3${v ? `?v=${v}` : ''}`;
   const audio = new Audio(url);
+  const linear = audioVolume / 100;
+  audio.volume = linear * linear * linear;
   audio.play().catch((err) => console.warn('Audio playback failed:', err));
 }
 
@@ -947,6 +1057,13 @@ function clickableHanzi(hanzi: string, className: string): string {
 
 function formatTranslations(english: string[]): string {
   return `<span class="translations">${english.map((t) => `<span class="translation-item">${t}</span>`).join('<span class="english-sep"> • </span>')}</span>`;
+}
+
+function formatPolish(polish: string[] | undefined): string {
+  if (!polish || polish.length === 0) {
+    return '';
+  }
+  return `<span class="translations polish">${polish.map((t) => `<span class="translation-item">${t}</span>`).join('<span class="english-sep"> • </span>')}</span>`;
 }
 
 // Format example hints for question (varies by mode)
@@ -981,6 +1098,10 @@ function showQuestion() {
     // english->X mode: show english prompt, no clickable hanzi
     const translationsHtml = formatTranslations(word.english);
     let promptHtml = translationsHtml;
+    const polishHtml = formatPolish(word.polish);
+    if (polishHtml) {
+      promptHtml += `<div class="prompt-polish">${polishHtml}</div>`;
+    }
 
     // Show categories
     if (word.categories.length > 0) {
@@ -1033,7 +1154,7 @@ function showQuestion() {
     feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
     feedbackDiv.classList.add('correct');
     feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
-    playAudio(question.word.hanzi, true);
+    playAudio(question.word.hanzi);
     submitBtn.classList.add('hidden');
     skipBtn.classList.add('hidden');
     practiceActions.classList.remove('hidden');
@@ -1057,11 +1178,23 @@ function formatTreeNodes(nodes: CharacterInfo[], isRoot: boolean): string {
       const hanziSpan = node.traditional
         ? `<span class="${hanziClass} tree-has-traditional">${node.hanzi}<span class="tree-traditional">${node.traditional}</span></span>`
         : `<span class="${hanziClass}">${node.hanzi}</span>`;
-      const label = `${hanziSpan} <span class="tree-pinyin">${node.pinyin}</span> <span class="tree-meaning">${formatTranslations(node.meaning)}</span>`;
+      const hasAlternates = node.alternates && node.alternates.length > 0;
+      const altToggle = hasAlternates
+        ? `<button type="button" class="tree-alt-toggle" aria-expanded="false" title="Other readings">▸</button> `
+        : '';
+      const label = `${hanziSpan} ${altToggle}<span class="tree-pinyin">${node.pinyin}</span> <span class="tree-meaning">${formatTranslations(node.meaning)}</span>`;
+      const altBlock = hasAlternates
+        ? `<div class="tree-alternates hidden">${node.alternates!
+            .map(
+              (a) =>
+                `<div class="tree-alt"><span class="tree-pinyin">${a.pinyin}</span> <span class="tree-meaning">${formatTranslations(a.meaning)}</span></div>`
+            )
+            .join('')}</div>`
+        : '';
       if (node.components.length > 0) {
-        return `<li class="tree-node"><details><summary>${label}</summary><ul class="tree-children">${formatTreeNodes(node.components, false)}</ul></details></li>`;
+        return `<li class="tree-node"><details><summary>${label}</summary><ul class="tree-children">${formatTreeNodes(node.components, false)}</ul></details>${altBlock}</li>`;
       }
-      return `<li class="tree-node tree-leaf">${label}</li>`;
+      return `<li class="tree-node tree-leaf">${label}${altBlock}</li>`;
     })
     .join('');
 }
@@ -1077,13 +1210,15 @@ function formatFullAnswer(question: PracticeQuestion): string {
   const hanzi = clickableHanzi(word.hanzi, 'answer-hanzi');
   const pinyin = `<span class="answer-pinyin">${word.pinyin}</span>`;
   const english = `<span class="answer-english">${formatTranslations(word.english)}</span>`;
+  const polishHtml = formatPolish(word.polish);
+  const polishBlock = polishHtml ? `<div class="answer-polish">${polishHtml}</div>` : '';
 
   let result: string;
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
-    result = `${hanzi} ${pinyin}`;
+    result = `${hanzi} ${pinyin}${polishBlock}`;
   } else {
     // hanzi2pinyin: hanzi was the question, reveal pinyin and english
-    result = `${pinyin}<div class="answer-english">${formatTranslations(word.english)}</div>`;
+    result = `${pinyin}<div class="answer-english">${formatTranslations(word.english)}</div>${polishBlock}`;
   }
 
   // Show categories
@@ -1217,7 +1352,7 @@ function showFinalFeedback(question: PracticeQuestion, type: 'correct' | 'incorr
     feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
   }
 
-  playAudio(question.word.hanzi, true);
+  playAudio(question.word.hanzi);
   submitBtn.classList.add('hidden');
   skipBtn.classList.add('hidden');
   practiceActions.classList.remove('hidden');
@@ -1386,7 +1521,7 @@ async function finishPractice() {
         return `
         <li class="${className}">
           ${clickableHanzi(q.word.hanzi, 'hanzi')}
-          <span class="details">(${q.word.pinyin}) - ${q.word.english[0]}</span>
+          <span class="details">(${q.word.pinyin}) - ${q.word.english[0]}${q.word.polish && q.word.polish.length > 0 ? ` / ${q.word.polish[0]}` : ''}</span>
           <span class="attempt-label">${label}</span>
           ${progressInfo}
         </li>`;
@@ -1414,8 +1549,8 @@ function editCurrentWord() {
   // Populate the add-word form
   addHanziInput.value = word.hanzi;
   addPinyinInput.value = word.pinyin;
-  englishValues = [...word.english];
-  renderEnglishList();
+  englishList.setValues(word.english);
+  polishList.setValues(word.polish ?? []);
   categoryValues = [...word.categories];
   ensureCurated();
   renderChips(categoryChips, categoryValues, removeCategoryChip);
@@ -1436,8 +1571,8 @@ function editCurrentWord() {
 function editWordFromSearch(word: Word) {
   addHanziInput.value = word.hanzi;
   addPinyinInput.value = word.pinyin;
-  englishValues = [...word.english];
-  renderEnglishList();
+  englishList.setValues(word.english);
+  polishList.setValues(word.polish ?? []);
   categoryValues = [...word.categories];
   ensureCurated();
   renderChips(categoryChips, categoryValues, removeCategoryChip);
@@ -1713,6 +1848,29 @@ makeCharOnlyBtn.addEventListener('click', async () => {
   }
 });
 
+makeWordModeBtn.addEventListener('click', async () => {
+  const hanzi = addHanziInput.value.trim();
+  if (!hanzi) {
+    return;
+  }
+  if (!isSingleHanzi(hanzi)) {
+    showAddWordStatus('Word-mode progress only applies to single characters', 'error');
+    return;
+  }
+  try {
+    const { changed } = await withButtonBusy(makeWordModeBtn, 'Updating…', () => makeProgressWordMode(hanzi)) ?? { changed: 0 };
+    makeWordModeBtn.disabled = true;
+    if (changed > 0) {
+      showAddWordStatus(`Promoted ${changed} progress row${changed === 1 ? '' : 's'} to word mode for "${hanzi}"`, 'success');
+    } else {
+      showAddWordStatus(`No char-only progress to convert for "${hanzi}"`, 'success');
+    }
+    loadStats();
+  } catch (error) {
+    showAddWordStatus(error instanceof Error ? error.message : 'Failed to convert progress', 'error');
+  }
+});
+
 regenExamplesBtn.addEventListener('click', async () => {
   const hanzi = addHanziInput.value.trim();
   if (!hanzi) {
@@ -1850,6 +2008,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     const { words, total, learnedElsewhere } = await previewNewWords(
       currentMode,
       getSelectedCategories(),
+      getExcludedCategories(),
       characterMode,
       pageSize,
       offset,
@@ -1894,7 +2053,8 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
               : '';
           const resetTag = `<button class="preview-dismiss-btn" data-hanzi="${w.hanzi}">✕</button>`;
           const checked = previewSelected.has(w.hanzi) ? 'checked' : '';
-          return `<label class="preview-word"><input type="checkbox" class="preview-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${rankSpan}${cats}${resetTag}</label>`;
+          const polishSpan = w.polish && w.polish.length > 0 ? ` <span class="preview-polish">${w.polish.join('; ')}</span>` : '';
+          return `<label class="preview-word"><input type="checkbox" class="preview-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${polishSpan}${rankSpan}${cats}${resetTag}</label>`;
         })
         .join('') +
       pagerHtml;
@@ -1923,7 +2083,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     selectAllCb.addEventListener('change', async (e) => {
       const checked = (e.target as HTMLInputElement).checked;
       if (checked) {
-        const { words: allWords } = await previewNewWords(currentMode, getSelectedCategories(), characterMode, previewTotal, 0, previewReverse);
+        const { words: allWords } = await previewNewWords(currentMode, getSelectedCategories(), getExcludedCategories(), characterMode, previewTotal, 0, previewReverse);
         allWords.forEach((w) => previewSelected.add(w.hanzi));
         section.querySelectorAll('.preview-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = true; });
       } else {
@@ -2065,6 +2225,7 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
     const { words, total } = await browseUnqueuedWords(
       currentMode,
       getSelectedCategories(),
+      getExcludedCategories(),
       characterMode,
       pageSize,
       offset
@@ -2095,7 +2256,8 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
           ? ` <span class="preview-categories">${w.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ')}</span>`
           : '';
         const checked = browseSelected.has(w.hanzi) ? 'checked' : '';
-        return `<label class="preview-word"><input type="checkbox" class="browse-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${rankSpan}${cats}</label>`;
+        const polishSpan = w.polish && w.polish.length > 0 ? ` <span class="preview-polish">${w.polish.join('; ')}</span>` : '';
+        return `<label class="preview-word"><input type="checkbox" class="browse-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${polishSpan}${rankSpan}${cats}</label>`;
       }).join('') +
       pagerHtml;
 
@@ -2120,7 +2282,7 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
     selectAllCb.addEventListener('change', async (e) => {
       const checked = (e.target as HTMLInputElement).checked;
       if (checked) {
-        const { words: allWords } = await browseUnqueuedWords(currentMode, getSelectedCategories(), characterMode, browseTotal, 0);
+        const { words: allWords } = await browseUnqueuedWords(currentMode, getSelectedCategories(), getExcludedCategories(), characterMode, browseTotal, 0);
         allWords.forEach((w) => browseSelected.add(w.hanzi));
         section.querySelectorAll('.browse-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = true; });
       } else {
@@ -2187,14 +2349,39 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// Delegated handler for the per-node "other readings" chevron in breakdown trees.
+// Sits independently of <details> so toggling alternates doesn't expand IDS children.
+document.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  if (!target.classList.contains('tree-alt-toggle')) {
+    return;
+  }
+  e.stopPropagation();
+  e.preventDefault();
+  const li = target.closest('li.tree-node');
+  if (!li) {
+    return;
+  }
+  const block = li.querySelector(':scope > .tree-alternates') as HTMLElement | null;
+  if (!block) {
+    return;
+  }
+  const expanded = block.classList.toggle('hidden') === false;
+  target.classList.toggle('expanded', expanded);
+  target.setAttribute('aria-expanded', String(expanded));
+  target.textContent = expanded ? '▾' : '▸';
+});
+
 
 // Add word form
 const addWordForm = document.getElementById('add-word-screen')!;
 const addHanziInput = document.getElementById('add-hanzi') as HTMLInputElement;
 const addPinyinInput = document.getElementById('add-pinyin') as HTMLInputElement;
 const addEnglishInput = document.getElementById('add-english') as HTMLInputElement;
+const addPolishInput = document.getElementById('add-polish') as HTMLInputElement;
 const addCategoriesInput = document.getElementById('add-categories') as HTMLInputElement;
-const englishList = document.getElementById('english-list')!;
+const englishListEl = document.getElementById('english-list')!;
+const polishListEl = document.getElementById('polish-list')!;
 const categoryChips = document.getElementById('category-chips')!;
 const cedictEntries = document.getElementById('cedict-entries')!;
 const wordInfoDiv = document.getElementById('word-info')!;
@@ -2210,7 +2397,184 @@ function setQueueAsNewDisabled(disabled: boolean) {
   queueAsNewLabel.classList.toggle('disabled', disabled);
 };
 
-let englishValues: string[] = [];
+class TranslationList {
+  values: string[] = [];
+  private listEl: HTMLElement;
+  private addInputEl: HTMLInputElement;
+  private dragSrcIndex: number | null = null;
+  private insertIndex: number | null = null;
+  private stride = 0;
+  private itemEls: HTMLElement[] = [];
+  private draggableItem: HTMLElement | null = null;
+
+  constructor(listEl: HTMLElement, addInputEl: HTMLInputElement) {
+    this.listEl = listEl;
+    this.addInputEl = addInputEl;
+    addInputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.add(addInputEl.value);
+      }
+    });
+    document.addEventListener('mouseup', () => {
+      if (this.draggableItem) {
+        this.draggableItem.draggable = false;
+        this.draggableItem = null;
+      }
+    });
+    document.addEventListener('dragover', (e) => this.handleDragOver(e));
+    document.addEventListener('drop', (e) => this.handleDrop(e));
+  }
+
+  setValues(values: string[]): void {
+    this.values = [...values];
+    this.addInputEl.value = '';
+    this.render();
+  }
+
+  clear(): void {
+    this.setValues([]);
+  }
+
+  add(value: string): void {
+    const trimmed = value.trim();
+    if (trimmed && !this.values.includes(trimmed)) {
+      this.values.push(trimmed);
+      this.render();
+    }
+    this.addInputEl.value = '';
+  }
+
+  private calcInsertIndex(clientY: number): number {
+    for (let i = 0; i < this.itemEls.length; i++) {
+      if (i === this.dragSrcIndex) {
+        continue;
+      }
+      const rect = this.itemEls[i].getBoundingClientRect();
+      if (clientY < rect.top + rect.height / 2) {
+        return i;
+      }
+    }
+    return this.values.length;
+  }
+
+  private applyTransforms(): void {
+    const src = this.dragSrcIndex;
+    const ins = this.insertIndex;
+    if (src === null || ins === null) {
+      return;
+    }
+    for (let i = 0; i < this.itemEls.length; i++) {
+      if (i === src) {
+        continue;
+      }
+      let shift = 0;
+      if (ins > src && i > src && i < ins) {
+        shift = -this.stride;
+      } else if (ins < src && i >= ins && i < src) {
+        shift = this.stride;
+      }
+      this.itemEls[i].style.transform = shift ? `translateY(${shift}px)` : '';
+    }
+  }
+
+  private clearTransforms(): void {
+    this.itemEls.forEach((el) => (el.style.transform = ''));
+  }
+
+  private handleDragOver(e: DragEvent): void {
+    if (this.dragSrcIndex === null) {
+      return;
+    }
+    e.preventDefault();
+    const newIns = this.calcInsertIndex(e.clientY);
+    if (newIns !== this.insertIndex) {
+      this.insertIndex = newIns;
+      this.applyTransforms();
+    }
+  }
+
+  private handleDrop(e: DragEvent): void {
+    if (this.dragSrcIndex === null) {
+      return;
+    }
+    e.preventDefault();
+    const src = this.dragSrcIndex;
+    const ins = this.insertIndex;
+    this.dragSrcIndex = null;
+    this.insertIndex = null;
+    if (ins === null || ins === src || ins === src + 1) {
+      return;
+    }
+    const [moved] = this.values.splice(src, 1);
+    this.values.splice(src < ins ? ins - 1 : ins, 0, moved);
+    this.render();
+  }
+
+  private render(): void {
+    this.listEl.innerHTML = '';
+    this.itemEls.length = 0;
+
+    this.values.forEach((val, i) => {
+      const item = document.createElement('div');
+      item.className = 'english-item';
+      this.itemEls.push(item);
+
+      const handle = document.createElement('span');
+      handle.className = 'drag-handle';
+      handle.textContent = '⠿';
+      handle.addEventListener('mousedown', () => {
+        item.draggable = true;
+        this.draggableItem = item;
+      });
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'english-item-input';
+      input.value = val;
+      input.addEventListener('input', () => {
+        this.values[i] = input.value;
+      });
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'english-item-remove';
+      removeBtn.textContent = '×';
+      removeBtn.addEventListener('click', () => {
+        this.values.splice(i, 1);
+        this.render();
+      });
+
+      item.addEventListener('dragstart', (e) => {
+        this.dragSrcIndex = i;
+        e.dataTransfer!.effectAllowed = 'move';
+        if (this.itemEls.length > 1) {
+          const a = this.itemEls[0].getBoundingClientRect().top;
+          const b = this.itemEls[1].getBoundingClientRect().top;
+          this.stride = b - a;
+        } else {
+          this.stride = item.offsetHeight;
+        }
+        setTimeout(() => item.classList.add('dragging'), 0);
+      });
+      item.addEventListener('dragend', () => {
+        item.draggable = false;
+        this.draggableItem = null;
+        item.classList.remove('dragging');
+        this.clearTransforms();
+        this.dragSrcIndex = null;
+        this.insertIndex = null;
+      });
+
+      item.append(handle, input, removeBtn);
+      this.listEl.appendChild(item);
+    });
+  }
+}
+
+const englishList = new TranslationList(englishListEl, addEnglishInput);
+const polishList = new TranslationList(polishListEl, addPolishInput);
+
 let categoryValues: string[] = [];
 let allCategoriesList: string[] = [];
 let lookupTimer: ReturnType<typeof setTimeout> | null = null;
@@ -2235,154 +2599,6 @@ function renderChips(container: HTMLElement, values: string[], onRemove: (index:
   });
 }
 
-let englishDragSrcIndex: number | null = null;
-let englishInsertIndex: number | null = null;
-let englishStride = 0;
-const englishItemEls: HTMLElement[] = [];
-let englishDraggableItem: HTMLElement | null = null;
-
-document.addEventListener('mouseup', () => {
-  if (englishDraggableItem) {
-    englishDraggableItem.draggable = false;
-    englishDraggableItem = null;
-  }
-});
-
-function calcEnglishInsertIndex(clientY: number): number {
-  for (let i = 0; i < englishItemEls.length; i++) {
-    if (i === englishDragSrcIndex) {
-      continue;
-    }
-    const rect = englishItemEls[i].getBoundingClientRect();
-    if (clientY < rect.top + rect.height / 2) {
-      return i;
-    }
-  }
-  return englishValues.length;
-}
-
-function applyEnglishTransforms() {
-  const src = englishDragSrcIndex;
-  const ins = englishInsertIndex;
-  if (src === null || ins === null) {
-    return;
-  }
-  for (let i = 0; i < englishItemEls.length; i++) {
-    if (i === src) {
-      continue;
-    }
-    let shift = 0;
-    if (ins > src && i > src && i < ins) {
-      shift = -englishStride;
-    } else if (ins < src && i >= ins && i < src) {
-      shift = englishStride;
-    }
-    englishItemEls[i].style.transform = shift ? `translateY(${shift}px)` : '';
-  }
-}
-
-function clearEnglishTransforms() {
-  englishItemEls.forEach((el) => (el.style.transform = ''));
-}
-
-document.addEventListener('dragover', (e) => {
-  if (englishDragSrcIndex === null) {
-    return;
-  }
-  e.preventDefault();
-  const newIns = calcEnglishInsertIndex(e.clientY);
-  if (newIns !== englishInsertIndex) {
-    englishInsertIndex = newIns;
-    applyEnglishTransforms();
-  }
-});
-
-document.addEventListener('drop', (e) => {
-  if (englishDragSrcIndex === null) {
-    return;
-  }
-  e.preventDefault();
-  const src = englishDragSrcIndex;
-  const ins = englishInsertIndex;
-  englishDragSrcIndex = null;
-  englishInsertIndex = null;
-  if (ins === null || ins === src || ins === src + 1) {
-    return;
-  }
-  const [moved] = englishValues.splice(src, 1);
-  englishValues.splice(src < ins ? ins - 1 : ins, 0, moved);
-  renderEnglishList();
-});
-
-function renderEnglishList() {
-  englishList.innerHTML = '';
-  englishItemEls.length = 0;
-
-  englishValues.forEach((val, i) => {
-    const item = document.createElement('div');
-    item.className = 'english-item';
-    englishItemEls.push(item);
-
-    const handle = document.createElement('span');
-    handle.className = 'drag-handle';
-    handle.textContent = '⠿';
-    handle.addEventListener('mousedown', () => {
-      item.draggable = true;
-      englishDraggableItem = item;
-    });
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'english-item-input';
-    input.value = val;
-    input.addEventListener('input', () => {
-      englishValues[i] = input.value;
-    });
-
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'english-item-remove';
-    removeBtn.textContent = '×';
-    removeBtn.addEventListener('click', () => {
-      englishValues.splice(i, 1);
-      renderEnglishList();
-    });
-
-    item.addEventListener('dragstart', (e) => {
-      englishDragSrcIndex = i;
-      e.dataTransfer!.effectAllowed = 'move';
-      if (englishItemEls.length > 1) {
-        const a = englishItemEls[0].getBoundingClientRect().top;
-        const b = englishItemEls[1].getBoundingClientRect().top;
-        englishStride = b - a;
-      } else {
-        englishStride = item.offsetHeight;
-      }
-      setTimeout(() => item.classList.add('dragging'), 0);
-    });
-    item.addEventListener('dragend', () => {
-      item.draggable = false;
-      englishDraggableItem = null;
-      item.classList.remove('dragging');
-      clearEnglishTransforms();
-      englishDragSrcIndex = null;
-      englishInsertIndex = null;
-    });
-
-    item.append(handle, input, removeBtn);
-    englishList.appendChild(item);
-  });
-}
-
-function addEnglishItem(value: string) {
-  const trimmed = value.trim();
-  if (trimmed && !englishValues.includes(trimmed)) {
-    englishValues.push(trimmed);
-    renderEnglishList();
-  }
-  addEnglishInput.value = '';
-}
-
 function addCategoryChip(value: string) {
   const trimmed = value.trim();
   if (trimmed && !categoryValues.includes(trimmed)) {
@@ -2397,13 +2613,6 @@ function removeCategoryChip(index: number) {
   categoryValues.splice(index, 1);
   renderChips(categoryChips, categoryValues, removeCategoryChip);
 }
-
-addEnglishInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    addEnglishItem(addEnglishInput.value);
-  }
-});
 
 addCategoriesInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
@@ -2454,8 +2663,8 @@ async function performHanziLookup(hanzi: string) {
       setEditOnlyButtonsVisible(true);
       setProgressActionsEnabled(maxBucket !== null, isSingleHanzi(existing.hanzi));
       addPinyinInput.value = existing.pinyin;
-      englishValues = [...existing.english];
-      renderEnglishList();
+      englishList.setValues(existing.english);
+      polishList.setValues(existing.polish ?? []);
       categoryValues = [...existing.categories];
       ensureCurated();
       renderChips(categoryChips, categoryValues, removeCategoryChip);
@@ -2473,12 +2682,11 @@ async function performHanziLookup(hanzi: string) {
       addWordBtn.textContent = 'Add';
       setEditOnlyButtonsVisible(false);
       addPinyinInput.value = '';
-      addEnglishInput.value = '';
       addCategoriesInput.value = '';
-      englishValues = [];
+      englishList.clear();
+      polishList.clear();
       categoryValues = [];
       ensureCurated();
-      renderEnglishList();
       renderChips(categoryChips, categoryValues, removeCategoryChip);
       const rankParts: string[] = [];
       if (wordRank != null) rankParts.push(`word #${wordRank}`);
@@ -2511,8 +2719,7 @@ async function performHanziLookup(hanzi: string) {
     if (!existing) {
       if (entries.length === 1) {
         addPinyinInput.value = entries[0].pinyin;
-        englishValues = [...entries[0].definitions];
-        renderEnglishList();
+        englishList.setValues(entries[0].definitions);
       } else {
         const allSamePinyin = entries.every((e) => e.pinyin === entries[0].pinyin);
         if (allSamePinyin) {
@@ -2531,12 +2738,11 @@ addHanziInput.addEventListener('input', () => {
   const hanzi = addHanziInput.value.trim();
   if (!hanzi) {
     addPinyinInput.value = '';
-    addEnglishInput.value = '';
     addCategoriesInput.value = '';
-    englishValues = [];
+    englishList.clear();
+    polishList.clear();
     categoryValues = [];
     ensureCurated();
-    renderEnglishList();
     renderChips(categoryChips, categoryValues, removeCategoryChip);
     cedictEntries.classList.add('hidden');
     wordInfoDiv.classList.add('hidden');
@@ -2559,8 +2765,7 @@ function renderCedictEntries(entries: CedictEntry[]) {
     div.innerHTML = `<span class="cedict-pinyin">${entry.pinyin}</span><span class="cedict-defs">${entry.definitions.join('; ')}</span>`;
     div.addEventListener('click', () => {
       addPinyinInput.value = entry.pinyin;
-      englishValues = [...entry.definitions];
-      renderEnglishList();
+      englishList.setValues(entry.definitions);
     });
     cedictEntries.appendChild(div);
   }
@@ -2570,7 +2775,7 @@ addWordBtn.addEventListener('click', async () => {
   const hanzi = addHanziInput.value.trim();
   const pinyin = addPinyinInput.value.trim();
 
-  if (!hanzi || !pinyin || englishValues.length === 0) {
+  if (!hanzi || !pinyin || englishList.values.length === 0) {
     showAddWordStatus(
       'Please fill in hanzi, pinyin, and at least one English translation',
       'error'
@@ -2590,11 +2795,14 @@ addWordBtn.addEventListener('click', async () => {
     addWordBtn.disabled = true;
     addWordBtn.textContent = editingExistingWord ? 'Saving...' : 'Adding...';
 
+    const englishValues = englishList.values;
+    const polishValues = polishList.values;
     if (editingExistingWord) {
       const updated = await updateWord(
         hanzi,
         pinyin,
         englishValues,
+        polishValues,
         categoryValues,
         queueAsNewCb.checked
       );
@@ -2610,6 +2818,7 @@ addWordBtn.addEventListener('click', async () => {
           }
           q.word.pinyin = updated.pinyin;
           q.word.english = updated.english;
+          q.word.polish = updated.polish;
           q.word.categories = updated.categories;
           if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
             q.prompt = englishPrompt;
@@ -2620,19 +2829,18 @@ addWordBtn.addEventListener('click', async () => {
         }
       }
     } else {
-      await addWord(hanzi, pinyin, englishValues, categoryValues, queueAsNewCb.checked);
+      await addWord(hanzi, pinyin, englishValues, polishValues, categoryValues, queueAsNewCb.checked);
       showAddWordStatus(`Added "${hanzi}" successfully!`, 'success');
     }
 
     // Reset form
     addHanziInput.value = '';
     addPinyinInput.value = '';
-    addEnglishInput.value = '';
     addCategoriesInput.value = '';
-    englishValues = [];
+    englishList.clear();
+    polishList.clear();
     categoryValues = [];
     editingExistingWord = false;
-    renderEnglishList();
     renderChips(categoryChips, categoryValues, removeCategoryChip);
     cedictEntries.classList.add('hidden');
     wordInfoDiv.classList.add('hidden');
@@ -2693,10 +2901,12 @@ function formatDue(nextEligible: string | null): string {
 }
 
 function formatWordDetail(word: Word, progress: Progress[]): string {
+  const polishHtml = formatPolish(word.polish);
   let html = `<div class="search-detail-top">
     ${clickableHanzi(word.hanzi, 'answer-hanzi')}
     <span class="answer-pinyin">${word.pinyin}</span>
     <span class="answer-english">${formatTranslations(word.english)}</span>
+    ${polishHtml ? `<span class="answer-polish">${polishHtml}</span>` : ''}
   </div>`;
 
   if (word.categories.length > 0) {
@@ -2886,6 +3096,9 @@ function renderSearchResults(
       const hanziHtml = highlightHanzi(r.word.hanzi, hanziQ, hanziMode);
       const pinyinHtml = highlightPinyin(r.word.pinyin, pinyinQ, pinyinMode);
       const englishHtml = highlightEnglish(r.word.english, englishQ);
+      const polishInline = r.word.polish && r.word.polish.length > 0
+        ? `<div class="search-polish">${r.word.polish.map((p) => escapeHtml(p)).join('; ')}</div>`
+        : '';
       const wordRank = r.word.wordFrequencyRank != null ? `#${r.word.wordFrequencyRank}` : '—';
       const charRank = r.word.hanziFrequencyRank != null ? `#${r.word.hanziFrequencyRank}` : '—';
       const queuedClass = r.queued ? ' search-result-queued' : '';
@@ -2895,7 +3108,7 @@ function renderSearchResults(
         <span class="search-col-focus"><button class="search-focus-btn" data-hanzi="${escapeHtml(r.word.hanzi)}"></button></span>
         <span class="search-hanzi">${hanziHtml}</span>
         <span class="preview-pinyin">${pinyinHtml}</span>
-        <span class="preview-english">${englishHtml}</span>
+        <span class="preview-english">${englishHtml}${polishInline}</span>
         <span class="search-rank-col" title="Word frequency rank">${wordRank}</span>
         <span class="search-rank-col" title="Character frequency rank">${charRank}</span>
       </div>

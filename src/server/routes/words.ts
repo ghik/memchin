@@ -13,6 +13,7 @@ import {
   searchLearnedWords,
   searchQueuedWords,
   setAllProgressCharacterOnly,
+  setAllProgressWordMode,
   setQueuedAt,
   setCharQueuedAt,
   clearQueuedAt,
@@ -95,13 +96,14 @@ router.get('/lookup/:hanzi', (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { hanzi, pinyin, english, categories } = req.body;
+    const { hanzi, pinyin, english, polish, categories } = req.body;
 
     if (!hanzi || !pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
         .status(400)
         .json({ error: 'hanzi, pinyin, english (array), and categories are required' });
     }
+    const polishArr: string[] = Array.isArray(polish) ? polish : [];
 
     // Check for duplicate
     if (getWordByHanzi(hanzi)) {
@@ -123,6 +125,7 @@ router.post('/', async (req, res) => {
         hanzi,
         pinyin: normalizedPinyin,
         english,
+        polish: polishArr,
         hskLevel: 0,
         wordFrequencyRank,
         hanziFrequencyRank,
@@ -216,13 +219,14 @@ router.post('/', async (req, res) => {
 router.put('/:hanzi', (req, res) => {
   try {
     const hanzi = decodeURIComponent(req.params.hanzi);
-    const { pinyin, english, categories, queueAsNew } = req.body;
+    const { pinyin, english, polish, categories, queueAsNew } = req.body;
 
     if (!pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
         .status(400)
         .json({ error: 'pinyin, english (array), and categories are required' });
     }
+    const polishArr: string[] = Array.isArray(polish) ? polish : [];
 
     const existing = getWordByHanzi(hanzi);
     if (!existing) {
@@ -231,7 +235,7 @@ router.put('/:hanzi', (req, res) => {
 
     const normalizedPinyin = normalizePinyinInput(pinyin);
 
-    updateWord(hanzi, normalizedPinyin, english, categories || []);
+    updateWord(hanzi, normalizedPinyin, english, polishArr, categories || []);
     if (queueAsNew) {
       setQueuedAt(hanzi);
       resetCharsForWord(hanzi);
@@ -286,6 +290,25 @@ router.post('/:hanzi/make-char-only', (req, res) => {
   } catch (error) {
     console.error('Failed to mark progress char-only:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to mark progress char-only' });
+  }
+});
+
+router.post('/:hanzi/make-word-mode', (req, res) => {
+  try {
+    const hanzi = decodeURIComponent(req.params.hanzi);
+    const existing = getWordByHanzi(hanzi);
+    if (!existing) {
+      return res.status(404).json({ error: `Word "${hanzi}" not found` });
+    }
+    if ([...hanzi].length !== 1) {
+      return res.status(400).json({ error: 'Only single-character entries can be promoted to word mode' });
+    }
+    const changed = setAllProgressWordMode(hanzi);
+    invalidateWordCache();
+    res.json({ ok: true, changed });
+  } catch (error) {
+    console.error('Failed to promote progress to word mode:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to promote progress to word mode' });
   }
 });
 

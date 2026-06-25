@@ -335,12 +335,33 @@ function lookupChar(char: string, pinyinHint?: string): CharacterInfo {
   if (!entry) {
     return { hanzi: char, pinyin: '', meaning: [], components: [] };
   }
+  const meaning = filterDefinitions(entry.definitions);
+
+  // Collect other readings from the same pool that was used to pick `entry`.
+  // Dedupe by (pinyin, meaning) to collapse identical CEDICT duplicates and exclude the chosen one.
+  const pool = filtered.length > 0 ? filtered : entries;
+  const seen = new Set<string>([`${entry.pinyin}|${meaning.join('|')}`]);
+  const alternates: { pinyin: string; meaning: string[] }[] = [];
+  for (const e of pool) {
+    if (e === entry) {
+      continue;
+    }
+    const m = filterDefinitions(e.definitions);
+    const key = `${e.pinyin}|${m.join('|')}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    alternates.push({ pinyin: e.pinyin, meaning: m });
+  }
+
   return {
     hanzi: char,
     traditional: entry.traditional !== char ? entry.traditional : undefined,
     pinyin: entry.pinyin,
-    meaning: filterDefinitions(entry.definitions),
+    meaning,
     components: [],
+    alternates: alternates.length > 0 ? alternates : undefined,
   };
 }
 

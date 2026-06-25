@@ -10,12 +10,14 @@ export interface CharacterInfo {
   pinyin: string;
   meaning: string[];
   components: CharacterInfo[];
+  alternates?: { pinyin: string; meaning: string[] }[];
 }
 
 export interface WordCore {
   hanzi: string;
   pinyin: string;
   english: string[];
+  polish?: string[];
   hskLevel: number;
 }
 
@@ -62,6 +64,7 @@ export interface StartRequest {
   mode: PracticeMode;
   wordSelection: 'review' | 'random';
   categories: string[];
+  excludedCategories?: string[];
   characterMode: boolean;
   hanziList?: string[]; // specific words to practice (overrides count/wordSelection/categories)
 }

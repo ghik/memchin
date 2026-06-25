@@ -15,22 +15,26 @@
       <a class="nav-item" data-view="add-word" href="/add">Add Word</a>
     </nav>
     <div class="main-content">
-      <label class="theme-toggle" id="theme-toggle" title="Toggle dark mode">
-        <input type="checkbox" id="theme-checkbox">
-        <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
-        <span class="theme-toggle-label">Dark mode</span>
-      </label>
+      <div class="global-controls">
+        <label class="volume-control" for="audio-volume" title="Audio playback volume">
+          <input type="range" id="audio-volume" min="0" max="100" step="1" value="100">
+          <span class="volume-value" id="audio-volume-value">100%</span>
+        </label>
+        <label class="toggle-switch" id="mute-toggle" title="Mute audio">
+          <input type="checkbox" id="mute-checkbox">
+          <span class="toggle-switch-track"><span class="toggle-switch-thumb"></span></span>
+          <span class="toggle-switch-label">Mute</span>
+        </label>
+        <label class="toggle-switch" id="theme-toggle" title="Toggle dark mode">
+          <input type="checkbox" id="theme-checkbox">
+          <span class="toggle-switch-track"><span class="toggle-switch-thumb"></span></span>
+          <span class="toggle-switch-label">Dark mode</span>
+        </label>
+      </div>
       <div id="start-screen" class="screen active">
         <h1>Chinese Practice</h1>
         <div class="start-layout">
           <div class="category-panel">
-            <div class="category-panel-title">Options</div>
-            <div class="panel-options">
-              <label class="checkbox-label">
-                <input type="checkbox" id="autoplay-audio" checked>
-                Auto-play audio
-              </label>
-            </div>
             <div class="category-panel-title">Categories</div>
             <input type="text" id="category-search" class="category-search" placeholder="Search…" autocomplete="off">
             <div class="category-selected" id="category-selected"></div>
@@ -134,6 +138,15 @@
             </div>
           </div>
           <div class="form-group">
+            <label>Polish</label>
+            <div id="polish-list" class="english-list"></div>
+            <div class="english-item english-add-row">
+              <span class="drag-handle" aria-hidden="true">⠿</span>
+              <input type="text" id="add-polish" placeholder="Type and press Enter to add" autocomplete="off">
+              <span class="english-item-remove" aria-hidden="true">×</span>
+            </div>
+          </div>
+          <div class="form-group">
             <label>Categories</label>
             <div class="chip-input-container">
               <div id="category-chips" class="chips"></div>
@@ -149,6 +162,7 @@
             <button id="regen-audio-btn" class="aux-btn hidden">Regen audio</button>
             <button id="regen-examples-btn" class="aux-btn hidden">Regen examples</button>
             <button id="make-char-only-btn" class="aux-btn hidden">Char-only</button>
+            <button id="make-word-mode-btn" class="aux-btn hidden">Word-mode</button>
             <button id="reset-progress-btn" class="aux-btn hidden">Reset</button>
           </div>
           <div class="add-word-actions">

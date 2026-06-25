@@ -149,7 +149,7 @@ body {
   flex: 1;
   display: flex;
   justify-content: center;
-  padding: 30px;
+  padding: 60px 30px 30px;
 }
 
 .screen {
@@ -374,6 +374,24 @@ body.dark input[type="checkbox"] {
 }
 
 .preview-english {
+  color: var(--text-3);
+}
+
+.preview-polish,
+.search-polish {
+  color: var(--text-4);
+  font-style: italic;
+}
+
+.translations.polish {
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.prompt-polish,
+.answer-polish {
+  margin-top: 4px;
+  font-style: italic;
   color: var(--text-3);
 }
 
@@ -1181,6 +1199,41 @@ body.dark .answer-section input.invalid:focus {
   color: var(--text-4);
 }
 
+.tree-alt-toggle {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: inherit;
+  line-height: 1;
+  color: var(--text-4);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.tree-alt-toggle:hover {
+  color: var(--accent);
+}
+
+.tree-alternates {
+  margin: 2px 0 4px 1.6em;
+  padding-left: 8px;
+  border-left: 2px solid var(--border-2);
+  font-size: 0.9em;
+}
+
+.tree-alt {
+  padding: 1px 0;
+}
+
+.tree-alt .tree-pinyin {
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.tree-alt .tree-meaning {
+  color: var(--text-3);
+}
+
 .ex-hanzi {
   font-size: 1.1em;
   color: var(--text);
@@ -1262,6 +1315,65 @@ body.dark .answer-section input.invalid:focus {
   height: 13px;
 }
 
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-3);
+  cursor: pointer;
+  user-select: none;
+}
+
+.volume-control input[type="range"] {
+  width: 200px;
+  height: 18px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+.volume-control input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.volume-control input[type="range"]::-moz-range-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  margin-top: -2px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+
+.volume-control input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+
+.volume-value {
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+}
+
 .category-search {
   margin: 4px 6px 2px;
   padding: 3px 6px;
@@ -1318,6 +1430,44 @@ label.category-item input[type="checkbox"] {
   height: 13px;
   flex-shrink: 0;
   cursor: pointer;
+}
+
+label.category-item.excluded {
+  color: #c0392b;
+  text-decoration: line-through;
+}
+
+label.category-item.excluded input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 1px solid #c0392b;
+  border-radius: 2px;
+  position: relative;
+}
+
+label.category-item.excluded input[type="checkbox"]::after {
+  content: '✗';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  color: #c0392b;
+}
+
+body.dark label.category-item.excluded {
+  color: #e57373;
+}
+
+body.dark label.category-item.excluded input[type="checkbox"] {
+  border-color: #e57373;
+}
+
+body.dark label.category-item.excluded input[type="checkbox"]::after {
+  color: #e57373;
 }
 
 .hidden {
@@ -1759,24 +1909,30 @@ body.dark .add-word-status.error {
   color: #f47c82;
 }
 
-.theme-toggle {
+.global-controls {
   position: fixed;
   top: 14px;
   right: 16px;
   z-index: 1000;
   display: flex;
   align-items: center;
+  gap: 18px;
+}
+
+.toggle-switch {
+  display: flex;
+  align-items: center;
   cursor: pointer;
 }
 
-.theme-toggle input {
+.toggle-switch input {
   position: absolute;
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.theme-toggle-track {
+.toggle-switch-track {
   display: block;
   width: 40px;
   height: 22px;
@@ -1786,11 +1942,11 @@ body.dark .add-word-status.error {
   transition: background 0.2s;
 }
 
-.theme-toggle input:checked + .theme-toggle-track {
+.toggle-switch input:checked + .toggle-switch-track {
   background: var(--accent);
 }
 
-.theme-toggle-thumb {
+.toggle-switch-thumb {
   position: absolute;
   top: 3px;
   left: 3px;
@@ -1801,11 +1957,11 @@ body.dark .add-word-status.error {
   transition: transform 0.2s;
 }
 
-.theme-toggle input:checked + .theme-toggle-track .theme-toggle-thumb {
+.toggle-switch input:checked + .toggle-switch-track .toggle-switch-thumb {
   transform: translateX(18px);
 }
 
-.theme-toggle-label {
+.toggle-switch-label {
   margin-left: 8px;
   font-size: 13px;
   color: var(--text-3);

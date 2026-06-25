@@ -85,8 +85,9 @@ function createQuestion(word: Word, mode: PracticeMode, characterMode: boolean):
 }
 
 router.post('/start', (req, res) => {
-  const { count, mode, wordSelection, categories, characterMode, hanziList } =
+  const { count, mode, wordSelection, categories, excludedCategories, characterMode, hanziList } =
     req.body as StartRequest;
+  const excluded = excludedCategories ?? [];
 
   if (
     !mode ||
@@ -105,10 +106,10 @@ router.post('/start', (req, res) => {
     }
     switch (wordSelection) {
       case 'review':
-        words = getWordsForReview(mode, count, categories, characterMode, false);
+        words = getWordsForReview(mode, count, categories, excluded, characterMode, false);
         break;
       case 'random':
-        words = getWordsForReview(mode, count, categories, characterMode, true);
+        words = getWordsForReview(mode, count, categories, excluded, characterMode, true);
         break;
     }
   }
@@ -243,11 +244,16 @@ router.post('/complete', (req, res) => {
   res.json(response);
 });
 
+function parseCategoryList(value: unknown): string[] {
+  return typeof value === 'string' && value.length > 0 ? value.split(',') : [];
+}
+
 router.get('/preview', (req, res) => {
   const mode = req.query.mode as PracticeMode;
   const limit = parseInt(req.query.limit as string) || 50;
   const offset = parseInt(req.query.offset as string) || 0;
-  const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
+  const categories = parseCategoryList(req.query.categories);
+  const excludedCategories = parseCategoryList(req.query.excludedCategories);
   const characterMode = req.query.characterMode === 'true';
   const reverse = req.query.reverse === 'true';
 
@@ -258,15 +264,16 @@ router.get('/preview', (req, res) => {
     return res.status(400).json({ error: 'Valid mode is required' });
   }
 
-  const words = getNewWords(mode, limit, categories, characterMode, offset, reverse).map(enrichWord);
-  const total = getNewWordsCount(mode, categories, characterMode);
-  const learnedElsewhere = getLearnedElsewhere(mode, categories, characterMode);
+  const words = getNewWords(mode, limit, categories, excludedCategories, characterMode, offset, reverse).map(enrichWord);
+  const total = getNewWordsCount(mode, categories, excludedCategories, characterMode);
+  const learnedElsewhere = getLearnedElsewhere(mode, categories, excludedCategories, characterMode);
   res.json({ words, total, learnedElsewhere });
 });
 
 router.get('/due-count', (req, res) => {
   const mode = req.query.mode as PracticeMode;
-  const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
+  const categories = parseCategoryList(req.query.categories);
+  const excludedCategories = parseCategoryList(req.query.excludedCategories);
   const characterMode = req.query.characterMode === 'true';
 
   if (
@@ -276,12 +283,13 @@ router.get('/due-count', (req, res) => {
     return res.status(400).json({ error: 'Valid mode is required' });
   }
 
-  const count = getDueCount(mode, categories, characterMode);
+  const count = getDueCount(mode, categories, excludedCategories, characterMode);
   res.json({ count });
 });
 
 router.get('/stats', (req, res) => {
-  const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
+  const categories = parseCategoryList(req.query.categories);
+  const excludedCategories = parseCategoryList(req.query.excludedCategories);
   const modes: PracticeMode[] = [
     'hanzi2pinyin',
     'english2hanzi',
@@ -291,8 +299,8 @@ router.get('/stats', (req, res) => {
     [false, true].map((characterMode) => ({
       mode,
       characterMode,
-      ...getStats(mode, categories, characterMode),
-      newWordsCount: getNewWordsCount(mode, categories, characterMode),
+      ...getStats(mode, categories, excludedCategories, characterMode),
+      newWordsCount: getNewWordsCount(mode, categories, excludedCategories, characterMode),
     }))
   );
   res.json(stats);
@@ -341,7 +349,8 @@ router.get('/unqueued', (req, res) => {
   const mode = req.query.mode as PracticeMode;
   const limit = parseInt(req.query.limit as string) || 50;
   const offset = parseInt(req.query.offset as string) || 0;
-  const categories = req.query.categories ? (req.query.categories as string).split(',') : [];
+  const categories = parseCategoryList(req.query.categories);
+  const excludedCategories = parseCategoryList(req.query.excludedCategories);
   const characterMode = req.query.characterMode === 'true';
 
   if (
@@ -351,8 +360,8 @@ router.get('/unqueued', (req, res) => {
     return res.status(400).json({ error: 'Valid mode is required' });
   }
 
-  const words = getUnqueuedWords(mode, categories, characterMode, limit, offset).map(enrichWord);
-  const total = getUnqueuedWordsCount(mode, categories, characterMode);
+  const words = getUnqueuedWords(mode, categories, excludedCategories, characterMode, limit, offset).map(enrichWord);
+  const total = getUnqueuedWordsCount(mode, categories, excludedCategories, characterMode);
   res.json({ words, total });
 });
 
