@@ -97,12 +97,13 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 #app {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
 }
 
 /* Sidebar */
@@ -150,6 +151,7 @@ body {
   display: flex;
   justify-content: center;
   padding: 60px 30px 30px;
+  min-height: 0;
 }
 
 .screen {
@@ -161,10 +163,13 @@ body {
   width: 100%;
   padding: 30px;
   align-self: flex-start;
+  max-height: 100%;
+  min-height: 0;
 }
 
 .screen.active {
   display: block;
+  overflow-y: auto;
 }
 
 h1, h2 {
@@ -396,7 +401,7 @@ body.dark input[type="checkbox"] {
 }
 
 .english-sep {
-  color: var(--text-4);
+  color: var(--btn-review-color);
 }
 .translation-item {
   white-space: nowrap;
@@ -1062,37 +1067,28 @@ body.dark .answer-section input.invalid:focus {
   padding: 3px 0;
 }
 
-.tree-node details {
-  margin: 0;
-}
-
-.tree-node summary {
+.tree-components-toggle {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 0.7em;
+  line-height: 1;
+  color: var(--text-4);
   cursor: pointer;
-  list-style: none;
-  padding: 2px 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.tree-node summary::-webkit-details-marker {
-  display: none;
-}
-
-.tree-node summary::before {
-  content: '';
-  display: inline-block;
-  width: 0;
-  height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 7px solid var(--text-4);
-  margin-right: 6px;
-  transition: transform 0.15s;
+  transition: transform 0.15s, color 0.15s;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
 }
 
-.tree-node details[open] > summary::before {
+.tree-components-toggle:hover {
+  color: var(--accent);
+}
+
+.tree-components-toggle.expanded {
   transform: rotate(90deg);
 }
 
@@ -1207,31 +1203,105 @@ body.dark .answer-section input.invalid:focus {
   line-height: 1;
   color: var(--text-4);
   cursor: pointer;
-  transition: color 0.15s;
+  transition: transform 0.15s, color 0.15s;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
 }
 
 .tree-alt-toggle:hover {
   color: var(--accent);
 }
 
+.tree-alt-toggle.expanded {
+  transform: rotate(90deg);
+}
+
+.translation-more {
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  padding: 0 6px;
+  margin: 0 2px 0 6px;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--accent);
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+  height: 1.4em;
+}
+
+.translation-more:hover {
+  background: var(--accent);
+  color: var(--surface);
+  border-color: var(--accent);
+}
+
+.translation-item-more {
+  background: none;
+  border: none;
+  padding: 0 3px;
+  margin: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.translation-item-more:hover {
+  background: var(--surface-3);
+}
+
+.translation-tooltip {
+  position: fixed;
+  background: var(--surface);
+  color: var(--text-3);
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  max-width: 420px;
+  width: max-content;
+  pointer-events: none;
+  z-index: 10000;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
 .tree-alternates {
-  margin: 2px 0 4px 1.6em;
-  padding-left: 8px;
-  border-left: 2px solid var(--border-2);
-  font-size: 0.9em;
+  margin: 2px 0 4px 0;
+}
+
+.tree-row,
+.tree-alt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .tree-alt {
   padding: 1px 0;
 }
 
-.tree-alt .tree-pinyin {
-  color: var(--accent);
-  opacity: 0.8;
-}
-
-.tree-alt .tree-meaning {
-  color: var(--text-3);
+.tree-prefix-mirror {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .ex-hanzi {

@@ -1059,6 +1059,39 @@ function formatTranslations(english: string[]): string {
   return `<span class="translations">${english.map((t) => `<span class="translation-item">${t}</span>`).join('<span class="english-sep"> • </span>')}</span>`;
 }
 
+const TRANSLATION_TRUNCATE_ABOVE = 10;
+const TRANSLATION_VISIBLE = 5;
+const ITEM_TRUNCATE_ABOVE = 60;
+const ITEM_VISIBLE = 40;
+
+function formatTranslationItem(text: string): string {
+  if (text.length <= ITEM_TRUNCATE_ABOVE) {
+    return `<span class="translation-item">${text}</span>`;
+  }
+  // Break at the nearest word boundary before the visible target, falling back to the raw cut.
+  let cut = ITEM_VISIBLE;
+  const space = text.lastIndexOf(' ', ITEM_VISIBLE);
+  if (space > ITEM_VISIBLE * 0.6) {
+    cut = space;
+  }
+  const head = text.slice(0, cut);
+  const tail = text.slice(cut);
+  const fullAttr = text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  return `<span class="translation-item">${head}<button type="button" class="translation-item-more" aria-expanded="false" data-tooltip="${fullAttr}">…</button><span class="translation-tail hidden">${tail}</span></span>`;
+}
+
+function formatTranslationsTruncated(items: string[]): string {
+  const sep = '<span class="english-sep"> • </span>';
+  if (items.length <= TRANSLATION_TRUNCATE_ABOVE) {
+    return `<span class="translations">${items.map(formatTranslationItem).join(sep)}</span>`;
+  }
+  const first = items.slice(0, TRANSLATION_VISIBLE);
+  const rest = items.slice(TRANSLATION_VISIBLE);
+  const firstHtml = first.map(formatTranslationItem).join(sep);
+  const restHtml = rest.map(formatTranslationItem).join(sep);
+  return `<span class="translations">${firstHtml}<button type="button" class="translation-more" aria-expanded="false" title="Show ${rest.length} more">…</button><span class="translation-extra hidden">${sep}${restHtml}</span></span>`;
+}
+
 function formatPolish(polish: string[] | undefined): string {
   if (!polish || polish.length === 0) {
     return '';
@@ -1179,22 +1212,30 @@ function formatTreeNodes(nodes: CharacterInfo[], isRoot: boolean): string {
         ? `<span class="${hanziClass} tree-has-traditional">${node.hanzi}<span class="tree-traditional">${node.traditional}</span></span>`
         : `<span class="${hanziClass}">${node.hanzi}</span>`;
       const hasAlternates = node.alternates && node.alternates.length > 0;
-      const altToggle = hasAlternates
-        ? `<button type="button" class="tree-alt-toggle" aria-expanded="false" title="Other readings">▸</button> `
+      const hasComponents = node.components.length > 0;
+      const componentsToggle = hasComponents
+        ? `<button type="button" class="tree-components-toggle" aria-expanded="false" title="Components">▶</button>`
         : '';
-      const label = `${hanziSpan} ${altToggle}<span class="tree-pinyin">${node.pinyin}</span> <span class="tree-meaning">${formatTranslations(node.meaning)}</span>`;
+      const altToggle = hasAlternates
+        ? `<button type="button" class="tree-alt-toggle" aria-expanded="false" title="Other readings">▸</button>`
+        : '';
+      const label = `${componentsToggle}${hanziSpan}${altToggle}<span class="tree-pinyin">${node.pinyin}</span><span class="tree-meaning">${formatTranslationsTruncated(node.meaning)}</span>`;
+      // Invisible mirror of the main row's leading elements so alt-row pinyin aligns under main pinyin.
+      const altRowPrefix = hasAlternates
+        ? `<span class="tree-prefix-mirror" aria-hidden="true">${hasComponents ? `<button type="button" class="tree-components-toggle" tabindex="-1">▶</button>` : ''}${hanziSpan}<button type="button" class="tree-alt-toggle" tabindex="-1">▸</button></span>`
+        : '';
       const altBlock = hasAlternates
         ? `<div class="tree-alternates hidden">${node.alternates!
             .map(
               (a) =>
-                `<div class="tree-alt"><span class="tree-pinyin">${a.pinyin}</span> <span class="tree-meaning">${formatTranslations(a.meaning)}</span></div>`
+                `<div class="tree-alt">${altRowPrefix}<span class="tree-pinyin">${a.pinyin}</span><span class="tree-meaning">${formatTranslationsTruncated(a.meaning)}</span></div>`
             )
             .join('')}</div>`
         : '';
-      if (node.components.length > 0) {
-        return `<li class="tree-node"><details><summary>${label}</summary><ul class="tree-children">${formatTreeNodes(node.components, false)}</ul></details>${altBlock}</li>`;
-      }
-      return `<li class="tree-node tree-leaf">${label}${altBlock}</li>`;
+      const childrenBlock = hasComponents
+        ? `<ul class="tree-children hidden">${formatTreeNodes(node.components, false)}</ul>`
+        : '';
+      return `<li class="tree-node${hasComponents ? '' : ' tree-leaf'}"><div class="tree-row">${label}</div>${altBlock}${childrenBlock}</li>`;
     })
     .join('');
 }
@@ -2349,27 +2390,97 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Delegated handler for the per-node "other readings" chevron in breakdown trees.
-// Sits independently of <details> so toggling alternates doesn't expand IDS children.
+// Floating tooltip for per-item ellipsis buttons. Lives on <body> so it can escape
+// the scrolling card and any other clip boundaries.
+let activeTooltip: HTMLDivElement | null = null;
+
+function hideTranslationTooltip(): void {
+  if (activeTooltip) {
+    activeTooltip.remove();
+    activeTooltip = null;
+  }
+}
+
+function showTranslationTooltip(target: HTMLElement): void {
+  const text = target.dataset.tooltip;
+  if (!text) {
+    return;
+  }
+  hideTranslationTooltip();
+  const tip = document.createElement('div');
+  tip.className = 'translation-tooltip';
+  tip.textContent = text;
+  document.body.appendChild(tip);
+  const margin = 6;
+  const btn = target.getBoundingClientRect();
+  const tipRect = tip.getBoundingClientRect();
+  let top = btn.top - tipRect.height - margin;
+  if (top < margin) {
+    top = btn.bottom + margin;
+  }
+  let left = btn.left + btn.width / 2 - tipRect.width / 2;
+  left = Math.max(margin, Math.min(left, window.innerWidth - tipRect.width - margin));
+  tip.style.top = `${top}px`;
+  tip.style.left = `${left}px`;
+  activeTooltip = tip;
+}
+
+document.addEventListener('mouseover', (e) => {
+  const target = e.target as HTMLElement;
+  if (target && target.classList && target.classList.contains('translation-item-more')) {
+    showTranslationTooltip(target);
+  }
+});
+
+document.addEventListener('mouseout', (e) => {
+  const target = e.target as HTMLElement;
+  if (target && target.classList && target.classList.contains('translation-item-more')) {
+    hideTranslationTooltip();
+  }
+});
+
+// Stale positions if the underlying button moves — drop the tooltip on scroll.
+window.addEventListener('scroll', hideTranslationTooltip, true);
+
+// Delegated handlers for the per-node chevrons in breakdown trees. Each chevron
+// toggles only its own sibling block within the same <li>, so the alternates
+// and IDS-components subtrees expand independently.
 document.addEventListener('click', (e) => {
   const target = e.target as HTMLElement;
-  if (!target.classList.contains('tree-alt-toggle')) {
+  let blockSelector: string | null = null;
+  let scopeSelector = 'li.tree-node';
+  if (target.classList.contains('tree-alt-toggle')) {
+    blockSelector = ':scope > .tree-alternates';
+  } else if (target.classList.contains('tree-components-toggle')) {
+    blockSelector = ':scope > .tree-children';
+  } else if (target.classList.contains('translation-more')) {
+    blockSelector = ':scope > .translation-extra';
+    scopeSelector = '.translations';
+  } else if (target.classList.contains('translation-item-more')) {
+    blockSelector = ':scope > .translation-tail';
+    scopeSelector = '.translation-item';
+  } else {
     return;
   }
   e.stopPropagation();
   e.preventDefault();
-  const li = target.closest('li.tree-node');
-  if (!li) {
+  const scope = target.closest(scopeSelector);
+  if (!scope) {
     return;
   }
-  const block = li.querySelector(':scope > .tree-alternates') as HTMLElement | null;
+  const block = scope.querySelector(blockSelector) as HTMLElement | null;
   if (!block) {
     return;
   }
   const expanded = block.classList.toggle('hidden') === false;
   target.classList.toggle('expanded', expanded);
   target.setAttribute('aria-expanded', String(expanded));
-  target.textContent = expanded ? '▾' : '▸';
+  if (
+    target.classList.contains('translation-more') ||
+    target.classList.contains('translation-item-more')
+  ) {
+    target.textContent = expanded ? '−' : '…';
+  }
 });
 
 
