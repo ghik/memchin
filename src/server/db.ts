@@ -752,7 +752,21 @@ export interface SearchQuery {
   english?: string;
 }
 
-export function searchLearnedWords(query: SearchQuery, limit = 50): { word: Word; progress: Progress[] }[] {
+function sortMatches<T extends { word: Word }>(matches: T[]): T[] {
+  matches.sort((a, b) => {
+    const lenA = [...a.word.hanzi].length;
+    const lenB = [...b.word.hanzi].length;
+    if (lenA !== lenB) {
+      return lenA - lenB;
+    }
+    const rankA = a.word.wordFrequencyRank ?? Infinity;
+    const rankB = b.word.wordFrequencyRank ?? Infinity;
+    return rankA - rankB;
+  });
+  return matches;
+}
+
+export function searchLearnedWords(query: SearchQuery, limit = 500): { word: Word; progress: Progress[] }[] {
   const hanzi = query.hanzi?.trim() ?? '';
   const hanziMode: MatchMode = query.hanziMode ?? 'contains';
   const english = query.english?.trim().toLowerCase() ?? '';
@@ -773,9 +787,6 @@ export function searchLearnedWords(query: SearchQuery, limit = 50): { word: Word
 
   const matched: { word: Word; progress: Progress[] }[] = [];
   for (const word of words) {
-    if (matched.length >= limit) {
-      break;
-    }
     if (matchesSearch(word, hanzi, hanziMode, english, pinyinTokens, pinyinMode)) {
       const progress = queryRows(
         'SELECT * FROM progress WHERE hanzi = ?',
@@ -785,20 +796,10 @@ export function searchLearnedWords(query: SearchQuery, limit = 50): { word: Word
       matched.push({ word, progress });
     }
   }
-  matched.sort((a, b) => {
-    const lenA = [...a.word.hanzi].length;
-    const lenB = [...b.word.hanzi].length;
-    if (lenA !== lenB) {
-      return lenA - lenB;
-    }
-    const rankA = a.word.wordFrequencyRank ?? Infinity;
-    const rankB = b.word.wordFrequencyRank ?? Infinity;
-    return rankA - rankB;
-  });
-  return matched;
+  return sortMatches(matched).slice(0, limit);
 }
 
-export function searchQueuedWords(query: SearchQuery, limit = 50): { word: Word }[] {
+export function searchQueuedWords(query: SearchQuery, limit = 500): { word: Word }[] {
   const hanzi = query.hanzi?.trim() ?? '';
   const hanziMode: MatchMode = query.hanziMode ?? 'contains';
   const english = query.english?.trim().toLowerCase() ?? '';
@@ -820,24 +821,11 @@ export function searchQueuedWords(query: SearchQuery, limit = 50): { word: Word 
 
   const matched: { word: Word }[] = [];
   for (const word of words) {
-    if (matched.length >= limit) {
-      break;
-    }
     if (matchesSearch(word, hanzi, hanziMode, english, pinyinTokens, pinyinMode)) {
       matched.push({ word });
     }
   }
-  matched.sort((a, b) => {
-    const lenA = [...a.word.hanzi].length;
-    const lenB = [...b.word.hanzi].length;
-    if (lenA !== lenB) {
-      return lenA - lenB;
-    }
-    const rankA = a.word.wordFrequencyRank ?? Infinity;
-    const rankB = b.word.wordFrequencyRank ?? Infinity;
-    return rankA - rankB;
-  });
-  return matched;
+  return sortMatches(matched).slice(0, limit);
 }
 
 function hanziMatchesSearch(wordHanzi: string, query: string, mode: MatchMode): boolean {

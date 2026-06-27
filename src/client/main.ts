@@ -17,6 +17,7 @@ import {
   splitPinyinQuery,
   pinyinCandidateIndices,
   syllableMatchesToken,
+  numberedToToneMarked,
 } from '../shared/pinyin.js';
 import type { PinyinToken } from '../shared/pinyin.js';
 import {
@@ -1064,18 +1065,51 @@ const TRANSLATION_VISIBLE = 5;
 const ITEM_TRUNCATE_ABOVE = 60;
 const ITEM_VISIBLE = 40;
 
+// CEDICT cross-references look like `忘不了[wang4 bu5 liao3]` or `無|无[wu2]`.
+// Render them as a single clean reference: hanzi (simplified preferred) followed
+// by tone-marked pinyin in a subtle pill, instead of dumping the raw bracketed
+// numbered pinyin and the trad|simp pair inline.
+const CEDICT_REF_RE = /([一-鿿]+)(?:\|([一-鿿]+))?\[([a-zA-Z0-9: ]+)\]/g;
+
+function formatCedictRefs(text: string): string {
+  return text.replace(CEDICT_REF_RE, (_match, trad: string, simp: string | undefined, pinyin: string) => {
+    const display = simp || trad;
+    let pretty: string;
+    try {
+      pretty = numberedToToneMarked(pinyin.trim());
+    } catch {
+      pretty = pinyin.trim();
+    }
+    return `<span class="cedict-ref"><span class="cedict-ref-hanzi">${display}</span><span class="cedict-ref-pinyin">${pretty}</span></span>`;
+  });
+}
+
 function formatTranslationItem(text: string): string {
+  const formatted = formatCedictRefs(text);
   if (text.length <= ITEM_TRUNCATE_ABOVE) {
-    return `<span class="translation-item">${text}</span>`;
+    return `<span class="translation-item">${formatted}</span>`;
   }
   // Break at the nearest word boundary before the visible target, falling back to the raw cut.
+  // Cut is computed on the raw text so the boundary semantics are intuitive; the
+  // head/tail substrings then get the same CEDICT-ref formatting applied.
   let cut = ITEM_VISIBLE;
   const space = text.lastIndexOf(' ', ITEM_VISIBLE);
   if (space > ITEM_VISIBLE * 0.6) {
     cut = space;
   }
-  const head = text.slice(0, cut);
-  const tail = text.slice(cut);
+  // Don't land the cut inside a CEDICT reference; snap to before it.
+  CEDICT_REF_RE.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = CEDICT_REF_RE.exec(text)) !== null) {
+    const start = m.index;
+    const end = m.index + m[0].length;
+    if (cut > start && cut < end) {
+      cut = start;
+      break;
+    }
+  }
+  const head = formatCedictRefs(text.slice(0, cut));
+  const tail = formatCedictRefs(text.slice(cut));
   const fullAttr = text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
   return `<span class="translation-item">${head}<button type="button" class="translation-item-more" aria-expanded="false" data-tooltip="${fullAttr}">…</button><span class="translation-tail hidden">${tail}</span></span>`;
 }
@@ -1208,21 +1242,19 @@ function formatTreeNodes(nodes: CharacterInfo[], isRoot: boolean): string {
   return nodes
     .map((node) => {
       const hanziClass = isRoot ? 'tree-hanzi-root' : 'tree-hanzi';
-      const hanziSpan = node.traditional
-        ? `<span class="${hanziClass} tree-has-traditional">${node.hanzi}<span class="tree-traditional">${node.traditional}</span></span>`
-        : `<span class="${hanziClass}">${node.hanzi}</span>`;
+      const hanziSpan = `<span class="${hanziClass}${node.traditional ? ' tree-has-traditional' : ''}"><span class="tree-traditional">${node.traditional ?? ''}</span><span class="tree-simplified">${node.hanzi}</span></span>`;
       const hasAlternates = node.alternates && node.alternates.length > 0;
       const hasComponents = node.components.length > 0;
       const componentsToggle = hasComponents
         ? `<button type="button" class="tree-components-toggle" aria-expanded="false" title="Components">▶</button>`
-        : '';
+        : `<span class="tree-components-toggle tree-toggle-placeholder" aria-hidden="true"></span>`;
       const altToggle = hasAlternates
         ? `<button type="button" class="tree-alt-toggle" aria-expanded="false" title="Other readings">▸</button>`
-        : '';
+        : `<span class="tree-alt-toggle tree-toggle-placeholder" aria-hidden="true"></span>`;
       const label = `${componentsToggle}${hanziSpan}${altToggle}<span class="tree-pinyin">${node.pinyin}</span><span class="tree-meaning">${formatTranslationsTruncated(node.meaning)}</span>`;
       // Invisible mirror of the main row's leading elements so alt-row pinyin aligns under main pinyin.
       const altRowPrefix = hasAlternates
-        ? `<span class="tree-prefix-mirror" aria-hidden="true">${hasComponents ? `<button type="button" class="tree-components-toggle" tabindex="-1">▶</button>` : ''}${hanziSpan}<button type="button" class="tree-alt-toggle" tabindex="-1">▸</button></span>`
+        ? `<span class="tree-prefix-mirror" aria-hidden="true">${componentsToggle}${hanziSpan}<button type="button" class="tree-alt-toggle" tabindex="-1">▸</button></span>`
         : '';
       const altBlock = hasAlternates
         ? `<div class="tree-alternates hidden">${node.alternates!
@@ -2409,7 +2441,7 @@ function showTranslationTooltip(target: HTMLElement): void {
   hideTranslationTooltip();
   const tip = document.createElement('div');
   tip.className = 'translation-tooltip';
-  tip.textContent = text;
+  tip.innerHTML = formatCedictRefs(text);
   document.body.appendChild(tip);
   const margin = 6;
   const btn = target.getBoundingClientRect();
@@ -2441,6 +2473,81 @@ document.addEventListener('mouseout', (e) => {
 
 // Stale positions if the underlying button moves — drop the tooltip on scroll.
 window.addEventListener('scroll', hideTranslationTooltip, true);
+
+// Floating big-character tooltip over a breakdown-tree hanzi span (simplified +
+// traditional). Also portaled to body so it escapes the card's clip boundary.
+let activeHanziTooltip: HTMLDivElement | null = null;
+let activeHanziTooltipFor: HTMLElement | null = null;
+
+function hideHanziTooltip(): void {
+  if (activeHanziTooltip) {
+    activeHanziTooltip.remove();
+    activeHanziTooltip = null;
+  }
+  activeHanziTooltipFor = null;
+}
+
+function showHanziTooltip(hanziEl: HTMLElement): void {
+  const trad = hanziEl.querySelector('.tree-traditional')?.textContent?.trim() ?? '';
+  const simp = hanziEl.querySelector('.tree-simplified')?.textContent?.trim() ?? '';
+  if (!simp) {
+    return;
+  }
+  hideHanziTooltip();
+  const tip = document.createElement('div');
+  tip.className = 'char-tooltip';
+  const parts: string[] = [];
+  if (trad && trad !== simp) {
+    parts.push(`<span class="char-tooltip-trad">${trad}</span>`);
+  }
+  parts.push(`<span class="char-tooltip-simp">${simp}</span>`);
+  tip.innerHTML = parts.join('');
+  document.body.appendChild(tip);
+  const margin = 6;
+  const r = hanziEl.getBoundingClientRect();
+  const tipRect = tip.getBoundingClientRect();
+  let top = r.top - tipRect.height - margin;
+  if (top < margin) {
+    top = r.bottom + margin;
+  }
+  let left = r.left + r.width / 2 - tipRect.width / 2;
+  left = Math.max(margin, Math.min(left, window.innerWidth - tipRect.width - margin));
+  tip.style.top = `${top}px`;
+  tip.style.left = `${left}px`;
+  activeHanziTooltip = tip;
+  activeHanziTooltipFor = hanziEl;
+}
+
+document.addEventListener('mouseover', (e) => {
+  const target = e.target as HTMLElement;
+  if (!target || !target.closest) {
+    return;
+  }
+  const hanziEl = target.closest('.tree-hanzi, .tree-hanzi-root') as HTMLElement | null;
+  if (!hanziEl || hanziEl === activeHanziTooltipFor) {
+    return;
+  }
+  showHanziTooltip(hanziEl);
+});
+
+document.addEventListener('mouseout', (e) => {
+  const target = e.target as HTMLElement;
+  if (!target || !target.closest) {
+    return;
+  }
+  const hanziEl = target.closest('.tree-hanzi, .tree-hanzi-root') as HTMLElement | null;
+  if (!hanziEl || hanziEl !== activeHanziTooltipFor) {
+    return;
+  }
+  // Don't close when moving between child spans of the same hanzi container.
+  const related = e.relatedTarget as Node | null;
+  if (related && hanziEl.contains(related)) {
+    return;
+  }
+  hideHanziTooltip();
+});
+
+window.addEventListener('scroll', hideHanziTooltip, true);
 
 // Delegated handlers for the per-node chevrons in breakdown trees. Each chevron
 // toggles only its own sibling block within the same <li>, so the alternates

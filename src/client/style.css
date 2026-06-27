@@ -1133,45 +1133,28 @@ body.dark .answer-section input.invalid:focus {
   color: var(--text-4);
 }
 
-.tree-hanzi-root {
+.tree-hanzi-root,
+.tree-hanzi {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25em;
   font-size: 1.3em;
   font-family: 'BabelStone Han', sans-serif;
 }
 
 .tree-hanzi {
-  font-size: 1.3em;
   color: var(--text-2);
-  font-family: 'BabelStone Han', sans-serif;
-}
-
-.tree-has-traditional {
-  position: relative;
-  cursor: default;
-  text-decoration: underline dotted #aaa;
-  text-underline-offset: 3px;
 }
 
 .tree-traditional {
-  display: none;
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2rem;
-  font-weight: 250;
+  flex: 0 0 1.1em;
+  text-align: center;
   color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 10px;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px var(--shadow);
-  z-index: 10;
-  pointer-events: none;
+  font-weight: 300;
 }
 
-.tree-has-traditional:hover .tree-traditional {
-  display: block;
+.tree-simplified {
+  flex: 0 0 auto;
 }
 
 .tree-pinyin {
@@ -1263,6 +1246,22 @@ body.dark .answer-section input.invalid:focus {
   background: var(--surface-3);
 }
 
+.cedict-ref {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--surface-3);
+  white-space: nowrap;
+}
+
+.cedict-ref-pinyin {
+  color: var(--accent);
+  font-style: italic;
+  font-size: 0.9em;
+}
+
 .translation-tooltip {
   position: fixed;
   background: var(--surface);
@@ -1279,6 +1278,33 @@ body.dark .answer-section input.invalid:focus {
   pointer-events: none;
   z-index: 10000;
   box-shadow: 0 2px 8px var(--shadow);
+}
+
+.char-tooltip {
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-family: 'BabelStone Han', sans-serif;
+  font-size: 5rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+  pointer-events: none;
+  z-index: 10000;
+  box-shadow: 0 4px 16px var(--shadow);
+  white-space: nowrap;
+}
+
+.char-tooltip-trad {
+  color: var(--text);
+  font-weight: 300;
+}
+
+.char-tooltip-simp {
+  color: var(--text-2);
 }
 
 .tree-alternates {
@@ -1300,6 +1326,11 @@ body.dark .answer-section input.invalid:focus {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.tree-toggle-placeholder {
   visibility: hidden;
   pointer-events: none;
 }
