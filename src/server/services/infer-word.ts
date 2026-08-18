@@ -54,6 +54,7 @@ Do three things:
 2. Give the reading and meaning:
    - "pinyin": tone-marked pinyin. Join the syllables of a single word without spaces (diànnǎo), separate distinct words with one space (wǒ hěn xǐhuan nǐ). Never include punctuation, numbers or capital letters.
    - "english": an array of 1-4 short English glosses, most common first — the way a dictionary lists senses. For a sentence, a single natural translation. For a character that only lives inside compounds, gloss the meaning it contributes and name a compound it appears in, e.g. "bat (in 蝙蝠)".
+     Write the glosses in English. Never drop the Chinese word into an English phrase ("to嫁 into a family", "to摘 off" are wrong; write "to marry into a family", "to pick off"). The only Chinese that belongs in a gloss is a compound named in brackets, as in "bat (in 蝙蝠)".
      Leave out senses that only record a personal name: 王 is "king", not "surname Wang"; 李 is "plum", not "surname Li"; 张 is "to stretch" and a measure word, not "surname Zhang". Give a name sense only when the character has no other meaning in modern Mandarin (赵, 郑), and say which kind of name it is. Place names, country names and other proper nouns are fine to keep.
 
 3. Label the text. "categories" is an array drawn only from the closed sets below — never invent a label.
@@ -170,11 +171,22 @@ Dla przysłowia lub chengyu podaj utrwalony polski odpowiednik, jeśli istnieje,
 
 Zwróć wyłącznie ten obiekt JSON, bez żadnego tekstu przed ani po nim.`;
 
+/**
+ * The model occasionally substitutes the Chinese word for the English one it is glossing
+ * ("to嫁 into a family"). A hanzi welded to a latin letter gives it away — but only outside
+ * brackets, where the notes legitimately write things like "(in 蝙蝠)" or "(in V着)".
+ */
+const HANZI_IN_A_WORD = /[A-Za-z][\u3400-\u9fff]|[\u3400-\u9fff][A-Za-z]/;
+
+function isMalformedGloss(gloss: string): boolean {
+  return HANZI_IN_A_WORD.test(gloss.replace(/\([^)]*\)/g, ' '));
+}
+
 function trimmedStrings(values: unknown[]): string[] {
   return values
     .filter((v): v is string => typeof v === 'string')
     .map((v) => v.trim())
-    .filter((v) => v !== '');
+    .filter((v) => v !== '' && !isMalformedGloss(v));
 }
 
 function parseInferResponse(raw: string): InferResponse | null {

@@ -410,13 +410,17 @@ body.dark input[type="checkbox"] {
   color: var(--text-3);
 }
 
-/* Secondary translations sit under the prompt or the revealed answer, so they read smaller
-   than the line they belong to */
+/* Secondary translations read smaller than the line they belong to. The prompt sets its own
+   large font, so it needs a much bigger reduction than the answer, which is already at body
+   size. */
 .prompt .prompt-polish,
-.prompt .answer-ai-english,
+.prompt .answer-ai-english {
+  font-size: 0.65em;
+}
+
 .feedback .answer-polish,
 .feedback .answer-ai-english {
-  font-size: 0.65em;
+  font-size: 0.8em;
 }
 
 .english-sep {
