@@ -21,6 +21,11 @@
   --sidebar-text: #adb5bd;
   --accent: #4a90d9;
   --accent-hover: #3a7bc8;
+  --grammar-tag: #5b3ea1;
+  --ai-color: #5b3ea1;
+  --ai-bg: #f3effb;
+  --ai-bg-hover: #e7dff6;
+  --ai-border: #c4b5e0;
   --input-bg: #ffffff;
   --shadow: rgba(0, 0, 0, 0.1);
   --btn-review-bg: #e8f0fe;
@@ -62,6 +67,11 @@ body.dark {
   --sidebar-text: #8889a8;
   --accent: #5ba3e8;
   --accent-hover: #4a90d9;
+  --grammar-tag: #b89de0;
+  --ai-color: #b89de0;
+  --ai-bg: #2a1f40;
+  --ai-bg-hover: #352852;
+  --ai-border: #5a3ea8;
   --input-bg: #1e1f32;
   --shadow: rgba(0, 0, 0, 0.4);
   --btn-review-bg: #1a2d4a;
@@ -981,8 +991,19 @@ body.dark .answer-section input.invalid:focus {
   width: auto;
 }
 
-.synonym-hanzi-input {
+.synonym-search-container {
+  position: relative;
   flex: 1;
+}
+
+.synonym-search-hint {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-3);
+}
+
+.synonym-hanzi-input {
+  width: 100%;
   padding: 8px 12px;
   font-size: 16px;
   border: 2px solid var(--border);
@@ -1028,6 +1049,15 @@ body.dark .answer-section input.invalid:focus {
   border-radius: 12px;
   font-size: 0.75em;
   margin-right: 4px;
+}
+
+.answer-category.ai-category {
+  background: var(--ai-bg);
+  color: var(--ai-color);
+}
+
+.answer-category.ai-category .ai-mark {
+  margin-right: 3px;
 }
 
 .example-hint {
@@ -1235,7 +1265,7 @@ body.dark .answer-section input.invalid:focus {
   padding: 0 3px;
   margin: 0;
   font: inherit;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--accent);
   cursor: pointer;
   border-radius: 3px;
@@ -1246,20 +1276,43 @@ body.dark .answer-section input.invalid:focus {
   background: var(--surface-3);
 }
 
-.cedict-ref {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-  padding: 0 4px;
+.grammar-badge {
+  position: relative;
+  font-style: italic;
+  color: var(--grammar-tag);
+  margin: 0 0.25em 0 2px;
+  cursor: help;
+}
+
+.grammar-badge:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 7px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--surface-3);
   border-radius: 4px;
-  background: var(--surface-3);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: normal;
   white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.cedict-ref {
+  white-space: nowrap;
+}
+
+.cedict-ref-hanzi {
+  margin-right: 3px;
 }
 
 .cedict-ref-pinyin {
   color: var(--accent);
-  font-style: italic;
-  font-size: 0.9em;
 }
 
 .translation-tooltip {
@@ -1733,23 +1786,27 @@ body.dark label.category-item.excluded input[type="checkbox"]::after {
   position: relative;
 }
 
-.english-list {
+.english-list,
+.synonym-list {
   display: flex;
   flex-direction: column;
 }
 
-.english-list:empty {
+.english-list:empty,
+.synonym-list:empty {
   display: none;
 }
 
-.english-list:not(:empty) {
+.english-list:not(:empty),
+.synonym-list:not(:empty) {
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 6px;
 }
 
-.english-item {
+.english-item,
+.synonym-item {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1759,7 +1816,8 @@ body.dark label.category-item.excluded input[type="checkbox"]::after {
   font-size: 14px;
 }
 
-.english-item:last-child {
+.english-item:last-child,
+.synonym-item:last-child {
   border-bottom: none;
 }
 
@@ -1777,7 +1835,8 @@ body.dark label.category-item.excluded input[type="checkbox"]::after {
 }
 
 .add-word-form input[type="text"].english-item-input,
-.add-word-form .english-add-row input[type="text"] {
+.add-word-form .english-add-row input[type="text"],
+.add-word-form .synonym-add-row input[type="text"] {
   flex: 1;
   padding: 6px 0;
   font-size: 14px;
@@ -1789,12 +1848,14 @@ body.dark label.category-item.excluded input[type="checkbox"]::after {
 }
 
 .add-word-form input[type="text"].english-item-input:focus,
-.add-word-form .english-add-row input[type="text"]:focus {
+.add-word-form .english-add-row input[type="text"]:focus,
+.add-word-form .synonym-add-row input[type="text"]:focus {
   color: var(--text);
 }
 
 .english-add-row .drag-handle,
-.english-add-row .english-item-remove {
+.english-add-row .english-item-remove,
+.synonym-add-row .synonym-item-remove {
   visibility: hidden;
   pointer-events: none;
 }
@@ -1803,7 +1864,8 @@ body.dark label.category-item.excluded input[type="checkbox"]::after {
   visibility: hidden;
 }
 
-.english-item-remove {
+.english-item-remove,
+.synonym-item-remove {
   background: none;
   border: none;
   cursor: pointer;
@@ -1815,7 +1877,8 @@ body.dark label.category-item.excluded input[type="checkbox"]::after {
   opacity: 0.7;
 }
 
-.english-item-remove:hover {
+.english-item-remove:hover,
+.synonym-item-remove:hover {
   opacity: 1;
 }
 
@@ -1867,12 +1930,146 @@ body.dark .chip-remove {
   opacity: 1;
 }
 
+/* AI inference: button, verdict panel, and badges on everything the model filled in */
+.infer-row {
+  display: flex;
+  margin-top: 8px;
+}
+
+.aux-btn.infer-btn {
+  color: var(--ai-color);
+  background: var(--ai-bg);
+  border-color: var(--ai-border);
+}
+
+.aux-btn.infer-btn:hover:not(:disabled) {
+  background: var(--ai-bg-hover);
+}
+
+.ai-mark {
+  font-size: 0.9em;
+  line-height: 1;
+}
+
+.ai-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.ai-chips .chip.ai-chip {
+  background: var(--ai-bg);
+  border-color: var(--ai-border);
+  color: var(--ai-color);
+}
+
+.ai-chips .chip.ai-chip .chip-remove {
+  color: var(--ai-color);
+}
+
+/* A value the AI supplied, until the user edits it */
+.add-word-form input[type="text"].ai-inferred,
+.english-item.ai-inferred {
+  border-color: var(--ai-border);
+  border-left: 3px solid var(--ai-color);
+  background: var(--ai-bg);
+}
+
+.english-item.ai-inferred .english-item-input {
+  background: transparent;
+}
+
+.ai-assessment {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--ai-border);
+  border-radius: 8px;
+  background: var(--ai-bg);
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.ai-assessment.unnatural {
+  border-color: #ffc107;
+  background: var(--btn-due-bg);
+}
+
+.ai-assessment.invalid {
+  border-color: #dc3545;
+  background: #f8d7da;
+}
+
+body.dark .ai-assessment.invalid {
+  background: #4d1a1e;
+}
+
+.ai-assessment-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ai-assessment-notes {
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+.ai-assessment-suggestion {
+  margin-top: 8px;
+}
+
+.synonym-item:not(.synonym-add-row) {
+  align-items: baseline;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.synonym-item .preview-english {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.synonym-item .synonym-item-remove {
+  align-self: center;
+}
+
+.synonym-add-container {
+  position: relative;
+}
+
+.synonym-suggestions {
+  max-height: 280px;
+}
+
+.synonym-suggestion {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  /* practice feedback centers its text; suggestion rows stay left-aligned */
+  text-align: left;
+}
+
+.synonym-suggestion .preview-english {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .category-suggestions {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
   background: var(--surface);
+  color: var(--text);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--shadow);
@@ -1889,7 +2086,8 @@ body.dark .chip-remove {
   transition: background 0.15s;
 }
 
-.category-suggestion:hover {
+.category-suggestion:hover,
+.category-suggestion.active {
   background: var(--surface-2);
 }
 

@@ -95,6 +95,12 @@ export async function initDb(): Promise<void> {
     db.run('ALTER TABLE words ADD COLUMN polish TEXT');
   }
 
+  // Labels inferred by the AI, kept apart from the user's own categories so their
+  // provenance stays visible
+  if (!columns.includes('ai_categories')) {
+    db.run('ALTER TABLE words ADD COLUMN ai_categories TEXT');
+  }
+
   // Clear char_queued_at for any chars that have already been practiced (cleanup for bad migrations)
   db.run(`
     UPDATE words SET char_queued_at = NULL
@@ -215,6 +221,7 @@ export interface WordToInsert {
   examples: Example[];
   translatable: boolean;
   categories: string[];
+  aiCategories?: string[];
   manual: boolean;
 }
 
@@ -222,8 +229,8 @@ export function insertWords(words: WordToInsert[]): void {
   for (const word of words) {
     db.run(
       `
-          INSERT INTO words (hanzi, pinyin, english, polish, hsk_level, examples, translatable, rank, hanzi_rank, categories, manual)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO words (hanzi, pinyin, english, polish, hsk_level, examples, translatable, rank, hanzi_rank, categories, ai_categories, manual)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(hanzi) DO UPDATE SET
             pinyin = excluded.pinyin,
             english = excluded.english,
@@ -233,6 +240,7 @@ export function insertWords(words: WordToInsert[]): void {
             rank = excluded.rank,
             hanzi_rank = excluded.hanzi_rank,
             categories = excluded.categories,
+            ai_categories = COALESCE(excluded.ai_categories, words.ai_categories),
             manual = excluded.manual
       `,
       [
@@ -246,11 +254,16 @@ export function insertWords(words: WordToInsert[]): void {
         word.wordFrequencyRank ?? null,
         word.hanziFrequencyRank ?? null,
         JSON.stringify(word.categories),
+        word.aiCategories ? JSON.stringify(word.aiCategories) : null,
         word.manual ? 1 : 0,
       ]
     );
   }
   saveDb();
+  // Invalidate so lookups right after an insert (e.g. queueing the characters of a
+  // freshly added word) can see the new rows
+  allWords = null;
+  ambiguousTranslations = null;
 }
 
 export function updateWord(
@@ -258,15 +271,22 @@ export function updateWord(
   pinyin: string,
   english: string[],
   polish: string[],
-  categories: string[]
+  categories: string[],
+  aiCategories?: string[]
 ): void {
-  db.run('UPDATE words SET pinyin = ?, english = ?, polish = ?, categories = ? WHERE hanzi = ?', [
-    pinyin,
-    JSON.stringify(english),
-    JSON.stringify(polish),
-    JSON.stringify(categories),
-    hanzi,
-  ]);
+  db.run(
+    `UPDATE words SET pinyin = ?, english = ?, polish = ?, categories = ?${
+      aiCategories ? ', ai_categories = ?' : ''
+    } WHERE hanzi = ?`,
+    [
+      pinyin,
+      JSON.stringify(english),
+      JSON.stringify(polish),
+      JSON.stringify(categories),
+      ...(aiCategories ? [JSON.stringify(aiCategories)] : []),
+      hanzi,
+    ]
+  );
   saveDb();
   allWords = null;
   ambiguousTranslations = null;
@@ -392,16 +412,27 @@ export function resetProgressBucket(hanzi: string, mode: string, toCharacterMode
   saveDb();
 }
 
+// These run one row at a time inside loops, so they patch the cached word rather than
+// dropping the cache — a full rebuild per call would be O(n) per queued character.
+function patchCachedWord(hanzi: string, patch: Partial<Word>): void {
+  const cached = allWords?.get(hanzi);
+  if (cached) {
+    Object.assign(cached, patch);
+  }
+}
+
 export function setQueuedAt(hanzi: string): void {
   const now = new Date()
     .toISOString()
     .replace('T', ' ')
     .replace(/\.\d+Z$/, '');
   db.run('UPDATE words SET queued_at = ? WHERE hanzi = ?', [now, hanzi]);
+  patchCachedWord(hanzi, { queuedAt: now });
 }
 
 export function clearQueuedAt(hanzi: string): void {
   db.run('UPDATE words SET queued_at = NULL WHERE hanzi = ?', [hanzi]);
+  patchCachedWord(hanzi, { queuedAt: undefined });
 }
 
 export function setCharQueuedAt(hanzi: string): void {
@@ -414,13 +445,32 @@ export function setCharQueuedAt(hanzi: string): void {
      AND NOT EXISTS (SELECT 1 FROM progress p WHERE p.hanzi = words.hanzi AND p.bucket IS NOT NULL)`,
     [now, hanzi]
   );
+  // The UPDATE is conditional, so read back what actually landed
+  if (allWords?.has(hanzi)) {
+    const stmt = db.prepare('SELECT char_queued_at FROM words WHERE hanzi = ?');
+    stmt.bind([hanzi]);
+    if (stmt.step()) {
+      patchCachedWord(hanzi, {
+        charQueuedAt: (stmt.getAsObject().char_queued_at as string | null) ?? undefined,
+      });
+    }
+    stmt.free();
+  }
 }
 
 export function clearCharQueuedAt(hanzi: string): void {
   db.run('UPDATE words SET char_queued_at = NULL WHERE hanzi = ?', [hanzi]);
+  patchCachedWord(hanzi, { charQueuedAt: undefined });
 }
 
 // Word query helpers
+
+// A word's own categories and its AI-inferred ones are both filterable, so every
+// category predicate runs over the union of the two columns
+const ALL_CATEGORY_VALUES = `
+      SELECT value FROM json_each(w.categories)
+      UNION ALL
+      SELECT value FROM json_each(COALESCE(w.ai_categories, '[]'))`;
 
 interface WordFilters {
   queueColumn: string; // 'w.queued_at' or 'w.char_queued_at'
@@ -441,13 +491,13 @@ function getWordFilters(
 
   if (categories.length > 0) {
     wordParts.push(
-      `AND EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${categories.map(() => '?').join(',')}))`
+      `AND EXISTS (SELECT 1 FROM (${ALL_CATEGORY_VALUES}) WHERE value IN (${categories.map(() => '?').join(',')}))`
     );
   }
 
   if (excludedCategories.length > 0) {
     wordParts.push(
-      `AND NOT EXISTS (SELECT 1 FROM json_each(w.categories) WHERE value IN (${excludedCategories.map(() => '?').join(',')}))`
+      `AND NOT EXISTS (SELECT 1 FROM (${ALL_CATEGORY_VALUES}) WHERE value IN (${excludedCategories.map(() => '?').join(',')}))`
     );
   }
 
@@ -879,7 +929,10 @@ function matchesSearch(
 // Category operations
 export function getAllCategories(): string[] {
   return queryRows(
-    'SELECT DISTINCT value FROM words, json_each(words.categories) ORDER BY value',
+    `SELECT value FROM words, json_each(words.categories)
+     UNION
+     SELECT value FROM words, json_each(COALESCE(words.ai_categories, '[]'))
+     ORDER BY value`,
     [],
     (row) => row.value as string
   );
@@ -899,6 +952,23 @@ export function isHanziSynonym(a: string, b: string): boolean {
   const found = stmt.step();
   stmt.free();
   return found;
+}
+
+/** Replaces the full set of synonyms of `hanzi` with `synonyms`. */
+export function setHanziSynonyms(hanzi: string, synonyms: string[]): void {
+  const wanted = new Set(synonyms);
+  for (const existing of getHanziSynonymHanzis(hanzi)) {
+    if (wanted.has(existing)) {
+      continue;
+    }
+    const [hanzi1, hanzi2] = hanzi < existing ? [hanzi, existing] : [existing, hanzi];
+    db.run(`DELETE FROM hanzi_synonyms WHERE hanzi1 = ? AND hanzi2 = ?`, [hanzi1, hanzi2]);
+  }
+  for (const synonym of wanted) {
+    const [hanzi1, hanzi2] = hanzi < synonym ? [hanzi, synonym] : [synonym, hanzi];
+    db.run(`INSERT OR IGNORE INTO hanzi_synonyms (hanzi1, hanzi2) VALUES (?, ?)`, [hanzi1, hanzi2]);
+  }
+  saveDb();
 }
 
 export function getHanziSynonymHanzis(hanzi: string): string[] {
@@ -923,6 +993,7 @@ function rowToWord(row: any): Word {
     examples: JSON.parse(row.examples || '[]'),
     translatable: Boolean(row.translatable),
     categories: JSON.parse(row.categories || '[]'),
+    aiCategories: JSON.parse(row.ai_categories || '[]'),
     manual: Boolean(row.manual),
     queuedAt: row.queued_at ?? undefined,
     charQueuedAt: row.char_queued_at ?? undefined,

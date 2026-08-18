@@ -19,14 +19,30 @@ import {
   clearQueuedAt,
   clearCharQueuedAt,
   updateWordExamples,
+  getHanziSynonymHanzis,
+  setHanziSynonyms,
 } from '../db.js';
 import { lookupFiltered } from '../services/cedict.js';
-import { normalizePinyinInput, splitPinyin } from '../../shared/pinyin.js';
+import { normalizePinyinInput, splitPinyin, splitPinyinQuery } from '../../shared/pinyin.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
 import { deleteAudio, generateSpeech } from '../services/tts.js';
+import { inferWord } from '../services/infer-word.js';
 import { decomposeWord } from '../services/ids.js';
 import { lookupChar, loadWordFrequencyData } from '../services/hanzi-freq.js';
-import type { Example } from '../../shared/types.js';
+import type { Example, SynonymEntry } from '../../shared/types.js';
+
+function synonymEntries(hanzi: string): SynonymEntry[] {
+  const entries: SynonymEntry[] = [];
+  for (const synonym of getHanziSynonymHanzis(hanzi)) {
+    const word = getWordByHanzi(synonym);
+    entries.push({
+      hanzi: synonym,
+      pinyin: word?.pinyin ?? '',
+      english: word?.english ?? [],
+    });
+  }
+  return entries;
+}
 
 function resetCharsForWord(hanzi: string): void {
   const chars = [...hanzi];
@@ -82,6 +98,45 @@ router.get('/search', (req, res) => {
   res.json([...learned, ...queued]);
 });
 
+// Autocomplete over learned words: hanzi if the query contains CJK, pinyin otherwise
+router.get('/suggest', (req, res) => {
+  const query = ((req.query.q as string) ?? '').trim();
+  const limit = Math.min(Number(req.query.limit) || 10, 50);
+  if (!query) {
+    return res.json([]);
+  }
+  const isHanzi = /[一-鿿㐀-䶿]/.test(query);
+  if (!isHanzi && splitPinyinQuery(query).length === 0) {
+    // Nothing parseable as pinyin: an empty token list would match every word
+    return res.json([]);
+  }
+  const matches = searchLearnedWords(
+    isHanzi ? { hanzi: query, hanziMode: 'prefix' } : { pinyin: query, pinyinMode: 'prefix' },
+    limit
+  );
+  const suggestions: SynonymEntry[] = matches.map(({ word }) => ({
+    hanzi: word.hanzi,
+    pinyin: word.pinyin,
+    english: word.english,
+  }));
+  res.json(suggestions);
+});
+
+// Ask OpenAI for the reading, meaning and naturalness of an arbitrary hanzi string
+router.post('/infer', async (req, res) => {
+  const hanzi = ((req.body.hanzi as string) ?? '').trim();
+  if (!hanzi) {
+    return res.status(400).json({ error: 'hanzi is required' });
+  }
+  try {
+    const result = await inferWord(hanzi);
+    res.json({ ...result, pinyin: normalizePinyinInput(result.pinyin) });
+  } catch (error) {
+    console.error(`Inference failed for "${hanzi}":`, error);
+    res.status(500).json({ error: 'Inference failed' });
+  }
+});
+
 router.get('/lookup/:hanzi', (req, res) => {
   const hanzi = decodeURIComponent(req.params.hanzi);
   const entries = lookupFiltered(hanzi);
@@ -91,12 +146,13 @@ router.get('/lookup/:hanzi', (req, res) => {
   const freq = loadWordFrequencyData();
   const wordRank = freq.get(hanzi) ?? null;
   const charRank = [...hanzi].length === 1 ? wordRank : null;
-  res.json({ entries, existing, maxBucket, breakdown, wordRank, charRank });
+  const synonyms = existing ? synonymEntries(hanzi) : [];
+  res.json({ entries, existing, maxBucket, breakdown, wordRank, charRank, synonyms });
 });
 
 router.post('/', async (req, res) => {
   try {
-    const { hanzi, pinyin, english, polish, categories } = req.body;
+    const { hanzi, pinyin, english, polish, categories, aiCategories } = req.body;
 
     if (!hanzi || !pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
@@ -132,6 +188,7 @@ router.post('/', async (req, res) => {
         examples: [],
         translatable: true,
         categories: categories || [],
+        aiCategories: Array.isArray(aiCategories) ? aiCategories : [],
         manual: true,
       },
     ]);
@@ -180,36 +237,47 @@ router.post('/', async (req, res) => {
 
     saveDb();
 
-    // Generate examples and audio for main word
-    const exampleMap = await generateExamples([
-      { hanzi, pinyin: normalizedPinyin, english, hskLevel: 0 },
-    ]);
-    const examples = exampleMap.get(hanzi) || [];
-    updateWordExamples(hanzi, examples);
-    await generateSpeech(hanzi, normalizedPinyin);
-    for (const ex of examples) {
-      await generateSpeech(ex.hanzi, ex.pinyin);
-    }
+    // Examples and audio are best-effort: the word is already stored, so a failure
+    // for one entry must not abort the others (run `npm run regenerate-missing` to backfill)
+    const warnings: string[] = [];
 
-    // Generate examples and audio for auto-added characters
-    for (const w of charsAdded) {
-      if (w.wordFrequencyRank) {
-        const charExampleMap = await generateExamples([
-          { hanzi: w.hanzi, pinyin: w.pinyin, english: w.english, hskLevel: 0 },
-        ]);
-        const charExamples = charExampleMap.get(w.hanzi) || [];
-        updateWordExamples(w.hanzi, charExamples);
-        for (const ex of charExamples) {
-          await generateSpeech(ex.hanzi, ex.pinyin);
+    const generateFor = async (entry: {
+      hanzi: string;
+      pinyin: string;
+      english: string[];
+    }): Promise<void> => {
+      try {
+        const exampleMap = await generateExamples([{ ...entry, hskLevel: 0 }]);
+        const examples = exampleMap.get(entry.hanzi) ?? [];
+        if (examples.length === 0) {
+          warnings.push(`No examples generated for "${entry.hanzi}"`);
+        } else {
+          updateWordExamples(entry.hanzi, examples);
+          for (const ex of examples) {
+            await generateSpeech(ex.hanzi, ex.pinyin);
+          }
         }
+      } catch (error) {
+        console.error(`Failed to generate examples for ${entry.hanzi}:`, error);
+        warnings.push(`Example generation failed for "${entry.hanzi}"`);
       }
-      await generateSpeech(w.hanzi, w.pinyin);
+      try {
+        await generateSpeech(entry.hanzi, entry.pinyin);
+      } catch (error) {
+        console.error(`Failed to generate audio for ${entry.hanzi}:`, error);
+        warnings.push(`Audio generation failed for "${entry.hanzi}"`);
+      }
+    };
+
+    await generateFor({ hanzi, pinyin: normalizedPinyin, english });
+    for (const w of charsAdded) {
+      await generateFor({ hanzi: w.hanzi, pinyin: w.pinyin, english: w.english });
     }
 
     invalidateWordCache();
 
     const word = getWordByHanzi(hanzi);
-    res.json(word);
+    res.json(warnings.length > 0 ? { ...word, warnings } : word);
   } catch (error) {
     console.error('Failed to add word:', error);
     res.status(500).json({ error: 'Failed to add word' });
@@ -219,7 +287,7 @@ router.post('/', async (req, res) => {
 router.put('/:hanzi', (req, res) => {
   try {
     const hanzi = decodeURIComponent(req.params.hanzi);
-    const { pinyin, english, polish, categories, queueAsNew } = req.body;
+    const { pinyin, english, polish, categories, queueAsNew, synonyms, aiCategories } = req.body;
 
     if (!pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
@@ -233,9 +301,33 @@ router.put('/:hanzi', (req, res) => {
       return res.status(404).json({ error: `Word "${hanzi}" not found` });
     }
 
+    if (synonyms !== undefined) {
+      if (!Array.isArray(synonyms)) {
+        return res.status(400).json({ error: 'synonyms must be an array' });
+      }
+      for (const synonym of synonyms) {
+        if (synonym === hanzi) {
+          return res.status(400).json({ error: 'A word cannot be its own synonym' });
+        }
+        if (!getWordByHanzi(synonym)) {
+          return res.status(404).json({ error: `Synonym word "${synonym}" not found` });
+        }
+      }
+    }
+
     const normalizedPinyin = normalizePinyinInput(pinyin);
 
-    updateWord(hanzi, normalizedPinyin, english, polishArr, categories || []);
+    updateWord(
+      hanzi,
+      normalizedPinyin,
+      english,
+      polishArr,
+      categories || [],
+      Array.isArray(aiCategories) ? aiCategories : undefined
+    );
+    if (synonyms !== undefined) {
+      setHanziSynonyms(hanzi, synonyms);
+    }
     if (queueAsNew) {
       setQueuedAt(hanzi);
       resetCharsForWord(hanzi);

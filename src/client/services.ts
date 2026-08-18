@@ -3,6 +3,7 @@ import type {
   CedictEntry,
   CharacterInfo,
   CompleteResponse,
+  InferResponse,
   LookupResponse,
   MatchMode,
   PracticeMode,
@@ -13,6 +14,7 @@ import type {
   SpeechAssessResponse,
   StartResponse,
   Stats,
+  SynonymEntry,
   Word,
   WordProgress,
 } from '../shared/types.js';
@@ -20,11 +22,14 @@ import type {
 export type {
   CedictEntry,
   CharacterInfo,
+  InferResponse,
+  InferVerdict,
   MatchMode,
   PracticeMode,
   PracticeQuestion,
   Progress,
   SearchResult,
+  SynonymEntry,
   Word,
   WordProgress,
 } from '../shared/types.js';
@@ -206,7 +211,9 @@ export function updateWord(
   english: string[],
   polish: string[],
   categories: string[],
-  queueAsNew: boolean
+  queueAsNew: boolean,
+  synonyms: string[],
+  aiCategories: string[]
 ): Promise<Word> {
   return apiPut(`/words/${encodeURIComponent(hanzi)}`, {
     pinyin,
@@ -214,7 +221,18 @@ export function updateWord(
     polish,
     categories,
     queueAsNew,
+    synonyms,
+    aiCategories,
   });
+}
+
+export function suggestWords(query: string, limit: number): Promise<SynonymEntry[]> {
+  const params = new URLSearchParams({ q: query, limit: String(limit) });
+  return apiGet(`/words/suggest?${params}`);
+}
+
+export function inferWord(hanzi: string): Promise<InferResponse> {
+  return apiPost('/words/infer', { hanzi });
 }
 
 export function lookupHanzi(
@@ -229,9 +247,10 @@ export function addWord(
   english: string[],
   polish: string[],
   categories: string[],
-  queueAsNew: boolean
-): Promise<Word> {
-  return apiPost('/words', { hanzi, pinyin, english, polish, categories, queueAsNew });
+  queueAsNew: boolean,
+  aiCategories: string[]
+): Promise<Word & { warnings?: string[] }> {
+  return apiPost('/words', { hanzi, pinyin, english, polish, categories, queueAsNew, aiCategories });
 }
 
 export function makeProgressCharOnly(hanzi: string): Promise<{ ok: boolean; changed: number }> {

@@ -123,6 +123,10 @@
             <div id="word-info" class="word-info hidden"></div>
             <div id="cedict-entries" class="cedict-entries hidden"></div>
             <div id="word-breakdown" class="hidden"></div>
+            <div class="infer-row">
+              <button id="infer-btn" class="aux-btn infer-btn">✨ Infer with AI</button>
+            </div>
+            <div id="ai-assessment" class="ai-assessment hidden"></div>
           </div>
           <div class="form-group">
             <label for="add-pinyin">Pinyin</label>
@@ -152,6 +156,18 @@
               <div id="category-chips" class="chips"></div>
               <input type="text" id="add-categories" placeholder="Type and press Enter" autocomplete="off">
               <div id="category-suggestions" class="category-suggestions hidden"></div>
+            </div>
+            <div id="ai-category-chips" class="chips ai-chips hidden"></div>
+          </div>
+          <div class="form-group hidden" id="synonyms-group">
+            <label for="add-synonym">Synonyms</label>
+            <div id="synonym-list" class="synonym-list"></div>
+            <div class="synonym-add-container">
+              <div class="synonym-item synonym-add-row">
+                <input type="text" id="add-synonym" placeholder="Search learned words by hanzi or pinyin" autocomplete="off">
+                <span class="synonym-item-remove" aria-hidden="true">×</span>
+              </div>
+              <div id="synonym-suggestions" class="category-suggestions synonym-suggestions hidden"></div>
             </div>
           </div>
           <label class="checkbox-label" id="queue-as-new-label">

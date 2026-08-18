@@ -1,10 +1,12 @@
 import type {
   CharacterInfo,
+  InferResponse,
   MatchMode,
   PracticeMode,
   PracticeQuestion,
   Progress,
   SearchResult,
+  SynonymEntry,
   WordProgress,
   CedictEntry,
   Word,
@@ -32,6 +34,7 @@ import {
   getStats,
   getWordCount,
   learnNow,
+  inferWord,
   lookupHanzi,
   makeProgressCharOnly,
   makeProgressWordMode,
@@ -43,6 +46,7 @@ import {
   resetWordProgress,
   startPractice,
   submitAnswer,
+  suggestWords,
   updateWord,
 } from './services.js';
 
@@ -87,11 +91,14 @@ const editOnlyBtns: HTMLButtonElement[] = [
   makeWordModeBtn,
 ];
 
-function setEditOnlyButtonsVisible(visible: boolean): void {
+function setEditOnlyUiVisible(visible: boolean): void {
   for (const btn of editOnlyBtns) {
     btn.classList.toggle('hidden', !visible);
   }
+  // Synonyms are stored per existing word, so they only apply while editing
+  synonymsGroup.classList.toggle('hidden', !visible);
   if (!visible) {
+    setSynonymValues([]);
     setProgressActionsEnabled(false, false);
   }
 }
@@ -1057,61 +1064,256 @@ function clickableHanzi(hanzi: string, className: string): string {
 }
 
 function formatTranslations(english: string[]): string {
-  return `<span class="translations">${english.map((t) => `<span class="translation-item">${t}</span>`).join('<span class="english-sep"> • </span>')}</span>`;
+  const sep = '<span class="english-sep"> • </span>';
+  return `<span class="translations">${english.map(renderFullTranslationItem).join(sep)}</span>`;
 }
 
 const TRANSLATION_TRUNCATE_ABOVE = 10;
 const TRANSLATION_VISIBLE = 5;
-const ITEM_TRUNCATE_ABOVE = 60;
-const ITEM_VISIBLE = 40;
+const ITEM_TRUNCATE_ABOVE = 30;
+const ITEM_VISIBLE = 20;
 
 // CEDICT cross-references look like `忘不了[wang4 bu5 liao3]` or `無|无[wu2]`.
 // Render them as a single clean reference: hanzi (simplified preferred) followed
 // by tone-marked pinyin in a subtle pill, instead of dumping the raw bracketed
 // numbered pinyin and the trad|simp pair inline.
-const CEDICT_REF_RE = /([一-鿿]+)(?:\|([一-鿿]+))?\[([a-zA-Z0-9: ]+)\]/g;
+const CEDICT_REF_RE = /(?:([一-鿿]+)(?:\|([一-鿿]+))?)?\[([a-zA-Z0-9: ]+)\]/g;
 
 function formatCedictRefs(text: string): string {
-  return text.replace(CEDICT_REF_RE, (_match, trad: string, simp: string | undefined, pinyin: string) => {
-    const display = simp || trad;
+  return text.replace(CEDICT_REF_RE, (_match, trad: string | undefined, simp: string | undefined, pinyin: string) => {
     let pretty: string;
     try {
       pretty = numberedToToneMarked(pinyin.trim());
     } catch {
       pretty = pinyin.trim();
     }
-    return `<span class="cedict-ref"><span class="cedict-ref-hanzi">${display}</span><span class="cedict-ref-pinyin">${pretty}</span></span>`;
+    const display = simp || trad;
+    const hanziHtml = display ? `<span class="cedict-ref-hanzi">${display}</span>` : '';
+    return `<span class="cedict-ref">${hanziHtml}<span class="cedict-ref-pinyin">${pretty}</span></span>`;
   });
 }
 
-function formatTranslationItem(text: string): string {
-  const formatted = formatCedictRefs(text);
-  if (text.length <= ITEM_TRUNCATE_ABOVE) {
-    return `<span class="translation-item">${formatted}</span>`;
-  }
-  // Break at the nearest word boundary before the visible target, falling back to the raw cut.
-  // Cut is computed on the raw text so the boundary semantics are intuitive; the
-  // head/tail substrings then get the same CEDICT-ref formatting applied.
-  let cut = ITEM_VISIBLE;
-  const space = text.lastIndexOf(' ', ITEM_VISIBLE);
-  if (space > ITEM_VISIBLE * 0.6) {
-    cut = space;
-  }
-  // Don't land the cut inside a CEDICT reference; snap to before it.
-  CEDICT_REF_RE.lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = CEDICT_REF_RE.exec(text)) !== null) {
-    const start = m.index;
-    const end = m.index + m[0].length;
-    if (cut > start && cut < end) {
-      cut = start;
-      break;
+// `Beijing dialect` must come before `dialect` so the longer match wins.
+// Each pattern optionally consumes trailing whitespace so the badge doesn't
+// leave a literal space next to its neighbor (CSS margin handles visual gap).
+const BADGE_DEFS: Array<{ re: RegExp; label: string; tip: string }> = [
+  { re: /^\(bound form\)\s*/i, label: 'bf', tip: 'bound form' },
+  { re: /^\(idiom\)\s*/i, label: 'id', tip: 'idiom' },
+  { re: /^\(Beijing dialect\)\s*/i, label: 'bj', tip: 'Beijing dialect' },
+  { re: /^\(Cantonese\)\s*/i, label: 'can', tip: 'Cantonese' },
+  { re: /^\(Taiwanese\)\s*/i, label: 'tw', tip: 'Taiwan usage' },
+  { re: /^\(Tw\)\s*/, label: 'tw', tip: 'Taiwan usage' },
+  { re: /^\(PRC\)\s*/, label: 'prc', tip: 'PRC (mainland) usage' },
+  { re: /^\(literary\)\s*/i, label: 'lit', tip: 'literary' },
+  { re: /^\(fig\.\)\s*/i, label: 'fig', tip: 'figurative' },
+  { re: /^\(coll\.\)\s*/i, label: 'col', tip: 'colloquial' },
+  { re: /^\(loanword\)\s*/i, label: 'lw', tip: 'loanword' },
+  { re: /^\(old\)\s*/i, label: 'old', tip: 'old usage' },
+  { re: /^\(dialect\)\s*/i, label: 'dia', tip: 'dialect' },
+  { re: /^\(slang\)\s*/i, label: 'sl', tip: 'slang' },
+  { re: /^\(archaic\)\s*/i, label: 'arc', tip: 'archaic' },
+  { re: /^\(onom\.\)\s*/i, label: 'ono', tip: 'onomatopoeia' },
+  { re: /^\(honorific\)\s*/i, label: 'hon', tip: 'honorific' },
+  { re: /^\(polite\)\s*/i, label: 'pol', tip: 'polite' },
+  { re: /^\(derog(?:atory|\.)\)\s*/i, label: 'der', tip: 'derogatory' },
+  { re: /^\(vulgar\)\s*/i, label: 'vul', tip: 'vulgar' },
+  { re: /^\(abbr\.\)\s*/i, label: 'abbr', tip: 'abbreviation' },
+  { re: /^\(esp\.\)\s*/i, label: 'esp', tip: 'especially' },
+  { re: /^\(neologism\)\s*/i, label: 'neo', tip: 'neologism' },
+  { re: /^\(euph(?:emism|\.)\)\s*/i, label: 'eup', tip: 'euphemism' },
+  { re: /^\(hist(?:orical|\.)\)\s*/i, label: 'hist', tip: 'historical' },
+  { re: /^classifier for\s+/i, label: 'mw', tip: 'measure word for' },
+  { re: /^CL:/, label: 'mw:', tip: 'classifier: takes measure word' },
+];
+
+type Segment = { type: 'badge'; label: string; tip: string } | { type: 'text'; text: string };
+
+function tokenizeBadges(text: string): Segment[] {
+  const segments: Segment[] = [];
+  let i = 0;
+  let textStart = 0;
+  while (i < text.length) {
+    let matched: { label: string; tip: string; len: number } | null = null;
+    const c = text[i];
+    if (c === '(' || c === 'c' || c === 'C') {
+      const sub = text.slice(i);
+      for (const b of BADGE_DEFS) {
+        const m = sub.match(b.re);
+        if (m) {
+          matched = { label: b.label, tip: b.tip, len: m[0].length };
+          break;
+        }
+      }
+    }
+    if (matched) {
+      if (textStart < i) {
+        segments.push({ type: 'text', text: text.slice(textStart, i) });
+      }
+      segments.push({ type: 'badge', label: matched.label, tip: matched.tip });
+      i += matched.len;
+      textStart = i;
+    } else {
+      i++;
     }
   }
-  const head = formatCedictRefs(text.slice(0, cut));
-  const tail = formatCedictRefs(text.slice(cut));
+  if (textStart < text.length) {
+    segments.push({ type: 'text', text: text.slice(textStart) });
+  }
+  return segments;
+}
+
+function renderSegment(seg: Segment): string {
+  if (seg.type === 'badge') {
+    return `<span class="grammar-badge" data-tip="${seg.tip}">${seg.label}</span>`;
+  }
+  return formatCedictRefs(seg.text);
+}
+
+function segmentLen(seg: Segment): number {
+  return seg.type === 'badge' ? seg.label.length : seg.text.length;
+}
+
+function renderFullTranslationItem(text: string): string {
+  const inner = tokenizeBadges(text).map(renderSegment).join('');
+  return `<span class="translation-item">${inner}</span>`;
+}
+
+// Non-nested parenthetical group. Used to collapse the "( ... )" tail of a
+// translation like "something (blah blah blah)" before resorting to a hard
+// character cut.
+const PAREN_RE = /\(([^()]+)\)/g;
+
+// A common translation shape is "meaning (clarification)". When such an item is
+// too long, prefer hiding just the parenthetical over chopping mid-word. Returns
+// the rendered item if collapsing a single parenthetical brings it under budget,
+// or null to let the caller fall back to character truncation. Among qualifying
+// parentheticals we collapse the smallest one that suffices — only hide more
+// than necessary when a single collapse isn't enough (then the caller truncates).
+function tryParenCollapse(segments: Segment[], displayLen: number, fullText: string): string | null {
+  let best: { si: number; open: number; closeEnd: number; save: number } | null = null;
+  for (let si = 0; si < segments.length; si++) {
+    const seg = segments[si];
+    if (seg.type !== 'text') {
+      continue;
+    }
+    PAREN_RE.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = PAREN_RE.exec(seg.text)) !== null) {
+      // Hiding the whole "( ... )" group, so the savings include the parens.
+      const save = m[0].length;
+      if (displayLen - save > ITEM_TRUNCATE_ABOVE) {
+        continue;
+      }
+      // Only collapse a parenthetical that is strictly a suffix of the whole
+      // translation — nothing but whitespace may follow the closing paren.
+      const closeEnd = m.index + save;
+      const isSuffix =
+        seg.text.slice(closeEnd).trim().length === 0 &&
+        segments.slice(si + 1).every((s) => s.type === 'text' && s.text.trim().length === 0);
+      if (!isSuffix) {
+        continue;
+      }
+      // Skip if the whole translation is the parenthetical — collapsing it would
+      // hide everything, leaving only "(…)". There must be real text before it.
+      const hasTextBefore =
+        seg.text.slice(0, m.index).trim().length > 0 ||
+        segments.slice(0, si).some((s) => s.type === 'text' && s.text.trim().length > 0);
+      if (!hasTextBefore) {
+        continue;
+      }
+      if (!best || save < best.save) {
+        best = { si, open: m.index, closeEnd: m.index + m[0].length, save };
+      }
+    }
+  }
+  if (!best) {
+    return null;
+  }
+  const headParts: string[] = [];
+  const tailParts: string[] = [];
+  const suffixParts: string[] = [];
+  for (let si = 0; si < segments.length; si++) {
+    const seg = segments[si];
+    if (si < best.si) {
+      headParts.push(renderSegment(seg));
+      continue;
+    }
+    if (si > best.si) {
+      suffixParts.push(renderSegment(seg));
+      continue;
+    }
+    // The text segment carrying the collapsed parenthetical: hide the whole
+    // "( ... )" group along with the space before it, so the collapsed form
+    // reads "meaning(…)"; keep the text before it and any trailing text visible.
+    const t = (seg as { type: 'text'; text: string }).text;
+    let headEnd = best.open;
+    while (headEnd > 0 && t[headEnd - 1] === ' ') {
+      headEnd--;
+    }
+    headParts.push(formatCedictRefs(t.slice(0, headEnd)));
+    tailParts.push(formatCedictRefs(t.slice(headEnd, best.closeEnd)));
+    suffixParts.push(formatCedictRefs(t.slice(best.closeEnd)));
+  }
+  const fullAttr = fullText.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  return `<span class="translation-item">${headParts.join('')}<button type="button" class="translation-item-more translation-item-paren" aria-expanded="false" data-tooltip="${fullAttr}">(…)</button><span class="translation-tail hidden">${tailParts.join('')}</span>${suffixParts.join('')}</span>`;
+}
+
+function formatTranslationItem(text: string): string {
+  const segments = tokenizeBadges(text);
+  const displayLen = segments.reduce((s, seg) => s + segmentLen(seg), 0);
+  if (displayLen <= ITEM_TRUNCATE_ABOVE) {
+    return `<span class="translation-item">${segments.map(renderSegment).join('')}</span>`;
+  }
+  const collapsed = tryParenCollapse(segments, displayLen, text);
+  if (collapsed) {
+    return collapsed;
+  }
+  const headParts: string[] = [];
+  const tailParts: string[] = [];
+  let acc = 0;
+  let cut = false;
+  for (const seg of segments) {
+    if (cut) {
+      tailParts.push(renderSegment(seg));
+      continue;
+    }
+    const segLen = segmentLen(seg);
+    if (acc + segLen <= ITEM_VISIBLE) {
+      headParts.push(renderSegment(seg));
+      acc += segLen;
+      continue;
+    }
+    if (seg.type === 'badge') {
+      // Atomic — keep it in the head and cut after.
+      headParts.push(renderSegment(seg));
+      cut = true;
+      continue;
+    }
+    // Split text segment at nearest word boundary, snapping out of CEDICT refs.
+    let sliceAt = ITEM_VISIBLE - acc;
+    const space = seg.text.lastIndexOf(' ', sliceAt);
+    if (space > sliceAt * 0.6) {
+      sliceAt = space;
+    }
+    CEDICT_REF_RE.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = CEDICT_REF_RE.exec(seg.text)) !== null) {
+      if (sliceAt > m.index && sliceAt < m.index + m[0].length) {
+        sliceAt = m.index;
+        break;
+      }
+    }
+    // Push any space right before the cut into the hidden tail so the collapsed
+    // form reads "head…" rather than "head …".
+    while (sliceAt > 0 && seg.text[sliceAt - 1] === ' ') {
+      sliceAt--;
+    }
+    headParts.push(formatCedictRefs(seg.text.slice(0, sliceAt)));
+    tailParts.push(formatCedictRefs(seg.text.slice(sliceAt)));
+    cut = true;
+  }
   const fullAttr = text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-  return `<span class="translation-item">${head}<button type="button" class="translation-item-more" aria-expanded="false" data-tooltip="${fullAttr}">…</button><span class="translation-tail hidden">${tail}</span></span>`;
+  return `<span class="translation-item">${headParts.join('')}<button type="button" class="translation-item-more" aria-expanded="false" data-tooltip="${fullAttr}">…</button><span class="translation-tail hidden">${tailParts.join('')}</span></span>`;
 }
 
 function formatTranslationsTruncated(items: string[]): string {
@@ -1171,9 +1373,8 @@ function showQuestion() {
     }
 
     // Show categories
-    if (word.categories.length > 0) {
-      const cats = word.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ');
-      promptHtml += `<div class="prompt-categories">${cats}</div>`;
+    if (hasCategoryTags(word)) {
+      promptHtml += `<div class="prompt-categories">${categoryTagsHtml(word)}</div>`;
     }
 
     // Show frequency rank
@@ -1295,9 +1496,8 @@ function formatFullAnswer(question: PracticeQuestion): string {
   }
 
   // Show categories
-  if (word.categories.length > 0) {
-    const cats = word.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ');
-    result += `<div class="answer-categories">${cats}</div>`;
+  if (hasCategoryTags(word)) {
+    result += `<div class="answer-categories">${categoryTagsHtml(word)}</div>`;
   }
 
   // Show example answers
@@ -1355,15 +1555,14 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
   });
 
   if (showSynonymBtn) {
-    const originalFeedbackHtml = feedbackDiv.innerHTML;
     document.getElementById('synonym-btn')!.addEventListener('click', () => {
-      feedbackDiv.innerHTML = `<div class="synonym-input-row"><input type="text" id="synonym-hanzi-input" placeholder="Synonym hanzi" class="synonym-hanzi-input"><button id="synonym-confirm-btn" class="primary-btn">Confirm</button><button id="synonym-cancel-btn" class="secondary-btn">Cancel</button></div>`;
+      feedbackDiv.innerHTML = `<div class="synonym-input-row"><div class="synonym-search-container"><input type="text" id="synonym-hanzi-input" placeholder="Search learned words by hanzi or pinyin" class="synonym-hanzi-input" autocomplete="off"><div id="synonym-hanzi-suggestions" class="category-suggestions synonym-suggestions hidden"></div></div><button id="synonym-confirm-btn" class="primary-btn">Confirm</button><button id="synonym-cancel-btn" class="secondary-btn">Cancel</button></div><div id="synonym-search-hint" class="synonym-search-hint hidden"></div>`;
       const synonymInput = document.getElementById('synonym-hanzi-input') as HTMLInputElement;
+      const synonymDropdown = document.getElementById('synonym-hanzi-suggestions')!;
+      const synonymHint = document.getElementById('synonym-search-hint')!;
       synonymInput.focus();
 
-      document.getElementById('synonym-confirm-btn')!.addEventListener('click', async () => {
-        const synonymHanzi = synonymInput.value.trim();
-        if (!synonymHanzi) return;
+      const saveSynonym = async (synonymHanzi: string) => {
         try {
           await addHanziSynonym(question.word.hanzi, synonymHanzi);
           incorrectThisRound = incorrectThisRound.filter((q) => q !== question);
@@ -1386,18 +1585,27 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
           console.error('Failed to save synonym:', error);
           feedbackDiv.innerHTML = `<span class="error">Failed to save synonym</span>`;
         }
+      };
+
+      const search = new SynonymSearch(synonymInput, synonymDropdown, {
+        onSelect: (entry) => {
+          synonymHint.classList.add('hidden');
+          void saveSynonym(entry.hanzi);
+        },
+        excluded: () => [question.word.hanzi],
+        onNoMatch: (query) => {
+          synonymHint.textContent = `No learned word matches "${query}"`;
+          synonymHint.classList.remove('hidden');
+        },
       });
 
-      synonymInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          e.stopPropagation();
-          document.getElementById('synonym-confirm-btn')!.click();
-        }
+      document.getElementById('synonym-confirm-btn')!.addEventListener('click', () => {
+        void search.confirm();
       });
 
       document.getElementById('synonym-cancel-btn')!.addEventListener('click', () => {
-        feedbackDiv.innerHTML = originalFeedbackHtml;
+        // Re-render rather than restoring markup, so the buttons get listeners again
+        showIncorrectFeedback(question, prefix);
       });
     });
   }
@@ -1633,10 +1841,11 @@ function editCurrentWord() {
   setQueueAsNewDisabled(alreadyQueued);
   addWordBtn.textContent = 'Save';
   addWordStatus.classList.add('hidden');
+  setSynonymValues([]);
   performHanziLookup(word.hanzi);
 
   returnToPractice = true;
-  setEditOnlyButtonsVisible(true);
+  setEditOnlyUiVisible(true);
   showView('add-word');
   addPinyinInput.focus();
 }
@@ -1655,9 +1864,10 @@ function editWordFromSearch(word: Word) {
   setQueueAsNewDisabled(alreadyQueued);
   addWordBtn.textContent = 'Save';
   addWordStatus.classList.add('hidden');
+  setSynonymValues([]);
   performHanziLookup(word.hanzi);
   returnToSearch = true;
-  setEditOnlyButtonsVisible(true);
+  setEditOnlyUiVisible(true);
   showView('add-word');
   addPinyinInput.focus();
 }
@@ -1815,7 +2025,7 @@ answerInput.addEventListener('keyup', (e) => {
 });
 
 cancelEditBtn.addEventListener('click', () => {
-  setEditOnlyButtonsVisible(false);
+  setEditOnlyUiVisible(false);
   if (returnToSearch) {
     returnToSearch = false;
     showView('search');
@@ -1853,7 +2063,7 @@ resetProgressBtn.addEventListener('click', async () => {
       if (currentIndex < -1) currentIndex = -1;
 
       returnToPractice = false;
-      setEditOnlyButtonsVisible(false);
+      setEditOnlyUiVisible(false);
 
       if (questions.length === 0) {
         // No questions left — finish the session
@@ -2120,10 +2330,9 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
             .filter(Boolean)
             .join(', ');
           const rankSpan = ranks ? ` <span class="preview-rank">${ranks}</span>` : '';
-          const cats =
-            w.categories.length > 0
-              ? ` <span class="preview-categories">${w.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ')}</span>`
-              : '';
+          const cats = hasCategoryTags(w)
+            ? ` <span class="preview-categories">${categoryTagsHtml(w)}</span>`
+            : '';
           const resetTag = `<button class="preview-dismiss-btn" data-hanzi="${w.hanzi}">✕</button>`;
           const checked = previewSelected.has(w.hanzi) ? 'checked' : '';
           const polishSpan = w.polish && w.polish.length > 0 ? ` <span class="preview-polish">${w.polish.join('; ')}</span>` : '';
@@ -2325,8 +2534,8 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
           w.hanziFrequencyRank != null ? `char #${w.hanziFrequencyRank}` : null,
         ].filter(Boolean).join(', ');
         const rankSpan = ranks ? ` <span class="preview-rank">${ranks}</span>` : '';
-        const cats = w.categories.length > 0
-          ? ` <span class="preview-categories">${w.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ')}</span>`
+        const cats = hasCategoryTags(w)
+          ? ` <span class="preview-categories">${categoryTagsHtml(w)}</span>`
           : '';
         const checked = browseSelected.has(w.hanzi) ? 'checked' : '';
         const polishSpan = w.polish && w.polish.length > 0 ? ` <span class="preview-polish">${w.polish.join('; ')}</span>` : '';
@@ -2523,7 +2732,13 @@ document.addEventListener('mouseover', (e) => {
   if (!target || !target.closest) {
     return;
   }
-  const hanziEl = target.closest('.tree-hanzi, .tree-hanzi-root') as HTMLElement | null;
+  // Only trigger when over a non-empty character slot; an empty traditional
+  // slot is a layout placeholder and should not pop the tooltip.
+  const slot = target.closest('.tree-simplified, .tree-traditional') as HTMLElement | null;
+  if (!slot || !slot.textContent?.trim()) {
+    return;
+  }
+  const hanziEl = slot.closest('.tree-hanzi, .tree-hanzi-root') as HTMLElement | null;
   if (!hanziEl || hanziEl === activeHanziTooltipFor) {
     return;
   }
@@ -2582,7 +2797,9 @@ document.addEventListener('click', (e) => {
   const expanded = block.classList.toggle('hidden') === false;
   target.classList.toggle('expanded', expanded);
   target.setAttribute('aria-expanded', String(expanded));
-  if (
+  if (target.classList.contains('translation-item-paren')) {
+    target.textContent = expanded ? '−' : '(…)';
+  } else if (
     target.classList.contains('translation-more') ||
     target.classList.contains('translation-item-more')
   ) {
@@ -2601,10 +2818,17 @@ const addCategoriesInput = document.getElementById('add-categories') as HTMLInpu
 const englishListEl = document.getElementById('english-list')!;
 const polishListEl = document.getElementById('polish-list')!;
 const categoryChips = document.getElementById('category-chips')!;
+const synonymsGroup = document.getElementById('synonyms-group')!;
+const synonymList = document.getElementById('synonym-list')!;
+const synonymSuggestions = document.getElementById('synonym-suggestions')!;
+const addSynonymInput = document.getElementById('add-synonym') as HTMLInputElement;
 const cedictEntries = document.getElementById('cedict-entries')!;
 const wordInfoDiv = document.getElementById('word-info')!;
 const wordBreakdown = document.getElementById('word-breakdown')!;
 const categorySuggestions = document.getElementById('category-suggestions')!;
+const aiCategoryChips = document.getElementById('ai-category-chips')!;
+const inferBtn = document.getElementById('infer-btn') as HTMLButtonElement;
+const aiAssessment = document.getElementById('ai-assessment')!;
 const addWordBtn = document.getElementById('add-word-btn') as HTMLButtonElement;
 const addWordStatus = document.getElementById('add-word-status')!;
 const queueAsNewCb = document.getElementById('queue-as-new-cb') as HTMLInputElement;
@@ -2624,10 +2848,16 @@ class TranslationList {
   private stride = 0;
   private itemEls: HTMLElement[] = [];
   private draggableItem: HTMLElement | null = null;
+  private isInferred: (value: string) => boolean;
 
-  constructor(listEl: HTMLElement, addInputEl: HTMLInputElement) {
+  constructor(
+    listEl: HTMLElement,
+    addInputEl: HTMLInputElement,
+    isInferred: (value: string) => boolean = () => false
+  ) {
     this.listEl = listEl;
     this.addInputEl = addInputEl;
+    this.isInferred = isInferred;
     addInputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -2736,6 +2966,7 @@ class TranslationList {
     this.values.forEach((val, i) => {
       const item = document.createElement('div');
       item.className = 'english-item';
+      item.classList.toggle('ai-inferred', this.isInferred(val));
       this.itemEls.push(item);
 
       const handle = document.createElement('span');
@@ -2752,6 +2983,7 @@ class TranslationList {
       input.value = val;
       input.addEventListener('input', () => {
         this.values[i] = input.value;
+        item.classList.toggle('ai-inferred', this.isInferred(input.value));
       });
 
       const removeBtn = document.createElement('button');
@@ -2790,10 +3022,20 @@ class TranslationList {
   }
 }
 
-const englishList = new TranslationList(englishListEl, addEnglishInput);
-const polishList = new TranslationList(polishListEl, addPolishInput);
+// Values the AI filled in, badged until the user edits them away
+let inferredEnglish = new Set<string>();
+let inferredPolish = new Set<string>();
+let inferredPinyin: string | null = null;
+
+const englishList = new TranslationList(englishListEl, addEnglishInput, (val) =>
+  inferredEnglish.has(val)
+);
+const polishList = new TranslationList(polishListEl, addPolishInput, (val) =>
+  inferredPolish.has(val)
+);
 
 let categoryValues: string[] = [];
+let aiCategoryValues: string[] = [];
 let allCategoriesList: string[] = [];
 let lookupTimer: ReturnType<typeof setTimeout> | null = null;
 let editingExistingWord = false;
@@ -2831,6 +3073,350 @@ function removeCategoryChip(index: number) {
   categoryValues.splice(index, 1);
   renderChips(categoryChips, categoryValues, removeCategoryChip);
 }
+
+function renderAiCategoryChips() {
+  aiCategoryChips.innerHTML = '';
+  aiCategoryChips.classList.toggle('hidden', aiCategoryValues.length === 0);
+  aiCategoryValues.forEach((val, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip ai-chip';
+    chip.title = 'Inferred by AI';
+    chip.innerHTML = `<span class="ai-mark" aria-hidden="true">✨</span>${val}<button type="button" class="chip-remove">×</button>`;
+    chip.querySelector('.chip-remove')!.addEventListener('click', () => {
+      aiCategoryValues.splice(i, 1);
+      renderAiCategoryChips();
+    });
+    aiCategoryChips.appendChild(chip);
+  });
+}
+
+function setAiCategories(values: string[]) {
+  aiCategoryValues = [...values];
+  renderAiCategoryChips();
+}
+
+/** Drop the "filled in by AI" badges (the labels themselves are kept — they are stored) */
+function clearInferMarks() {
+  inferredEnglish = new Set();
+  inferredPolish = new Set();
+  inferredPinyin = null;
+  addPinyinInput.classList.remove('ai-inferred');
+  aiAssessment.classList.add('hidden');
+  aiAssessment.innerHTML = '';
+}
+
+const VERDICT_LABEL: Record<InferResponse['verdict'], string> = {
+  ok: 'Looks natural',
+  unnatural: 'Unnatural',
+  invalid: 'Not valid Chinese',
+};
+
+function renderAssessment(result: InferResponse) {
+  aiAssessment.className = `ai-assessment ${result.verdict}`;
+  aiAssessment.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.className = 'ai-assessment-header';
+  header.innerHTML = `<span class="ai-mark" aria-hidden="true">✨</span><span class="ai-verdict">${VERDICT_LABEL[result.verdict]}</span>`;
+  aiAssessment.appendChild(header);
+
+  if (result.notes) {
+    const notes = document.createElement('div');
+    notes.className = 'ai-assessment-notes';
+    notes.textContent = result.notes;
+    aiAssessment.appendChild(notes);
+  }
+
+  if (result.suggestion) {
+    const row = document.createElement('div');
+    row.className = 'ai-assessment-suggestion';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'aux-btn';
+    btn.textContent = `Use ${result.suggestion} instead`;
+    btn.addEventListener('click', () => {
+      addHanziInput.value = result.suggestion!;
+      addHanziInput.dispatchEvent(new Event('input'));
+      addHanziInput.focus();
+    });
+    row.appendChild(btn);
+    aiAssessment.appendChild(row);
+  }
+
+  aiAssessment.classList.remove('hidden');
+}
+
+function mergeInferred(list: TranslationList, values: string[], marks: Set<string>) {
+  const merged = [...list.values];
+  for (const value of values) {
+    marks.add(value);
+    if (!merged.includes(value)) {
+      merged.push(value);
+    }
+  }
+  list.setValues(merged);
+}
+
+function applyInference(result: InferResponse) {
+  addPinyinInput.value = result.pinyin;
+  inferredPinyin = result.pinyin;
+  addPinyinInput.classList.add('ai-inferred');
+
+  // Merge rather than replace: an existing word may already carry translations worth keeping
+  mergeInferred(englishList, result.english, inferredEnglish);
+  mergeInferred(polishList, result.polish, inferredPolish);
+
+  for (const category of result.categories) {
+    if (!aiCategoryValues.includes(category) && !categoryValues.includes(category)) {
+      aiCategoryValues.push(category);
+    }
+  }
+  renderAiCategoryChips();
+  renderAssessment(result);
+}
+
+addPinyinInput.addEventListener('input', () => {
+  if (inferredPinyin !== null && addPinyinInput.value !== inferredPinyin) {
+    inferredPinyin = null;
+    addPinyinInput.classList.remove('ai-inferred');
+  }
+});
+
+inferBtn.addEventListener('click', async () => {
+  const hanzi = addHanziInput.value.trim();
+  if (!hanzi) {
+    showAddWordStatus('Type a word or sentence first', 'error');
+    return;
+  }
+  try {
+    const result = await withButtonBusy(inferBtn, 'Inferring…', () => inferWord(hanzi));
+    if (result) {
+      applyInference(result);
+    }
+  } catch (error) {
+    showAddWordStatus(error instanceof Error ? error.message : 'Inference failed', 'error');
+  }
+});
+
+const SYNONYM_SUGGESTION_LIMIT = 8;
+const SYNONYM_SUGGEST_DEBOUNCE_MS = 200;
+
+interface SynonymSearchOptions {
+  onSelect: (entry: SynonymEntry) => void;
+  /** Hanzi that must not be offered (the word itself, already-added synonyms) */
+  excluded: () => string[];
+  onNoMatch?: (query: string) => void;
+}
+
+/** Autocomplete over learned words, driven by hanzi or pinyin. */
+class SynonymSearch {
+  private items: SynonymEntry[] = [];
+  private highlight = -1;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(
+    private input: HTMLInputElement,
+    private dropdown: HTMLElement,
+    private options: SynonymSearchOptions
+  ) {
+    this.input.addEventListener('input', () => this.scheduleLoad());
+    this.input.addEventListener('keydown', (e) => this.handleKeydown(e));
+    this.input.addEventListener('blur', () => {
+      // Delay so a suggestion click still lands
+      setTimeout(() => this.hide(), 150);
+    });
+  }
+
+  clear(): void {
+    this.input.value = '';
+    this.hide();
+  }
+
+  hide(): void {
+    this.items = [];
+    this.highlight = -1;
+    this.dropdown.classList.add('hidden');
+  }
+
+  /** Adds the highlighted suggestion, resolving a still-pending query first. */
+  async confirm(): Promise<void> {
+    const query = this.input.value.trim();
+    if (!query) {
+      return;
+    }
+    if (this.timer) {
+      // Confirmed before the debounce fired — resolve the query first
+      clearTimeout(this.timer);
+      this.timer = null;
+      await this.load(query);
+    }
+    const highlighted = this.items[this.highlight];
+    if (highlighted) {
+      this.clear();
+      this.options.onSelect(highlighted);
+    } else {
+      this.options.onNoMatch?.(query);
+    }
+  }
+
+  private scheduleLoad(): void {
+    if (this.timer) {
+      clearTimeout(this.timer);
+    }
+    const query = this.input.value.trim();
+    if (!query) {
+      this.hide();
+      return;
+    }
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      void this.load(query);
+    }, SYNONYM_SUGGEST_DEBOUNCE_MS);
+  }
+
+  private async load(query: string): Promise<void> {
+    try {
+      const results = await suggestWords(query, SYNONYM_SUGGESTION_LIMIT * 2);
+      if (this.input.value.trim() !== query) {
+        // A newer keystroke already superseded this response
+        return;
+      }
+      const excluded = this.options.excluded();
+      this.items = results
+        .filter((r) => !excluded.includes(r.hanzi))
+        .slice(0, SYNONYM_SUGGESTION_LIMIT);
+      this.highlight = this.items.length > 0 ? 0 : -1;
+      this.render();
+    } catch (error) {
+      console.error('Synonym lookup failed:', error);
+      this.hide();
+    }
+  }
+
+  private render(): void {
+    this.dropdown.innerHTML = '';
+    if (this.items.length === 0) {
+      this.hide();
+      return;
+    }
+    this.items.forEach((entry, i) => {
+      const div = document.createElement('div');
+      div.className = 'category-suggestion synonym-suggestion';
+      div.classList.toggle('active', i === this.highlight);
+
+      const hanziEl = document.createElement('span');
+      hanziEl.className = 'preview-hanzi';
+      hanziEl.textContent = entry.hanzi;
+
+      const pinyinEl = document.createElement('span');
+      pinyinEl.className = 'preview-pinyin';
+      pinyinEl.textContent = entry.pinyin;
+
+      const englishEl = document.createElement('span');
+      englishEl.className = 'preview-english';
+      englishEl.textContent = entry.english.join('; ');
+
+      div.append(hanziEl, pinyinEl, englishEl);
+      // mousedown, not click: the input's blur handler would hide the list first
+      div.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        this.clear();
+        this.options.onSelect(entry);
+      });
+      this.dropdown.appendChild(div);
+    });
+    this.dropdown.classList.remove('hidden');
+  }
+
+  private move(delta: number): void {
+    if (this.items.length === 0) {
+      return;
+    }
+    const count = this.items.length;
+    this.highlight = (this.highlight + delta + count) % count;
+    this.render();
+  }
+
+  private handleKeydown(e: KeyboardEvent): void {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      this.move(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.move(-1);
+    } else if (e.key === 'Escape') {
+      this.hide();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      // Practice binds Enter globally to "next question"
+      e.stopPropagation();
+      void this.confirm();
+    }
+  }
+}
+
+let synonymValues: SynonymEntry[] = [];
+
+function renderSynonymList() {
+  synonymList.innerHTML = '';
+  synonymValues.forEach((syn, i) => {
+    const item = document.createElement('div');
+    item.className = 'synonym-item';
+
+    const hanziEl = document.createElement('span');
+    hanziEl.className = 'preview-hanzi';
+    hanziEl.textContent = syn.hanzi;
+
+    const pinyinEl = document.createElement('span');
+    pinyinEl.className = 'preview-pinyin';
+    pinyinEl.textContent = syn.pinyin;
+
+    const englishEl = document.createElement('span');
+    englishEl.className = 'preview-english';
+    englishEl.textContent = syn.english.join('; ');
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'synonym-item-remove';
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', () => removeSynonym(i));
+
+    item.append(hanziEl, pinyinEl, englishEl, removeBtn);
+    synonymList.appendChild(item);
+  });
+}
+
+function setSynonymValues(values: SynonymEntry[]) {
+  synonymValues = values;
+  synonymSearch.clear();
+  renderSynonymList();
+}
+
+function removeSynonym(index: number) {
+  synonymValues.splice(index, 1);
+  renderSynonymList();
+}
+
+function addSynonymEntry(entry: SynonymEntry) {
+  if (entry.hanzi === addHanziInput.value.trim()) {
+    showAddWordStatus('A word cannot be its own synonym', 'error');
+    return;
+  }
+  if (!synonymValues.some((syn) => syn.hanzi === entry.hanzi)) {
+    synonymValues.push(entry);
+    renderSynonymList();
+  }
+  synonymSearch.clear();
+}
+
+const synonymSearch = new SynonymSearch(addSynonymInput, synonymSuggestions, {
+  onSelect: (entry) => {
+    addSynonymEntry(entry);
+    addSynonymInput.focus();
+  },
+  excluded: () => [addHanziInput.value.trim(), ...synonymValues.map((syn) => syn.hanzi)],
+  onNoMatch: (query) => showAddWordStatus(`No learned word matches "${query}"`, 'error'),
+});
 
 addCategoriesInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
@@ -2870,7 +3456,8 @@ addCategoriesInput.addEventListener('blur', () => {
 
 async function performHanziLookup(hanzi: string) {
   try {
-    const { entries, existing, maxBucket, breakdown, wordRank, charRank } = await lookupHanzi(hanzi);
+    const { entries, existing, maxBucket, breakdown, wordRank, charRank, synonyms } =
+      await lookupHanzi(hanzi);
 
     if (existing) {
       editingExistingWord = true;
@@ -2878,7 +3465,8 @@ async function performHanziLookup(hanzi: string) {
       queueAsNewCb.checked = !alreadyQueued;
       setQueueAsNewDisabled(alreadyQueued);
       addWordBtn.textContent = 'Save';
-      setEditOnlyButtonsVisible(true);
+      setEditOnlyUiVisible(true);
+      setSynonymValues(synonyms);
       setProgressActionsEnabled(maxBucket !== null, isSingleHanzi(existing.hanzi));
       addPinyinInput.value = existing.pinyin;
       englishList.setValues(existing.english);
@@ -2886,6 +3474,8 @@ async function performHanziLookup(hanzi: string) {
       categoryValues = [...existing.categories];
       ensureCurated();
       renderChips(categoryChips, categoryValues, removeCategoryChip);
+      setAiCategories(existing.aiCategories ?? []);
+      clearInferMarks();
 
       const infoParts: string[] = [];
       if (wordRank != null) infoParts.push(`word #${wordRank}`);
@@ -2898,7 +3488,7 @@ async function performHanziLookup(hanzi: string) {
       queueAsNewCb.checked = true;
       setQueueAsNewDisabled(false);
       addWordBtn.textContent = 'Add';
-      setEditOnlyButtonsVisible(false);
+      setEditOnlyUiVisible(false);
       addPinyinInput.value = '';
       addCategoriesInput.value = '';
       englishList.clear();
@@ -2906,6 +3496,8 @@ async function performHanziLookup(hanzi: string) {
       categoryValues = [];
       ensureCurated();
       renderChips(categoryChips, categoryValues, removeCategoryChip);
+      setAiCategories([]);
+      clearInferMarks();
       const rankParts: string[] = [];
       if (wordRank != null) rankParts.push(`word #${wordRank}`);
       if (charRank != null) rankParts.push(`char #${charRank}`);
@@ -2962,6 +3554,8 @@ addHanziInput.addEventListener('input', () => {
     categoryValues = [];
     ensureCurated();
     renderChips(categoryChips, categoryValues, removeCategoryChip);
+    setAiCategories([]);
+    clearInferMarks();
     cedictEntries.classList.add('hidden');
     wordInfoDiv.classList.add('hidden');
     wordBreakdown.classList.add('hidden');
@@ -2969,7 +3563,7 @@ addHanziInput.addEventListener('input', () => {
     queueAsNewCb.checked = true;
     setQueueAsNewDisabled(false);
     addWordBtn.textContent = 'Add';
-    setEditOnlyButtonsVisible(false);
+    setEditOnlyUiVisible(false);
     return;
   }
   lookupTimer = setTimeout(() => performHanziLookup(hanzi), 300);
@@ -3022,7 +3616,9 @@ addWordBtn.addEventListener('click', async () => {
         englishValues,
         polishValues,
         categoryValues,
-        queueAsNewCb.checked
+        queueAsNewCb.checked,
+        synonymValues.map((syn) => syn.hanzi),
+        aiCategoryValues
       );
       showAddWordStatus(`Updated "${hanzi}" successfully!`, 'success');
 
@@ -3038,6 +3634,7 @@ addWordBtn.addEventListener('click', async () => {
           q.word.english = updated.english;
           q.word.polish = updated.polish;
           q.word.categories = updated.categories;
+          q.word.aiCategories = updated.aiCategories;
           if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
             q.prompt = englishPrompt;
           }
@@ -3047,8 +3644,20 @@ addWordBtn.addEventListener('click', async () => {
         }
       }
     } else {
-      await addWord(hanzi, pinyin, englishValues, polishValues, categoryValues, queueAsNewCb.checked);
-      showAddWordStatus(`Added "${hanzi}" successfully!`, 'success');
+      const added = await addWord(
+        hanzi,
+        pinyin,
+        englishValues,
+        polishValues,
+        categoryValues,
+        queueAsNewCb.checked,
+        aiCategoryValues
+      );
+      if (added.warnings && added.warnings.length > 0) {
+        showAddWordStatus(`Added "${hanzi}", but: ${added.warnings.join('; ')}`, 'error');
+      } else {
+        showAddWordStatus(`Added "${hanzi}" successfully!`, 'success');
+      }
     }
 
     // Reset form
@@ -3060,10 +3669,12 @@ addWordBtn.addEventListener('click', async () => {
     categoryValues = [];
     editingExistingWord = false;
     renderChips(categoryChips, categoryValues, removeCategoryChip);
+    setAiCategories([]);
+    clearInferMarks();
     cedictEntries.classList.add('hidden');
     wordInfoDiv.classList.add('hidden');
     wordBreakdown.classList.add('hidden');
-    setEditOnlyButtonsVisible(false);
+    setEditOnlyUiVisible(false);
 
     // Reload stats and categories
     loadStats();
@@ -3083,6 +3694,21 @@ addWordBtn.addEventListener('click', async () => {
     addWordBtn.textContent = editingExistingWord ? 'Save' : 'Add';
   }
 });
+
+/** Category tags for a word — the user's own first, then the AI-inferred ones, badged */
+function categoryTagsHtml(word: Word): string {
+  const tags = word.categories.map((c) => `<span class="answer-category">${c}</span>`);
+  for (const cat of word.aiCategories ?? []) {
+    tags.push(
+      `<span class="answer-category ai-category" title="Inferred by AI"><span class="ai-mark" aria-hidden="true">✨</span>${cat}</span>`
+    );
+  }
+  return tags.join(' ');
+}
+
+function hasCategoryTags(word: Word): boolean {
+  return word.categories.length > 0 || (word.aiCategories ?? []).length > 0;
+}
 
 function showAddWordStatus(message: string, type: 'success' | 'error') {
   addWordStatus.textContent = message;
@@ -3127,9 +3753,8 @@ function formatWordDetail(word: Word, progress: Progress[]): string {
     ${polishHtml ? `<span class="answer-polish">${polishHtml}</span>` : ''}
   </div>`;
 
-  if (word.categories.length > 0) {
-    const cats = word.categories.map((c) => `<span class="answer-category">${c}</span>`).join(' ');
-    html += `<div class="answer-categories">${cats}</div>`;
+  if (hasCategoryTags(word)) {
+    html += `<div class="answer-categories">${categoryTagsHtml(word)}</div>`;
   }
 
   const progressByMode = new Map(progress.map((p) => [p.mode, p]));

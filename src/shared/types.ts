@@ -28,6 +28,8 @@ export interface Word extends WordCore {
   translatable: boolean;
   breakdown?: CharacterInfo[];
   categories: string[];
+  /** Labels inferred by the AI, kept separate from the user's own categories */
+  aiCategories: string[];
   manual: boolean;
   queuedAt?: string;
   charQueuedAt?: string;
@@ -127,6 +129,12 @@ export interface Stats {
   dueByDay: number[]; // count of words due each day for next 7 days in server local time (index 0 = today, includes overdue)
 }
 
+export interface SynonymEntry {
+  hanzi: string;
+  pinyin: string;
+  english: string[];
+}
+
 export interface LookupResponse {
   entries: CedictEntry[];
   existing: Word | null;
@@ -134,6 +142,32 @@ export interface LookupResponse {
   breakdown: CharacterInfo[];
   wordRank: number | null;
   charRank: number | null;
+  synonyms: SynonymEntry[];
+}
+
+/**
+ * How the model judged the input text:
+ * - `ok`: a real, natural word/phrase/sentence
+ * - `unnatural`: understandable but awkward, unidiomatic or vanishingly rare
+ * - `invalid`: not a real word, ungrammatical or nonsensical
+ */
+export type InferVerdict = 'ok' | 'unnatural' | 'invalid';
+
+export interface InferResponse {
+  verdict: InferVerdict;
+  pinyin: string;
+  english: string[];
+  polish: string[];
+  /**
+   * Inferred labels: `sentence` for a full sentence, `expression` for a multi-word
+   * phrase, or one or more parts of speech for a single word — plus a register
+   * label (`casual`, `neutral`, `formal`, `written`, `vernacular`, `vulgar`).
+   */
+  categories: string[];
+  /** Why the verdict was given — usage note for `ok`, explanation of the problem otherwise */
+  notes: string;
+  /** A corrected or more idiomatic form, when the model can offer one */
+  suggestion?: string;
 }
 
 export interface CedictEntry {
