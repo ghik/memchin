@@ -272,7 +272,9 @@ export function updateWord(
   english: string[],
   polish: string[],
   categories: string[],
-  aiCategories?: string[]
+  aiCategories?: string[],
+  // Bulk callers pass false and call saveDb() themselves: every save rewrites the whole file
+  save = true
 ): void {
   db.run(
     `UPDATE words SET pinyin = ?, english = ?, polish = ?, categories = ?${
@@ -287,7 +289,9 @@ export function updateWord(
       hanzi,
     ]
   );
-  saveDb();
+  if (save) {
+    saveDb();
+  }
   allWords = null;
   ambiguousTranslations = null;
 }

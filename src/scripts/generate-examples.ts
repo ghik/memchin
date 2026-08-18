@@ -10,6 +10,8 @@ export interface ExampleResponse {
 
 export const MAX_RETRIES = 10;
 
+const MODEL = 'gpt-5.4';
+
 export async function generateExamples(words: WordCore[]): Promise<Map<string, Example[]>> {
   const wordList = words
     .map((w) => `${w.hanzi} (${w.pinyin}) [HSK ${w.hskLevel}]: ${w.english.join(', ')}`)
@@ -30,16 +32,18 @@ The second and third examples should:
 
 For each word, provide the examples in hanzi, pinyin (with tone marks), and English translation.
 
-Output format - one JSON array, no other text:
-[{"hanzi": "爱", "examples": [{"hanzi": "我爱你", "pinyin": "wǒ ài nǐ", "english": "I love you"}, {"hanzi": "她很爱吃苹果", "pinyin": "tā hěn ài chī píngguǒ", "english": "She really loves eating apples"}, {"hanzi": "我爱我的家人，他们让我很开心", "pinyin": "wǒ ài wǒ de jiārén, tāmen ràng wǒ hěn kāixīn", "english": "I love my family, they make me very happy"}]}, ...]
+Output format - one JSON object, no other text:
+{"words": [{"hanzi": "爱", "examples": [{"hanzi": "我爱你", "pinyin": "wǒ ài nǐ", "english": "I love you"}, {"hanzi": "她很爱吃苹果", "pinyin": "tā hěn ài chī píngguǒ", "english": "She really loves eating apples"}, {"hanzi": "我爱我的家人，他们让我很开心", "pinyin": "wǒ ài wǒ de jiārén, tāmen ràng wǒ hěn kāixīn", "english": "I love my family, they make me very happy"}]}, ...]}
 
 Words:
 ${wordList}`;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      max_tokens: 16384,
+      model: MODEL,
+      // Reasoning tokens share this budget, so it sits well above the size of a 25-word batch
+      max_completion_tokens: 32768,
+      response_format: { type: 'json_object' },
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -55,9 +59,13 @@ ${wordList}`;
     }
 
     try {
-      const parsed: ExampleResponse[] = JSON.parse(jsonText);
+      const parsed = JSON.parse(jsonText);
+      const items: ExampleResponse[] = Array.isArray(parsed) ? parsed : parsed.words;
+      if (!Array.isArray(items)) {
+        throw new Error('Response contained no "words" array');
+      }
       const result = new Map<string, Example[]>();
-      for (const item of parsed) {
+      for (const item of items) {
         result.set(item.hanzi, item.examples);
       }
 
