@@ -16,6 +16,7 @@
  * simply be started again. --force redoes them.
  */
 import fs from 'fs';
+import net from 'net';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
@@ -86,6 +87,25 @@ function parseArgs(argv: string[]): Options {
     throw new Error('--concurrency needs a positive number');
   }
   return options;
+}
+
+/**
+ * The dev server keeps the whole database in memory and writes it back whole on every save,
+ * so anything this script writes while it runs is erased the next time the server saves.
+ */
+function devServerRunning(): Promise<boolean> {
+  const port = Number(process.env.PORT) || 3000;
+  return new Promise((resolve) => {
+    const socket = net.connect({ port, host: '127.0.0.1' });
+    const finish = (running: boolean) => {
+      socket.destroy();
+      resolve(running);
+    };
+    socket.setTimeout(500);
+    socket.on('connect', () => finish(true));
+    socket.on('timeout', () => finish(false));
+    socket.on('error', () => finish(false));
+  });
 }
 
 function audioExists(hanzi: string): boolean {
@@ -207,6 +227,17 @@ async function regenerateExamplesFor(words: Word[]): Promise<Map<string, string>
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
+
+  if (!options.dryRun && (await devServerRunning())) {
+    console.error(
+      'The app server is running on port ' +
+        (Number(process.env.PORT) || 3000) +
+        '. It holds the whole database in memory and would overwrite this run.\n' +
+        'Stop it first, then start it again once this finishes.'
+    );
+    process.exit(1);
+  }
+
   await initDb();
 
   let words = getLearnedWordsByReviewOrder(options.selection);
