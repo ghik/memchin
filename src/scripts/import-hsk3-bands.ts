@@ -110,7 +110,12 @@ async function importBand(filePath: string, category: string): Promise<void> {
         continue;
       }
       cats.add(category);
-      updateWord(entry.hanzi, existing.pinyin, existing.english, existing.polish ?? [], [...cats]);
+      updateWord(entry.hanzi, {
+        pinyin: existing.pinyin,
+        english: existing.english,
+        polish: existing.polish ?? [],
+        categories: [...cats],
+      });
       tagged++;
       continue;
     }

@@ -1366,7 +1366,7 @@ function showQuestion() {
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
     // english->X mode: show english prompt, no clickable hanzi
     const translationsHtml = formatTranslations(word.english);
-    let promptHtml = translationsHtml;
+    let promptHtml = translationsHtml + aiEnglishHtml(word);
     const polishHtml = formatPolish(word.polish);
     if (polishHtml) {
       promptHtml += `<div class="prompt-polish">${polishHtml}</div>`;
@@ -1489,10 +1489,13 @@ function formatFullAnswer(question: PracticeQuestion): string {
 
   let result: string;
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
-    result = `${hanzi} ${pinyin}${polishBlock}`;
+    // The translations were the question — repeating them in the answer adds nothing
+    result = `${hanzi} ${pinyin}`;
   } else {
-    // hanzi2pinyin: hanzi was the question, reveal pinyin and english
-    result = `${pinyin}<div class="answer-english">${formatTranslations(word.english)}</div>${polishBlock}`;
+    // hanzi2pinyin: hanzi was the question, reveal pinyin and every translation
+    result =
+      `${pinyin}<div class="answer-english">${formatTranslations(word.english)}</div>` +
+      `${aiEnglishHtml(word)}${polishBlock}`;
   }
 
   // Show categories
@@ -1520,6 +1523,9 @@ function formatFullAnswer(question: PracticeQuestion): string {
       .join('');
     result += `<div class="containing-words"><span class="containing-label">Words with ${word.hanzi}:</span>${items}</div>`;
   }
+
+  // The usage note closes the answer, after everything it might refer to
+  result += aiNotesHtml(word);
 
   return result;
 }
@@ -2828,6 +2834,9 @@ const wordBreakdown = document.getElementById('word-breakdown')!;
 const categorySuggestions = document.getElementById('category-suggestions')!;
 const aiCategoryChips = document.getElementById('ai-category-chips')!;
 const inferBtn = document.getElementById('infer-btn') as HTMLButtonElement;
+const aiNotesInput = document.getElementById('ai-notes') as HTMLTextAreaElement;
+const aiEnglishGroup = document.getElementById('ai-english-group')!;
+const aiEnglishList = document.getElementById('ai-english-list')!;
 const aiAssessment = document.getElementById('ai-assessment')!;
 const addWordBtn = document.getElementById('add-word-btn') as HTMLButtonElement;
 const addWordStatus = document.getElementById('add-word-status')!;
@@ -3036,6 +3045,7 @@ const polishList = new TranslationList(polishListEl, addPolishInput, (val) =>
 
 let categoryValues: string[] = [];
 let aiCategoryValues: string[] = [];
+let aiEnglishValues: string[] = [];
 let allCategoriesList: string[] = [];
 let lookupTimer: ReturnType<typeof setTimeout> | null = null;
 let editingExistingWord = false;
@@ -3093,6 +3103,48 @@ function renderAiCategoryChips() {
 function setAiCategories(values: string[]) {
   aiCategoryValues = [...values];
   renderAiCategoryChips();
+}
+
+function renderAiEnglish() {
+  aiEnglishGroup.classList.toggle('hidden', aiEnglishValues.length === 0);
+  aiEnglishList.innerHTML = '';
+  aiEnglishValues.forEach((value, i) => {
+    const item = document.createElement('div');
+    item.className = 'english-item ai-inferred';
+    const text = document.createElement('span');
+    text.className = 'ai-english-text';
+    text.textContent = value;
+    const promote = document.createElement('button');
+    promote.type = 'button';
+    promote.className = 'ai-english-promote';
+    promote.title = 'Move to English';
+    promote.textContent = '↑';
+    promote.addEventListener('click', () => {
+      englishList.add(value);
+      aiEnglishValues.splice(i, 1);
+      renderAiEnglish();
+    });
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'english-item-remove';
+    remove.textContent = '×';
+    remove.addEventListener('click', () => {
+      aiEnglishValues.splice(i, 1);
+      renderAiEnglish();
+    });
+    item.append(text, promote, remove);
+    aiEnglishList.appendChild(item);
+  });
+}
+
+function setAiEnglish(values: string[]) {
+  aiEnglishValues = [...values];
+  renderAiEnglish();
+}
+
+function setAiNotes(notes: string) {
+  aiNotesInput.value = notes;
+  aiNotesInput.classList.toggle('ai-inferred', notes.trim() !== '');
 }
 
 /** Drop the "filled in by AI" badges (the labels themselves are kept — they are stored) */
@@ -3158,16 +3210,24 @@ function mergeInferred(list: TranslationList, values: string[], marks: Set<strin
 }
 
 function applyInference(result: InferResponse) {
+  setAiNotes(result.notes);
   addPinyinInput.value = result.pinyin;
   inferredPinyin = result.pinyin;
   addPinyinInput.classList.add('ai-inferred');
 
-  // Merge rather than replace: an existing word may already carry translations worth keeping
-  mergeInferred(englishList, result.english, inferredEnglish);
+  // The inferred English stays in its own list, minus whatever the curated one already has
+  // (the server dedupes on save too); Polish still merges into the curated list
+  const known = new Set(englishList.values.map((value) => value.trim().toLowerCase()));
+  setAiEnglish(result.english.filter((gloss) => !known.has(gloss.trim().toLowerCase())));
   mergeInferred(polishList, result.polish, inferredPolish);
 
+  // Same rule the server applies on save: a label already on the word is not worth repeating
+  const knownCategories = new Set(
+    [...categoryValues, ...aiCategoryValues].map((value) => value.trim().toLowerCase())
+  );
   for (const category of result.categories) {
-    if (!aiCategoryValues.includes(category) && !categoryValues.includes(category)) {
+    if (!knownCategories.has(category.trim().toLowerCase())) {
+      knownCategories.add(category.trim().toLowerCase());
       aiCategoryValues.push(category);
     }
   }
@@ -3475,6 +3535,8 @@ async function performHanziLookup(hanzi: string) {
       ensureCurated();
       renderChips(categoryChips, categoryValues, removeCategoryChip);
       setAiCategories(existing.aiCategories ?? []);
+      setAiEnglish(existing.aiEnglish ?? []);
+      setAiNotes(existing.aiNotes ?? '');
       clearInferMarks();
 
       const infoParts: string[] = [];
@@ -3497,6 +3559,8 @@ async function performHanziLookup(hanzi: string) {
       ensureCurated();
       renderChips(categoryChips, categoryValues, removeCategoryChip);
       setAiCategories([]);
+      setAiEnglish([]);
+      setAiNotes('');
       clearInferMarks();
       const rankParts: string[] = [];
       if (wordRank != null) rankParts.push(`word #${wordRank}`);
@@ -3555,6 +3619,8 @@ addHanziInput.addEventListener('input', () => {
     ensureCurated();
     renderChips(categoryChips, categoryValues, removeCategoryChip);
     setAiCategories([]);
+    setAiEnglish([]);
+    setAiNotes('');
     clearInferMarks();
     cedictEntries.classList.add('hidden');
     wordInfoDiv.classList.add('hidden');
@@ -3618,7 +3684,9 @@ addWordBtn.addEventListener('click', async () => {
         categoryValues,
         queueAsNewCb.checked,
         synonymValues.map((syn) => syn.hanzi),
-        aiCategoryValues
+        aiCategoryValues,
+        aiEnglishValues,
+        aiNotesInput.value.trim()
       );
       showAddWordStatus(`Updated "${hanzi}" successfully!`, 'success');
 
@@ -3635,6 +3703,8 @@ addWordBtn.addEventListener('click', async () => {
           q.word.polish = updated.polish;
           q.word.categories = updated.categories;
           q.word.aiCategories = updated.aiCategories;
+          q.word.aiEnglish = updated.aiEnglish;
+          q.word.aiNotes = updated.aiNotes;
           if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
             q.prompt = englishPrompt;
           }
@@ -3651,7 +3721,9 @@ addWordBtn.addEventListener('click', async () => {
         polishValues,
         categoryValues,
         queueAsNewCb.checked,
-        aiCategoryValues
+        aiCategoryValues,
+        aiEnglishValues,
+        aiNotesInput.value.trim()
       );
       if (added.warnings && added.warnings.length > 0) {
         showAddWordStatus(`Added "${hanzi}", but: ${added.warnings.join('; ')}`, 'error');
@@ -3706,6 +3778,22 @@ function categoryTagsHtml(word: Word): string {
   return tags.join(' ');
 }
 
+/** AI-inferred English glosses, shown under the curated ones */
+function aiEnglishHtml(word: Word): string {
+  if (!word.aiEnglish || word.aiEnglish.length === 0) {
+    return '';
+  }
+  return `<div class="answer-ai-english"><span class="ai-mark" aria-hidden="true">✨</span>${formatTranslations(word.aiEnglish)}</div>`;
+}
+
+/** The AI's usage note for a word, badged so its origin is obvious */
+function aiNotesHtml(word: Word): string {
+  if (!word.aiNotes) {
+    return '';
+  }
+  return `<div class="ai-note"><span class="ai-mark" aria-hidden="true">✨</span><span class="ai-note-text">${word.aiNotes}</span></div>`;
+}
+
 function hasCategoryTags(word: Word): boolean {
   return word.categories.length > 0 || (word.aiCategories ?? []).length > 0;
 }
@@ -3757,6 +3845,8 @@ function formatWordDetail(word: Word, progress: Progress[]): string {
     html += `<div class="answer-categories">${categoryTagsHtml(word)}</div>`;
   }
 
+  html += aiEnglishHtml(word);
+
   const progressByMode = new Map(progress.map((p) => [p.mode, p]));
   const progressParts = (['hanzi2pinyin', 'english2pinyin', 'english2hanzi'] as const).map((mode) => {
     const p = progressByMode.get(mode);
@@ -3775,6 +3865,8 @@ function formatWordDetail(word: Word, progress: Progress[]): string {
   if (word.breakdown && word.breakdown.length > 0) {
     html += formatBreakdown(word.breakdown);
   }
+
+  html += aiNotesHtml(word);
 
   html += `<div class="search-detail-actions">
     <button class="search-edit-btn edit-word-btn">Edit word</button>

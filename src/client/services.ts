@@ -213,7 +213,9 @@ export function updateWord(
   categories: string[],
   queueAsNew: boolean,
   synonyms: string[],
-  aiCategories: string[]
+  aiCategories: string[],
+  aiEnglish: string[],
+  aiNotes: string
 ): Promise<Word> {
   return apiPut(`/words/${encodeURIComponent(hanzi)}`, {
     pinyin,
@@ -223,6 +225,8 @@ export function updateWord(
     queueAsNew,
     synonyms,
     aiCategories,
+    aiEnglish,
+    aiNotes,
   });
 }
 
@@ -248,9 +252,21 @@ export function addWord(
   polish: string[],
   categories: string[],
   queueAsNew: boolean,
-  aiCategories: string[]
+  aiCategories: string[],
+  aiEnglish: string[],
+  aiNotes: string
 ): Promise<Word & { warnings?: string[] }> {
-  return apiPost('/words', { hanzi, pinyin, english, polish, categories, queueAsNew, aiCategories });
+  return apiPost('/words', {
+    hanzi,
+    pinyin,
+    english,
+    polish,
+    categories,
+    queueAsNew,
+    aiCategories,
+    aiEnglish,
+    aiNotes,
+  });
 }
 
 export function makeProgressCharOnly(hanzi: string): Promise<{ ok: boolean; changed: number }> {

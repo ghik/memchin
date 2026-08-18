@@ -30,6 +30,7 @@ const REGISTERS = ['casual', 'neutral', 'formal', 'written', 'vernacular', 'vulg
 const ALLOWED_CATEGORIES = new Set([
   'sentence',
   'expression',
+  'bound morpheme',
   ...PARTS_OF_SPEECH,
   ...REGISTERS,
 ]);
@@ -45,9 +46,15 @@ Do three things:
    - "unnatural" — understandable and roughly well-formed, but awkward, unidiomatic, stilted, regionally odd, or so rare that learning it is not useful
    - "invalid" — not a real word, nonsensical, ungrammatical, or a string of characters that do not combine into anything meaningful
 
+   A single character that modern Mandarin does not use on its own is still "ok" — never mark a
+   character "unnatural" or "invalid" merely because it only appears inside compounds. Judge it as
+   the morpheme it is: "invalid" is reserved for characters that are not real characters at all.
+   Label such a character "bound morpheme" (see the label rules below).
+
 2. Give the reading and meaning:
    - "pinyin": tone-marked pinyin. Join the syllables of a single word without spaces (diànnǎo), separate distinct words with one space (wǒ hěn xǐhuan nǐ). Never include punctuation, numbers or capital letters.
-   - "english": an array of 1-4 short English glosses, most common first — the way a dictionary lists senses. For a sentence, a single natural translation.
+   - "english": an array of 1-4 short English glosses, most common first — the way a dictionary lists senses. For a sentence, a single natural translation. For a character that only lives inside compounds, gloss the meaning it contributes and name a compound it appears in, e.g. "bat (in 蝙蝠)".
+     Leave out senses that only record a personal name: 王 is "king", not "surname Wang"; 李 is "plum", not "surname Li"; 张 is "to stretch" and a measure word, not "surname Zhang". Give a name sense only when the character has no other meaning in modern Mandarin (赵, 郑), and say which kind of name it is. Place names, country names and other proper nouns are fine to keep.
 
 3. Label the text. "categories" is an array drawn only from the closed sets below — never invent a label.
 
@@ -55,6 +62,11 @@ Do three things:
    - a full sentence (has a subject and a predicate, or is a complete utterance) => "sentence"
    - a multi-word phrase, fixed expression, chengyu or collocation that is not a full sentence => "expression"
    - a single word (one word, however many characters) => no structural label; instead give every part of speech it commonly functions as, from: ${PARTS_OF_SPEECH.join(', ')}. Many words work as several — list all the common ones, most typical first, and omit rare or archaic uses.
+     Add "bound morpheme" as well if the character is not normally used as a standalone word in
+     modern Mandarin and appears essentially only inside compounds (蝠, 榄, 瑚, 葡). Keep the parts of
+     speech alongside it, describing the meaning it contributes. Do not use this label for
+     characters that do stand alone as words, even when they are also common in compounds (好, 电,
+     水, 行) — the test is whether a native speaker could use the character by itself.
      A separable verb-object compound (离合词) such as 吃饭, 睡觉, 帮忙, 结婚, 见面 — one whose two halves can be split by an aspect marker, measure phrase or modifier (吃了饭, 帮我的忙, 结过婚) — is labelled "verb-object compound" and NOT "verb". Use plain "verb" only for verbs that never split this way.
 
    Then the register, from: ${REGISTERS.join(', ')}. Every input gets one, including sentences, expressions and text you judged unnatural — a register label is never optional.
@@ -69,7 +81,7 @@ Do three things:
    If the verdict is "invalid" there is nothing to label: return an empty "categories" array.
 
 Also set:
-   - "notes": one or two sentences, written in English (Chinese examples inside them are welcome). For "ok", a brief usage note (common collocations, what distinguishes it from near-synonyms). For "unnatural" or "invalid", explain precisely what is wrong.
+   - "notes": one or two sentences, written in English (Chinese examples inside them are welcome). For a character that cannot stand alone as a word, say so plainly and list the common compounds it appears in — that is the most useful thing a learner can be told about it. For "ok", a brief usage note (common collocations, what distinguishes it from near-synonyms). For "unnatural" or "invalid", explain precisely what is wrong.
    - "suggestion": if the text is unnatural or invalid and there is an obvious corrected or more idiomatic version, the hanzi of that version. Otherwise null.
 
 If the text is invalid, still fill in "pinyin" with the literal reading of the characters and "english" with a literal, character-by-character rendering, so the learner can see what they actually typed.
@@ -91,6 +103,9 @@ Input 你吃了吗:
 Input 他给我打了一个电话昨天:
 {"verdict": "unnatural", "pinyin": "tā gěi wǒ dǎ le yī gè diànhuà zuótiān", "english": ["He called me yesterday"], "categories": ["sentence", "neutral"], "notes": "Understandable, but 昨天 is stranded at the end. A time expression belongs before the verb phrase.", "suggestion": "他昨天给我打了一个电话"}
 
+Input 蝠 (a character that never stands alone):
+{"verdict": "ok", "pinyin": "fú", "english": ["bat (in 蝙蝠)"], "categories": ["noun", "bound morpheme", "neutral"], "notes": "Not a standalone word in modern Mandarin: 蝠 appears essentially only in 蝙蝠 (bat), so it is worth learning as part of that compound.", "suggestion": null}
+
 Input 睡书:
 {"verdict": "invalid", "pinyin": "shuì shū", "english": ["sleep book"], "categories": [], "notes": "Not a word. 睡 takes 觉 as its object in 睡觉, but it does not combine with 书 this way.", "suggestion": "看书"}`;
 
@@ -108,7 +123,7 @@ Zasady:
 - formy słownikowe: czasowniki w bezokoliczniku, rzeczowniki w mianowniku liczby pojedynczej
 - gdy polszczyzna dzieli znaczenie inaczej niż chińszczyzna (pary aspektowe, czasowniki ruchu, formy grzecznościowe), trzymaj się podziału polskiego
 - bez wyjaśnień, komentarzy, pinyinu i znaków chińskich w odpowiedzi
-- jeśli tekst nie jest poprawnym chińskim, podaj dosłowne znaczenia kolejnych znaków
+- tekst niezręczny albo z błędem gramatycznym przetłumacz mimo to normalnie, zgodnie z tym, co autor chciał powiedzieć (dla 他给我打了一个电话昨天 poprawnie będzie "Wczoraj do mnie zadzwonił."); dosłowne znaczenia kolejnych znaków podawaj wyłącznie wtedy, gdy tekst w ogóle nie układa się w żadną sensowną całość
 
 Odpowiedz wyłącznie jednym obiektem JSON:
 {"tlumaczenia": ["..."]}
@@ -145,8 +160,11 @@ Typowe błędy, których masz unikać:
 - podawanie kilku wariantów stylistycznych tego samego znaczenia zamiast osobnych znaczeń ("iść", "pójść", "chodzić" to jedna pozycja, nie trzy)
 - tłumaczenie chińskich klasyfikatorów i partykuł osobnym polskim słowem, gdy polszczyzna ich nie wyraża — opisz wtedy funkcję jednym krótkim określeniem
 - zbyt książkowe słownictwo przy słowach potocznych i odwrotnie: rejestr polskiego odpowiednika ma odpowiadać rejestrowi chińskiego
+- podawanie znaczeń, które mówią tylko tyle, że znak bywa nazwiskiem albo imieniem: 王 to "król", a nie "nazwisko Wang"; 李 to "śliwka", a nie "nazwisko Li". Znaczenie "nazwisko" albo "imię" podaj wyłącznie wtedy, gdy znak nie ma we współczesnym chińskim żadnego innego znaczenia (赵, 郑). Nazwy geograficzne i inne nazwy własne są w porządku
 
 Dla pojedynczego znaku, który sam w sobie jest morfemem, podaj znaczenia, jakie ten znak wnosi do złożeń — na przykład dla 电: {"tlumaczenia": ["elektryczność", "prąd", "porazić prądem"]}.
+
+Wiele znaków nie występuje samodzielnie i pojawia się wyłącznie w złożeniach. Nie wymyślaj wtedy samodzielnego polskiego słowa na siłę: podaj znaczenie, które znak wnosi, a jeśli trzeba, dopisz w nawiasie złożenie, w którym występuje — na przykład dla 蝠: {"tlumaczenia": ["nietoperz (w 蝙蝠)"]}.
 
 Dla przysłowia lub chengyu podaj utrwalony polski odpowiednik, jeśli istnieje, a w przeciwnym razie zwięzłe znaczenie — na przykład dla 入乡随俗: {"tlumaczenia": ["kiedy wejdziesz między wrony, musisz krakać jak i one", "dostosować się do miejscowych zwyczajów"]}.
 

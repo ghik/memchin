@@ -1,8 +1,15 @@
 /**
- * Refresh every learned or queued word: ask the AI for translations and labels, and
- * regenerate the example sentences (with audio for anything new).
+ * Refresh learned entries in review order, soonest first: ask the AI for translations and
+ * labels, and regenerate the example sentences (with audio for anything new).
  *
- *   npm run reinfer-words -- [--limit N] [--force] [--dry-run]
+ * Two separate runs, each mirroring one practice queue:
+ *   --words       (default) the english2pinyin word-mode queue, in review order
+ *   --characters  the hanzi2pinyin character-mode queue, in review order
+ *
+ * They overlap wherever a character is learned both ways; the resume check keeps the second
+ * run from redoing what the first already covered.
+ *
+ *   npm run reinfer-words -- [--words | --characters] [--limit N] [--force] [--dry-run]
  *                            [--skip-infer] [--skip-examples] [--concurrency N]
  *
  * Words already carrying AI labels and examples are skipped, so an interrupted run can
@@ -12,8 +19,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
-  getAllWords,
-  getMaxBucket,
+  getLearnedWordsByReviewOrder,
   initDb,
   saveDb,
   updateWord,
@@ -23,6 +29,7 @@ import { inferWord } from '../server/services/infer-word.js';
 import { generateExamples } from './generate-examples.js';
 import { generateSpeech } from '../server/services/tts.js';
 import type { Word } from '../shared/types.js';
+import type { LearnedSelection } from '../server/db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const audioDir = path.join(__dirname, '../../data/audio');
@@ -31,6 +38,7 @@ const EXAMPLE_BATCH_SIZE = 25;
 const DEFAULT_CONCURRENCY = 4;
 
 interface Options {
+  selection: LearnedSelection;
   limit: number | null;
   force: boolean;
   dryRun: boolean;
@@ -41,6 +49,7 @@ interface Options {
 
 function parseArgs(argv: string[]): Options {
   const options: Options = {
+    selection: 'words',
     limit: null,
     force: false,
     dryRun: false,
@@ -50,7 +59,11 @@ function parseArgs(argv: string[]): Options {
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--force') {
+    if (arg === '--words') {
+      options.selection = 'words';
+    } else if (arg === '--characters') {
+      options.selection = 'characters';
+    } else if (arg === '--force') {
       options.force = true;
     } else if (arg === '--dry-run') {
       options.dryRun = true;
@@ -79,19 +92,8 @@ function audioExists(hanzi: string): boolean {
   return fs.existsSync(path.join(audioDir, `${hanzi}.mp3`));
 }
 
-/** Every word that is learned in some mode, or queued to be learned */
-function selectWords(): Word[] {
-  const selected: Word[] = [];
-  for (const word of getAllWords().values()) {
-    if (word.queuedAt || word.charQueuedAt || getMaxBucket(word.hanzi) !== null) {
-      selected.push(word);
-    }
-  }
-  return selected;
-}
-
 function isDone(word: Word, options: Options): boolean {
-  const inferDone = options.skipInfer || word.aiCategories.length > 0;
+  const inferDone = options.skipInfer || word.aiEnglish.length > 0;
   const examplesDone = options.skipExamples || word.examples.length > 0;
   return inferDone && examplesDone;
 }
@@ -130,11 +132,22 @@ async function inferAll(words: Word[], options: Options): Promise<number> {
   await forEachConcurrent(words, options.concurrency, async (word) => {
     try {
       const result = await inferWord(word.hanzi);
-      const english = mergeValues(word.english, result.english);
       const polish = mergeValues(word.polish ?? [], result.polish);
-      // The pinyin and the user's own categories stay as they are — only the AI-owned
-      // fields and the new translations are written back
-      updateWord(word.hanzi, word.pinyin, english, polish, word.categories, result.categories, false);
+      // Pinyin, curated English and the user's own categories stay as they are: the inferred
+      // English lands in its own column, so the two can be compared before anything is merged
+      updateWord(
+        word.hanzi,
+        {
+          pinyin: word.pinyin,
+          english: word.english,
+          polish,
+          categories: word.categories,
+          aiCategories: result.categories,
+          aiEnglish: result.english,
+          aiNotes: result.notes,
+        },
+        false
+      );
       sinceSave++;
       if (sinceSave >= EXAMPLE_BATCH_SIZE) {
         saveDb();
@@ -196,7 +209,7 @@ async function main() {
   const options = parseArgs(process.argv.slice(2));
   await initDb();
 
-  let words = selectWords();
+  let words = getLearnedWordsByReviewOrder(options.selection);
   const total = words.length;
   if (!options.force) {
     words = words.filter((word) => !isDone(word, options));
@@ -206,7 +219,8 @@ async function main() {
   }
 
   console.log(
-    `${total} learned or queued word(s); ${words.length} to process` +
+    `${total} learned ${options.selection === 'words' ? 'word' : 'character'}(s) in review ` +
+      `order; ${words.length} to process` +
       (options.force ? ' (--force)' : ' (already-processed words skipped)')
   );
 

@@ -101,6 +101,16 @@ export async function initDb(): Promise<void> {
     db.run('ALTER TABLE words ADD COLUMN ai_categories TEXT');
   }
 
+  // The AI's usage note for the word
+  if (!columns.includes('ai_notes')) {
+    db.run('ALTER TABLE words ADD COLUMN ai_notes TEXT');
+  }
+
+  // AI-inferred English glosses, kept apart from the curated ones
+  if (!columns.includes('ai_english')) {
+    db.run('ALTER TABLE words ADD COLUMN ai_english TEXT');
+  }
+
   // Clear char_queued_at for any chars that have already been practiced (cleanup for bad migrations)
   db.run(`
     UPDATE words SET char_queued_at = NULL
@@ -210,6 +220,25 @@ export function getWordsWithSameEnglish(hanzi: string, englishTranslations: stri
   return result;
 }
 
+/**
+ * The AI's glosses and labels are only worth storing when they add something the curated
+ * list lacks, so drop the ones already there (and any repeats among themselves), comparing
+ * case-insensitively.
+ */
+function newValuesOnly(inferred: string[], curated: string[]): string[] {
+  const seen = new Set(curated.map((value) => value.trim().toLowerCase()));
+  const kept: string[] = [];
+  for (const value of inferred) {
+    const key = value.trim().toLowerCase();
+    if (key === '' || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    kept.push(value.trim());
+  }
+  return kept;
+}
+
 export interface WordToInsert {
   hanzi: string;
   pinyin: string;
@@ -222,6 +251,8 @@ export interface WordToInsert {
   translatable: boolean;
   categories: string[];
   aiCategories?: string[];
+  aiEnglish?: string[];
+  aiNotes?: string;
   manual: boolean;
 }
 
@@ -229,8 +260,8 @@ export function insertWords(words: WordToInsert[]): void {
   for (const word of words) {
     db.run(
       `
-          INSERT INTO words (hanzi, pinyin, english, polish, hsk_level, examples, translatable, rank, hanzi_rank, categories, ai_categories, manual)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO words (hanzi, pinyin, english, polish, hsk_level, examples, translatable, rank, hanzi_rank, categories, ai_categories, ai_english, ai_notes, manual)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(hanzi) DO UPDATE SET
             pinyin = excluded.pinyin,
             english = excluded.english,
@@ -241,6 +272,8 @@ export function insertWords(words: WordToInsert[]): void {
             hanzi_rank = excluded.hanzi_rank,
             categories = excluded.categories,
             ai_categories = COALESCE(excluded.ai_categories, words.ai_categories),
+            ai_english = COALESCE(excluded.ai_english, words.ai_english),
+            ai_notes = COALESCE(excluded.ai_notes, words.ai_notes),
             manual = excluded.manual
       `,
       [
@@ -254,7 +287,9 @@ export function insertWords(words: WordToInsert[]): void {
         word.wordFrequencyRank ?? null,
         word.hanziFrequencyRank ?? null,
         JSON.stringify(word.categories),
-        word.aiCategories ? JSON.stringify(word.aiCategories) : null,
+        word.aiCategories ? JSON.stringify(newValuesOnly(word.aiCategories, word.categories)) : null,
+        word.aiEnglish ? JSON.stringify(newValuesOnly(word.aiEnglish, word.english)) : null,
+        word.aiNotes || null,
         word.manual ? 1 : 0,
       ]
     );
@@ -266,29 +301,45 @@ export function insertWords(words: WordToInsert[]): void {
   ambiguousTranslations = null;
 }
 
+export interface WordUpdate {
+  pinyin: string;
+  english: string[];
+  polish: string[];
+  categories: string[];
+  /** Omit to leave the stored AI labels untouched */
+  aiCategories?: string[];
+  /** Omit to leave the stored AI glosses untouched */
+  aiEnglish?: string[];
+  /** Omit to leave the stored AI usage note untouched */
+  aiNotes?: string;
+}
+
 export function updateWord(
   hanzi: string,
-  pinyin: string,
-  english: string[],
-  polish: string[],
-  categories: string[],
-  aiCategories?: string[],
+  update: WordUpdate,
   // Bulk callers pass false and call saveDb() themselves: every save rewrites the whole file
   save = true
 ): void {
-  db.run(
-    `UPDATE words SET pinyin = ?, english = ?, polish = ?, categories = ?${
-      aiCategories ? ', ai_categories = ?' : ''
-    } WHERE hanzi = ?`,
-    [
-      pinyin,
-      JSON.stringify(english),
-      JSON.stringify(polish),
-      JSON.stringify(categories),
-      ...(aiCategories ? [JSON.stringify(aiCategories)] : []),
-      hanzi,
-    ]
-  );
+  const columns = ['pinyin = ?', 'english = ?', 'polish = ?', 'categories = ?'];
+  const values: (string | null)[] = [
+    update.pinyin,
+    JSON.stringify(update.english),
+    JSON.stringify(update.polish),
+    JSON.stringify(update.categories),
+  ];
+  if (update.aiCategories) {
+    columns.push('ai_categories = ?');
+    values.push(JSON.stringify(newValuesOnly(update.aiCategories, update.categories)));
+  }
+  if (update.aiEnglish) {
+    columns.push('ai_english = ?');
+    values.push(JSON.stringify(newValuesOnly(update.aiEnglish, update.english)));
+  }
+  if (update.aiNotes !== undefined) {
+    columns.push('ai_notes = ?');
+    values.push(update.aiNotes || null);
+  }
+  db.run(`UPDATE words SET ${columns.join(', ')} WHERE hanzi = ?`, [...values, hanzi]);
   if (save) {
     saveDb();
   }
@@ -931,6 +982,28 @@ function matchesSearch(
 }
 
 // Category operations
+/** Which set of learned entries to walk, each with its own practice mode and review order */
+export type LearnedSelection = 'words' | 'characters';
+
+/**
+ * Learned entries in the order practice would bring them up: `words` is the english2pinyin
+ * word-mode queue (single-character words learned as words included), `characters` the
+ * hanzi2pinyin character-mode queue. Both apply the same filters as practice itself, so the
+ * head of the list is what you would actually see next. The two overlap wherever a
+ * character is learned both ways.
+ */
+export function getLearnedWordsByReviewOrder(selection: LearnedSelection): Word[] {
+  const characterMode = selection === 'characters';
+  const mode: PracticeMode = characterMode ? 'hanzi2pinyin' : 'english2pinyin';
+  const filters = getWordFilters(mode, [], [], characterMode);
+  return queryWords(
+    `SELECT w.* FROM words w JOIN progress p ON w.hanzi = p.hanzi
+     WHERE p.mode = ? AND p.bucket IS NOT NULL ${filters.wordFilter}
+     ORDER BY p.next_eligible ASC`,
+    [mode]
+  );
+}
+
 export function getAllCategories(): string[] {
   return queryRows(
     `SELECT value FROM words, json_each(words.categories)
@@ -998,6 +1071,8 @@ function rowToWord(row: any): Word {
     translatable: Boolean(row.translatable),
     categories: JSON.parse(row.categories || '[]'),
     aiCategories: JSON.parse(row.ai_categories || '[]'),
+    aiEnglish: JSON.parse(row.ai_english || '[]'),
+    aiNotes: row.ai_notes ?? undefined,
     manual: Boolean(row.manual),
     queuedAt: row.queued_at ?? undefined,
     charQueuedAt: row.char_queued_at ?? undefined,

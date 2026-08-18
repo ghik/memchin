@@ -30,6 +30,10 @@ export interface Word extends WordCore {
   categories: string[];
   /** Labels inferred by the AI, kept separate from the user's own categories */
   aiCategories: string[];
+  /** English glosses inferred by the AI, kept separate from the curated ones */
+  aiEnglish: string[];
+  /** The AI's usage note for this word */
+  aiNotes?: string;
   manual: boolean;
   queuedAt?: string;
   charQueuedAt?: string;

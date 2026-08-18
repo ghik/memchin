@@ -152,7 +152,8 @@ router.get('/lookup/:hanzi', (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { hanzi, pinyin, english, polish, categories, aiCategories } = req.body;
+    const { hanzi, pinyin, english, polish, categories, aiCategories, aiEnglish, aiNotes } =
+      req.body;
 
     if (!hanzi || !pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
@@ -189,6 +190,8 @@ router.post('/', async (req, res) => {
         translatable: true,
         categories: categories || [],
         aiCategories: Array.isArray(aiCategories) ? aiCategories : [],
+        aiEnglish: Array.isArray(aiEnglish) ? aiEnglish : [],
+        aiNotes: typeof aiNotes === 'string' ? aiNotes.trim() : undefined,
         manual: true,
       },
     ]);
@@ -287,7 +290,17 @@ router.post('/', async (req, res) => {
 router.put('/:hanzi', (req, res) => {
   try {
     const hanzi = decodeURIComponent(req.params.hanzi);
-    const { pinyin, english, polish, categories, queueAsNew, synonyms, aiCategories } = req.body;
+    const {
+      pinyin,
+      english,
+      polish,
+      categories,
+      queueAsNew,
+      synonyms,
+      aiCategories,
+      aiEnglish,
+      aiNotes,
+    } = req.body;
 
     if (!pinyin || !english || !Array.isArray(english) || english.length === 0) {
       return res
@@ -317,14 +330,15 @@ router.put('/:hanzi', (req, res) => {
 
     const normalizedPinyin = normalizePinyinInput(pinyin);
 
-    updateWord(
-      hanzi,
-      normalizedPinyin,
+    updateWord(hanzi, {
+      pinyin: normalizedPinyin,
       english,
-      polishArr,
-      categories || [],
-      Array.isArray(aiCategories) ? aiCategories : undefined
-    );
+      polish: polishArr,
+      categories: categories || [],
+      aiCategories: Array.isArray(aiCategories) ? aiCategories : undefined,
+      aiEnglish: Array.isArray(aiEnglish) ? aiEnglish : undefined,
+      aiNotes: typeof aiNotes === 'string' ? aiNotes.trim() : undefined,
+    });
     if (synonyms !== undefined) {
       setHanziSynonyms(hanzi, synonyms);
     }
