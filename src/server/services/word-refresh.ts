@@ -25,6 +25,7 @@ import {
 import type { WordSnapshot } from '../db.js';
 import { inferWord } from './infer-word.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
+import { takesExamples } from '../../shared/labels.js';
 import { resetUsage, usageSummary } from './ai-usage.js';
 import { generateSpeech } from './tts.js';
 import type { PracticeMode, Word } from '../../shared/types.js';
@@ -147,7 +148,8 @@ function audioExists(hanzi: string): boolean {
 
 function isDone(word: Word, options: RefreshOptions): boolean {
   const inferDone = options.skipInfer || word.aiEnglish.length > 0;
-  const examplesDone = options.skipExamples || word.examples.length > 0;
+  // A sentence is never getting examples, so waiting for them would queue it up forever
+  const examplesDone = options.skipExamples || word.examples.length > 0 || !takesExamples(word);
   return inferDone && examplesDone;
 }
 
@@ -254,8 +256,13 @@ async function inferAll(words: Word[], options: RefreshOptions): Promise<void> {
   saveDb();
 }
 
-async function regenerateExamplesFor(words: Word[]): Promise<void> {
+async function regenerateExamplesFor(selected: Word[]): Promise<void> {
   state.stage = 'examples';
+  const words = selected.filter(takesExamples);
+  const skipped = selected.length - words.length;
+  if (skipped > 0) {
+    log(`${skipped} labelled a sentence, so no examples for them`);
+  }
   const batchCount = Math.ceil(words.length / EXAMPLE_BATCH_SIZE);
 
   for (let i = 0; i < words.length && !state.stopRequested; i += EXAMPLE_BATCH_SIZE) {

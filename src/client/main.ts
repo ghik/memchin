@@ -12,6 +12,7 @@ import type {
   Word,
 } from './services.js';
 import type { Example, Stats } from '../shared/types.js';
+import { takesExamples } from '../shared/labels.js';
 import {
   toNumberedPinyin,
   validatePinyin,
@@ -90,6 +91,11 @@ const editOnlyBtns: HTMLButtonElement[] = [
   makeCharOnlyBtn,
   makeWordModeBtn,
 ];
+
+/** A sentence gets no example sentences, so the button asking for them has nothing to do */
+function setRegenExamplesVisible(word: Word): void {
+  regenExamplesBtn.classList.toggle('hidden', !takesExamples(word));
+}
 
 function setEditOnlyUiVisible(visible: boolean): void {
   for (const btn of editOnlyBtns) {
@@ -1870,6 +1876,7 @@ function editCurrentWord() {
 
   returnToPractice = true;
   setEditOnlyUiVisible(true);
+  setRegenExamplesVisible(word);
   showView('add-word');
   addPinyinInput.focus();
 }
@@ -1892,6 +1899,7 @@ function editWordFromSearch(word: Word) {
   performHanziLookup(word.hanzi);
   returnToSearch = true;
   setEditOnlyUiVisible(true);
+  setRegenExamplesVisible(word);
   showView('add-word');
   addPinyinInput.focus();
 }
@@ -3540,6 +3548,7 @@ async function performHanziLookup(hanzi: string) {
       setQueueAsNewDisabled(alreadyQueued);
       addWordBtn.textContent = 'Save';
       setEditOnlyUiVisible(true);
+      setRegenExamplesVisible(existing);
       setSynonymValues(synonyms);
       setProgressActionsEnabled(maxBucket !== null, isSingleHanzi(existing.hanzi));
       addPinyinInput.value = existing.pinyin;

@@ -25,6 +25,7 @@ import {
 import { lookupFiltered } from '../services/cedict.js';
 import { normalizePinyinInput, splitPinyin, splitPinyinQuery } from '../../shared/pinyin.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
+import { takesExamples } from '../../shared/labels.js';
 import { deleteAudio, generateSpeech } from '../services/tts.js';
 import { inferWord } from '../services/infer-word.js';
 import { decomposeWord } from '../services/ids.js';
@@ -248,18 +249,22 @@ router.post('/', async (req, res) => {
       hanzi: string;
       pinyin: string;
       english: string[];
+      categories?: string[];
+      aiCategories?: string[];
     }): Promise<void> => {
-      try {
-        const exampleMap = await generateExamples([{ ...entry, hskLevel: 0 }]);
-        const examples = exampleMap.get(entry.hanzi) ?? [];
-        if (examples.length === 0) {
-          warnings.push(`No examples generated for "${entry.hanzi}"`);
-        } else {
-          updateWordExamples(entry.hanzi, examples);
+      if (takesExamples(entry)) {
+        try {
+          const exampleMap = await generateExamples([{ ...entry, hskLevel: 0 }]);
+          const examples = exampleMap.get(entry.hanzi) ?? [];
+          if (examples.length === 0) {
+            warnings.push(`No examples generated for "${entry.hanzi}"`);
+          } else {
+            updateWordExamples(entry.hanzi, examples);
+          }
+        } catch (error) {
+          console.error(`Failed to generate examples for ${entry.hanzi}:`, error);
+          warnings.push(`Example generation failed for "${entry.hanzi}"`);
         }
-      } catch (error) {
-        console.error(`Failed to generate examples for ${entry.hanzi}:`, error);
-        warnings.push(`Example generation failed for "${entry.hanzi}"`);
       }
       try {
         await generateSpeech(entry.hanzi, entry.pinyin);
@@ -269,7 +274,13 @@ router.post('/', async (req, res) => {
       }
     };
 
-    await generateFor({ hanzi, pinyin: normalizedPinyin, english });
+    await generateFor({
+      hanzi,
+      pinyin: normalizedPinyin,
+      english,
+      categories: categories || [],
+      aiCategories: Array.isArray(aiCategories) ? aiCategories : [],
+    });
     for (const w of charsAdded) {
       await generateFor({ hanzi: w.hanzi, pinyin: w.pinyin, english: w.english });
     }
@@ -437,6 +448,11 @@ router.post('/:hanzi/regenerate-examples', async (req, res) => {
     const existing = getWordByHanzi(hanzi);
     if (!existing) {
       return res.status(404).json({ error: `Word "${hanzi}" not found` });
+    }
+    if (!takesExamples(existing)) {
+      return res
+        .status(400)
+        .json({ error: `"${hanzi}" is labelled a sentence, which gets no example sentences` });
     }
     const exampleMap = await generateExamples([
       { hanzi: existing.hanzi, pinyin: existing.pinyin, english: existing.english, hskLevel: existing.hskLevel },

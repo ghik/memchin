@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { getAllWords, initDb, saveDb, updateWordExamples } from '../server/db.js';
 import { generateExamples } from './generate-examples.js';
+import { takesExamples } from '../shared/labels.js';
 import { generateSpeech } from '../server/services/tts.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -20,7 +21,7 @@ async function main() {
   const needAudio = new Map<string, string>(); // hanzi -> pinyin
 
   for (const [, word] of allWords) {
-    if (!word.examples || word.examples.length === 0) {
+    if ((!word.examples || word.examples.length === 0) && takesExamples(word)) {
       needExamples.push({ hanzi: word.hanzi, pinyin: word.pinyin, english: word.english, hskLevel: word.hskLevel });
     }
     if (!audioExists(word.hanzi)) {
