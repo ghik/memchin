@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { notesAreAboutAHomophone } from './homophones.js';
 import type { InferResponse, InferVerdict } from '../../shared/types.js';
 
 const openai = new OpenAI();
@@ -43,7 +44,7 @@ const PROMPT = `You are a Mandarin Chinese lexicographer helping a learner add a
 
 You are given a piece of text the learner typed. It may be a single character, a word, a fixed expression, or a whole sentence.
 
-Everything you write must be about that exact text. Chinese is full of homophones, and a single character shares its reading with many others: 章 (chapter) is not 张 (the measure word for flat things), 干 is not 甘, 是 is not 事. Never borrow a sense, an example or a usage note from a similar-looking or similar-sounding character. Before you answer, check that every compound and example you cite actually contains the character you were given.
+Everything you write must be about that exact text. Chinese is full of homophones, and a single character shares its reading with many others: 章 (chapter) is not 张 (the measure word for flat things), 干 is not 甘, 是 is not 事. Never borrow a sense, an example or a usage note from a similar-looking or similar-sounding character. Before you answer, check that you have not mixed the text up with another character that has the same or a similar pronunciation — look at the character itself, not only at how it sounds, and make sure the senses, compounds and examples you give belong to it rather than to its homophone.
 
 Do three things:
 
@@ -250,17 +251,20 @@ function parseInferResponse(raw: string): InferResponse | null {
 }
 
 /** Polish glosses for `text`, asked for on their own. Best-effort: `[]` if the call fails. */
-async function inferPolish(text: string): Promise<string[]> {
+async function inferPolish(text: string, signal?: AbortSignal): Promise<string[]> {
   try {
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      max_completion_tokens: 2048,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: POLISH_PROMPT },
-        { role: 'user', content: text },
-      ],
-    });
+    const response = await openai.chat.completions.create(
+      {
+        model: MODEL,
+        max_completion_tokens: 2048,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: POLISH_PROMPT },
+          { role: 'user', content: text },
+        ],
+      },
+      { signal }
+    );
     const content = response.choices[0]?.message?.content;
     if (!content) {
       return [];
@@ -273,37 +277,26 @@ async function inferPolish(text: string): Promise<string[]> {
   }
 }
 
-/**
- * Homophone drift: the model sometimes answers about a character that sounds like the one it
- * was given (章 answered as 张). Examples cited in the notes give it away — at least one of
- * them should contain a character from the input.
- */
-function notesAreAboutAnotherWord(text: string, notes: string): boolean {
-  const cited = notes.match(/[\u3400-\u9fff]+/g);
-  if (!cited) {
-    return false;
-  }
-  const characters = new Set([...text]);
-  return !cited.some((run) => [...run].some((character) => characters.has(character)));
-}
-
 /** Ask the model for the reading, meaning and a naturalness assessment of `text`. */
-async function inferMain(text: string): Promise<InferResponse> {
+async function inferMain(text: string, signal?: AbortSignal): Promise<InferResponse> {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      max_completion_tokens: 4096,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: PROMPT },
-        { role: 'user', content: text },
-      ],
-    });
+    const response = await openai.chat.completions.create(
+      {
+        model: MODEL,
+        max_completion_tokens: 4096,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: PROMPT },
+          { role: 'user', content: text },
+        ],
+      },
+      { signal }
+    );
 
     const content = response.choices[0]?.message?.content;
     const result = content ? parseInferResponse(content) : null;
-    if (result && notesAreAboutAnotherWord(text, result.notes)) {
-      console.warn(`Inference for "${text}" cited only other characters, retrying...`);
+    if (result && notesAreAboutAHomophone(text, result.notes)) {
+      console.warn(`Inference for "${text}" reads as being about a homophone, retrying...`);
       continue;
     }
     if (result) {
@@ -314,8 +307,8 @@ async function inferMain(text: string): Promise<InferResponse> {
   throw new Error(`Failed to get a usable inference after ${MAX_RETRIES} attempts`);
 }
 
-export async function inferWord(text: string): Promise<InferResponse> {
+export async function inferWord(text: string, signal?: AbortSignal): Promise<InferResponse> {
   // Independent calls, so the Polish is never coloured by the English glosses
-  const [result, polish] = await Promise.all([inferMain(text), inferPolish(text)]);
+  const [result, polish] = await Promise.all([inferMain(text, signal), inferPolish(text, signal)]);
   return { ...result, polish };
 }

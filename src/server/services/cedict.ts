@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { CedictEntry } from '../../shared/types.js';
-import { numberedToToneMarked } from '../../shared/pinyin.js';
+import { numberedToToneMarked, stripTones } from '../../shared/pinyin.js';
 
 export type { CedictEntry } from '../../shared/types.js';
 
@@ -85,6 +85,19 @@ export function lookupWord(hanzi: string): CedictEntry | null {
 }
 
 /**
+ * Every reading CEDICT lists for a character, tones stripped — what "sounds the same" means
+ * when asking whether two characters could be confused for each other.
+ */
+export function characterReadings(char: string): Set<string> {
+  const map = loadCedict();
+  const readings = new Set<string>();
+  for (const entry of map.get(char) ?? []) {
+    readings.add(stripTones(entry.pinyin).toLowerCase().replace(/\s+/g, ''));
+  }
+  return readings;
+}
+
+/**
  * Look up a word in CEDICT, filtering out non-translation entries and definitions.
  * Returns entries with only useful definitions (actual meanings, not cross-references).
  */
@@ -148,4 +161,3 @@ export function filterDefinitions(definitions: string[]): string[] {
   const defs = useful.length > 0 ? useful : definitions;
   return defs.map(shortenDefinition);
 }
-
