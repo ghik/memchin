@@ -1356,12 +1356,9 @@ function formatExampleAnswers(examples: Example[]): string {
     .join('<br>');
 }
 
-// Show current question
-function showQuestion() {
-  const question = questions[currentIndex];
+/** Renders the question prompt for `question`, without touching the answer input or feedback */
+function renderPrompt(question: PracticeQuestion) {
   const word = question.word;
-  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
-
   // Show example hints alongside the question
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
     // english->X mode: show english prompt, no clickable hanzi
@@ -1401,6 +1398,28 @@ function showQuestion() {
     currentMode === 'english2hanzi' || currentMode === 'english2pinyin'
       ? 'prompt english-prompt'
       : 'prompt';
+}
+
+/** Re-renders what is on screen for `hanzi` after it was edited mid-practice */
+function refreshPracticeView(hanzi: string) {
+  const question = questions[currentIndex];
+  if (!question || question.word.hanzi !== hanzi) {
+    return;
+  }
+  renderPrompt(question);
+  // If the answer is already revealed, it is showing the pre-edit word
+  const revealed = feedbackDiv.querySelector('.correct-answer');
+  if (revealed) {
+    revealed.innerHTML = formatFullAnswer(question);
+  }
+}
+
+// Show current question
+function showQuestion() {
+  const question = questions[currentIndex];
+  const word = question.word;
+  progressText.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
+  renderPrompt(question);
 
   answerInput.value = '';
   answerInput.placeholder =
@@ -1508,7 +1527,9 @@ function formatFullAnswer(question: PracticeQuestion): string {
     result += `<div class="example-sentence">${formatExampleAnswers(word.examples)}</div>`;
   }
 
-  // Show character breakdown for multi-character words (at the bottom)
+  result += aiNotesHtml(word);
+
+  // Show character breakdown for multi-character words
   if (word.breakdown && word.breakdown.length > 0) {
     result += formatBreakdown(word.breakdown);
   }
@@ -1523,9 +1544,6 @@ function formatFullAnswer(question: PracticeQuestion): string {
       .join('');
     result += `<div class="containing-words"><span class="containing-label">Words with ${word.hanzi}:</span>${items}</div>`;
   }
-
-  // The usage note closes the answer, after everything it might refer to
-  result += aiNotesHtml(word);
 
   return result;
 }
@@ -3701,6 +3719,7 @@ addWordBtn.addEventListener('click', async () => {
           q.word.aiCategories = updated.aiCategories;
           q.word.aiEnglish = updated.aiEnglish;
           q.word.aiNotes = updated.aiNotes;
+          q.word.examples = updated.examples;
           if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
             q.prompt = englishPrompt;
           }
@@ -3756,6 +3775,7 @@ addWordBtn.addEventListener('click', async () => {
     } else if (returnToPractice) {
       returnToPractice = false;
       showView('practice');
+      refreshPracticeView(hanzi);
     }
   } catch (error) {
     showAddWordStatus(error instanceof Error ? error.message : 'Failed to save word', 'error');
@@ -3860,11 +3880,11 @@ function formatWordDetail(word: Word, progress: Progress[]): string {
     html += `<div class="example-sentence">${formatExampleAnswers(word.examples)}</div>`;
   }
 
+  html += aiNotesHtml(word);
+
   if (word.breakdown && word.breakdown.length > 0) {
     html += formatBreakdown(word.breakdown);
   }
-
-  html += aiNotesHtml(word);
 
   html += `<div class="search-detail-actions">
     <button class="search-edit-btn edit-word-btn">Edit word</button>
