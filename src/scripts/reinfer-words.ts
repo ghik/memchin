@@ -1,302 +1,236 @@
 /**
- * Refresh learned entries in review order, soonest first: ask the AI for translations and
- * labels, and regenerate the example sentences (with audio for anything new).
+ * Drives the server's refresh job: asks the AI for translations, labels and usage notes for
+ * learned entries, and regenerates their example sentences.
  *
- * Two separate runs, each mirroring one practice queue:
- *   --words       (default) the english2pinyin word-mode queue, in review order
- *   --characters  the hanzi2pinyin character-mode queue, in review order
+ * The work happens inside the running server, which owns the database, so a job and ordinary
+ * practice cannot overwrite each other and nothing needs restarting. This is only the client:
+ * it starts the job and prints its log until it finishes.
  *
- * They overlap wherever a character is learned both ways; the resume check keeps the second
- * run from redoing what the first already covered.
+ *   npm run reinfer-words -- [--mode MODE] [--words | --characters] [--limit N] [--force]
+ *                            [--dry-run] [--skip-infer] [--skip-examples] [--concurrency N]
+ *   npm run reinfer-words -- --status      follow a job that is already running
+ *   npm run reinfer-words -- --stop        ask it to stop after the item in flight
  *
- *   npm run reinfer-words -- [--words | --characters] [--limit N] [--force] [--dry-run]
- *                            [--skip-infer] [--skip-examples] [--concurrency N]
+ * The queue to walk:
+ *   --mode <hanzi2pinyin | english2pinyin | english2hanzi>   default english2pinyin
+ *   --words | --characters                                   word or character mode, default words
  *
- * Words already carrying AI labels and examples are skipped, so an interrupted run can
+ * Entries already carrying AI translations and examples are skipped, so an interrupted run can
  * simply be started again. --force redoes them.
  */
-import fs from 'fs';
-import net from 'net';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import {
-  getLearnedWordsByReviewOrder,
-  initDb,
-  saveDb,
-  updateWord,
-  updateWordExamples,
-} from '../server/db.js';
-import { inferWord } from '../server/services/infer-word.js';
-import { generateExamples } from './generate-examples.js';
-import { generateSpeech } from '../server/services/tts.js';
-import type { Word } from '../shared/types.js';
-import type { LearnedSelection } from '../server/db.js';
+import https from 'https';
+import type { PracticeMode } from '../shared/types.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const audioDir = path.join(__dirname, '../../data/audio');
-
-const EXAMPLE_BATCH_SIZE = 25;
-const DEFAULT_CONCURRENCY = 4;
+const PRACTICE_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2pinyin', 'english2hanzi'];
+const POLL_INTERVAL_MS = 2000;
 
 interface Options {
-  selection: LearnedSelection;
+  mode: PracticeMode;
+  characterMode: boolean;
   limit: number | null;
   force: boolean;
-  dryRun: boolean;
   skipInfer: boolean;
   skipExamples: boolean;
-  concurrency: number;
+  concurrency: number | null;
 }
 
-function parseArgs(argv: string[]): Options {
+type Command = 'start' | 'preview' | 'status' | 'stop';
+
+interface RefreshStatus {
+  running: boolean;
+  stage: string;
+  queueSize: number;
+  total: number;
+  processed: number;
+  failed: number;
+  error: string | null;
+  logOffset: number;
+  log: string[];
+}
+
+function parseArgs(argv: string[]): { command: Command; options: Options } {
+  let command: Command = 'start';
   const options: Options = {
-    selection: 'words',
+    mode: 'english2pinyin',
+    characterMode: false,
     limit: null,
     force: false,
-    dryRun: false,
     skipInfer: false,
     skipExamples: false,
-    concurrency: DEFAULT_CONCURRENCY,
+    concurrency: null,
   };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
-    if (arg === '--words') {
-      options.selection = 'words';
+    if (arg === '--mode') {
+      const mode = argv[++i] as PracticeMode;
+      if (!PRACTICE_MODES.includes(mode)) {
+        throw new Error(`--mode must be one of: ${PRACTICE_MODES.join(', ')}`);
+      }
+      options.mode = mode;
+    } else if (arg === '--words') {
+      options.characterMode = false;
     } else if (arg === '--characters') {
-      options.selection = 'characters';
+      options.characterMode = true;
     } else if (arg === '--force') {
       options.force = true;
     } else if (arg === '--dry-run') {
-      options.dryRun = true;
+      command = 'preview';
+    } else if (arg === '--status') {
+      command = 'status';
+    } else if (arg === '--stop') {
+      command = 'stop';
     } else if (arg === '--skip-infer') {
       options.skipInfer = true;
     } else if (arg === '--skip-examples') {
       options.skipExamples = true;
     } else if (arg === '--limit') {
       options.limit = Number(argv[++i]);
+      if (!Number.isFinite(options.limit)) {
+        throw new Error('--limit needs a number');
+      }
     } else if (arg === '--concurrency') {
       options.concurrency = Number(argv[++i]);
+      if (!Number.isFinite(options.concurrency)) {
+        throw new Error('--concurrency needs a number');
+      }
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
   }
-  if (options.limit !== null && !Number.isFinite(options.limit)) {
-    throw new Error('--limit needs a number');
-  }
-  if (!Number.isFinite(options.concurrency) || options.concurrency < 1) {
-    throw new Error('--concurrency needs a positive number');
-  }
-  return options;
+  return { command, options };
 }
 
-/**
- * The dev server keeps the whole database in memory and writes it back whole on every save,
- * so anything this script writes while it runs is erased the next time the server saves.
- */
-function devServerRunning(): Promise<boolean> {
-  const port = Number(process.env.PORT) || 3000;
-  return new Promise((resolve) => {
-    const socket = net.connect({ port, host: '127.0.0.1' });
-    const finish = (running: boolean) => {
-      socket.destroy();
-      resolve(running);
-    };
-    socket.setTimeout(500);
-    socket.on('connect', () => finish(true));
-    socket.on('timeout', () => finish(false));
-    socket.on('error', () => finish(false));
-  });
-}
+const baseUrl = `https://localhost:${Number(process.env.PORT) || 3000}/api/refresh`;
 
-function audioExists(hanzi: string): boolean {
-  return fs.existsSync(path.join(audioDir, `${hanzi}.mp3`));
-}
-
-function isDone(word: Word, options: Options): boolean {
-  const inferDone = options.skipInfer || word.aiEnglish.length > 0;
-  const examplesDone = options.skipExamples || word.examples.length > 0;
-  return inferDone && examplesDone;
-}
-
-function mergeValues(existing: string[], inferred: string[]): string[] {
-  const merged = [...existing];
-  for (const value of inferred) {
-    if (!merged.includes(value)) {
-      merged.push(value);
-    }
-  }
-  return merged;
-}
-
-/** Runs `task` over `items`, `concurrency` at a time, in order */
-async function forEachConcurrent<T>(
-  items: T[],
-  concurrency: number,
-  task: (item: T, index: number) => Promise<void>
-): Promise<void> {
-  let next = 0;
-  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-    while (next < items.length) {
-      const index = next++;
-      await task(items[index], index);
-    }
-  });
-  await Promise.all(workers);
-}
-
-async function inferAll(words: Word[], options: Options): Promise<number> {
-  let done = 0;
-  let failed = 0;
-  let sinceSave = 0;
-
-  await forEachConcurrent(words, options.concurrency, async (word) => {
-    try {
-      const result = await inferWord(word.hanzi);
-      const polish = mergeValues(word.polish ?? [], result.polish);
-      // Pinyin, curated English and the user's own categories stay as they are: the inferred
-      // English lands in its own column, so the two can be compared before anything is merged
-      updateWord(
-        word.hanzi,
-        {
-          pinyin: word.pinyin,
-          english: word.english,
-          polish,
-          categories: word.categories,
-          aiCategories: result.categories,
-          aiEnglish: result.english,
-          aiNotes: result.notes,
-        },
-        false
-      );
-      sinceSave++;
-      if (sinceSave >= EXAMPLE_BATCH_SIZE) {
-        saveDb();
-        sinceSave = 0;
-      }
-      done++;
-      console.log(
-        `  [${done + failed}/${words.length}] ${word.hanzi} ${result.verdict} ` +
-          `${result.categories.join(', ')} | ${result.english.join('; ')} | ${result.polish.join('; ')}`
-      );
-      if (result.verdict !== 'ok') {
-        console.log(`      ^ ${result.notes}`);
-      }
-    } catch (error) {
-      failed++;
-      console.error(`  [${done + failed}/${words.length}] ${word.hanzi} FAILED:`, error);
-    }
-  });
-
-  saveDb();
-  if (failed > 0) {
-    console.log(`  ${failed} word(s) failed to infer`);
-  }
-  return done;
-}
-
-async function regenerateExamplesFor(words: Word[]): Promise<Map<string, string>> {
-  const needAudio = new Map<string, string>(); // hanzi -> pinyin
-
-  for (let i = 0; i < words.length; i += EXAMPLE_BATCH_SIZE) {
-    const batch = words.slice(i, i + EXAMPLE_BATCH_SIZE);
-    const batchNumber = Math.floor(i / EXAMPLE_BATCH_SIZE) + 1;
-    const batchCount = Math.ceil(words.length / EXAMPLE_BATCH_SIZE);
-    console.log(`  Batch ${batchNumber}/${batchCount}: ${batch.map((w) => w.hanzi).join(' ')}`);
-    try {
-      const exampleMap = await generateExamples(batch);
-      for (const word of batch) {
-        const examples = exampleMap.get(word.hanzi) ?? [];
-        if (examples.length === 0) {
-          console.warn(`    no examples returned for ${word.hanzi}`);
-          continue;
-        }
-        updateWordExamples(word.hanzi, examples);
-        for (const example of examples) {
-          if (!audioExists(example.hanzi)) {
-            needAudio.set(example.hanzi, example.pinyin);
+/** The dev server serves its own certificate, so verifying it against localhost is pointless */
+function request<T>(method: 'GET' | 'POST', urlPath: string, body?: unknown): Promise<T> {
+  const url = new URL(baseUrl + urlPath);
+  const payload = body === undefined ? undefined : JSON.stringify(body);
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: url.hostname,
+        port: url.port,
+        path: url.pathname + url.search,
+        method,
+        rejectUnauthorized: false,
+        headers: payload ? { 'Content-Type': 'application/json' } : undefined,
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          let parsed: any;
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            reject(new Error(`Unexpected response: ${data.slice(0, 200)}`));
+            return;
           }
-        }
+          if (res.statusCode && res.statusCode >= 400) {
+            reject(new Error(parsed.error ?? `Request failed (${res.statusCode})`));
+            return;
+          }
+          resolve(parsed as T);
+        });
       }
-      saveDb();
-    } catch (error) {
-      console.error(`    batch failed:`, error);
+    );
+    req.on('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'ECONNREFUSED') {
+        reject(new Error(`No app server on ${url.origin} — start it with "npm run dev" first.`));
+        return;
+      }
+      reject(error);
+    });
+    if (payload) {
+      req.write(payload);
     }
+    req.end();
+  });
+}
+
+function requestBody(options: Options) {
+  return {
+    mode: options.mode,
+    characterMode: options.characterMode,
+    limit: options.limit,
+    force: options.force,
+    skipInfer: options.skipInfer,
+    skipExamples: options.skipExamples,
+    ...(options.concurrency !== null ? { concurrency: options.concurrency } : {}),
+  };
+}
+
+function printLog(status: RefreshStatus): number {
+  for (const line of status.log) {
+    console.log(line);
   }
-  return needAudio;
+  return status.logOffset + status.log.length;
+}
+
+/** Prints new log lines as they appear, until the job stops */
+async function follow(since: number): Promise<RefreshStatus> {
+  let next = since;
+  for (;;) {
+    const status = await request<RefreshStatus>('GET', `/status?since=${next}`);
+    next = printLog(status);
+    if (!status.running) {
+      return status;
+    }
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+  }
 }
 
 async function main() {
-  const options = parseArgs(process.argv.slice(2));
+  const { command, options } = parseArgs(process.argv.slice(2));
 
-  if (!options.dryRun && (await devServerRunning())) {
-    console.error(
-      'The app server is running on port ' +
-        (Number(process.env.PORT) || 3000) +
-        '. It holds the whole database in memory and would overwrite this run.\n' +
-        'Stop it first, then start it again once this finishes.'
+  if (command === 'preview') {
+    const preview = await request<{ queueSize: number; hanzi: string[] }>(
+      'POST',
+      '/preview',
+      requestBody(options)
     );
-    process.exit(1);
-  }
-
-  await initDb();
-
-  let words = getLearnedWordsByReviewOrder(options.selection);
-  const total = words.length;
-  if (!options.force) {
-    words = words.filter((word) => !isDone(word, options));
-  }
-  if (options.limit !== null) {
-    words = words.slice(0, options.limit);
-  }
-
-  console.log(
-    `${total} learned ${options.selection === 'words' ? 'word' : 'character'}(s) in review ` +
-      `order; ${words.length} to process` +
-      (options.force ? ' (--force)' : ' (already-processed words skipped)')
-  );
-
-  if (options.dryRun) {
-    console.log(words.map((w) => w.hanzi).join(' '));
+    console.log(
+      `${preview.queueSize} entries in the ${options.mode} ` +
+        `${options.characterMode ? 'character' : 'word'}-mode queue; ` +
+        `${preview.hanzi.length} to process`
+    );
+    console.log(preview.hanzi.join(' '));
     console.log('\nDry run, nothing written.');
     return;
   }
-  if (words.length === 0) {
+
+  if (command === 'stop') {
+    const status = await request<RefreshStatus>('POST', '/stop');
+    console.log(status.running ? 'Stop requested.' : 'No job is running.');
     return;
   }
 
-  if (!options.skipInfer) {
-    console.log(`\nInferring translations and labels (${options.concurrency} at a time)...`);
-    await inferAll(words, options);
+  if (command === 'status') {
+    const status = await request<RefreshStatus>('GET', '/status?since=0');
+    if (!status.running) {
+      console.log(`No job running (last stage: ${status.stage}).`);
+      printLog(status);
+      return;
+    }
+    await follow(0);
+    return;
   }
 
-  const needAudio = new Map<string, string>();
-  if (!options.skipExamples) {
-    console.log('\nRegenerating examples...');
-    for (const [hanzi, pinyin] of await regenerateExamplesFor(words)) {
-      needAudio.set(hanzi, pinyin);
-    }
+  const started = await request<RefreshStatus>('POST', '/start', requestBody(options));
+  const since = printLog(started);
+  if (!started.running) {
+    return;
   }
-  for (const word of words) {
-    if (!audioExists(word.hanzi)) {
-      needAudio.set(word.hanzi, word.pinyin);
-    }
-  }
-
-  if (needAudio.size > 0) {
-    console.log(`\nGenerating audio for ${needAudio.size} item(s)...`);
-    for (const [hanzi, pinyin] of needAudio) {
-      try {
-        await generateSpeech(hanzi, pinyin);
-      } catch (error) {
-        console.error(`  Failed to generate audio for ${hanzi}:`, error);
-      }
-    }
-  }
-
-  console.log('\nDone.');
+  console.log('(the job runs inside the server — Ctrl-C only stops following it)\n');
+  const finished = await follow(since);
+  console.log(
+    `\n${finished.stage}: ${finished.processed} processed, ${finished.failed} failed` +
+      (finished.error ? ` — ${finished.error}` : '')
+  );
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 });

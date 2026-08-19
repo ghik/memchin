@@ -26,11 +26,6 @@ async function main() {
     if (!audioExists(word.hanzi)) {
       needAudio.set(word.hanzi, word.pinyin);
     }
-    for (const ex of word.examples || []) {
-      if (!audioExists(ex.hanzi)) {
-        needAudio.set(ex.hanzi, ex.pinyin);
-      }
-    }
   }
 
   console.log(`${needExamples.length} words missing examples, ${needAudio.size} missing audio.`);
@@ -47,11 +42,6 @@ async function main() {
           const examples = exampleMap.get(w.hanzi) || [];
           if (examples.length > 0) {
             updateWordExamples(w.hanzi, examples);
-            for (const ex of examples) {
-              if (!audioExists(ex.hanzi)) {
-                needAudio.set(ex.hanzi, ex.pinyin);
-              }
-            }
           }
         }
         saveDb();

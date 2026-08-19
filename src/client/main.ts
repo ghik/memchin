@@ -1341,8 +1341,8 @@ function formatExampleHints(examples: Example[]): string {
     // english->X: show english only (to not give away the answer)
     return examples.map((ex) => `<span class="ex-english">${ex.english}</span>`).join('<br>');
   } else {
-    // hanzi->X modes: show clickable example hanzi
-    return examples.map((ex) => clickableHanzi(ex.hanzi, 'ex-hanzi')).join('<br>');
+    // hanzi->X modes: show the example hanzi (not clickable — examples have no audio)
+    return examples.map((ex) => `<span class="ex-hanzi">${ex.hanzi}</span>`).join('<br>');
   }
 }
 
@@ -1351,7 +1351,7 @@ function formatExampleAnswers(examples: Example[]): string {
   return examples
     .map(
       (ex) =>
-        `${clickableHanzi(ex.hanzi, 'ex-hanzi')} <span class="ex-pinyin">${ex.pinyin}</span> <span class="ex-english">— ${ex.english}</span>`
+        `<span class="ex-hanzi">${ex.hanzi}</span> <span class="ex-pinyin">${ex.pinyin}</span> <span class="ex-english">— ${ex.english}</span>`
     )
     .join('<br>');
 }
@@ -2103,11 +2103,7 @@ regenAudioBtn.addEventListener('click', async () => {
   }
   try {
     const updated = await withButtonBusy(regenAudioBtn, 'Regenerating…', () => regenerateAudio(hanzi));
-    const stamp = Date.now();
-    audioCacheBust.set(hanzi, stamp);
-    for (const ex of updated?.examples ?? []) {
-      audioCacheBust.set(ex.hanzi, stamp);
-    }
+    audioCacheBust.set(hanzi, Date.now());
     showAddWordStatus(`Regenerated audio for "${hanzi}"`, 'success');
   } catch (error) {
     showAddWordStatus(error instanceof Error ? error.message : 'Failed to regenerate audio', 'error');
@@ -3742,6 +3738,8 @@ addWordBtn.addEventListener('click', async () => {
     editingExistingWord = false;
     renderChips(categoryChips, categoryValues, removeCategoryChip);
     setAiCategories([]);
+    setAiEnglish([]);
+    setAiNotes('');
     clearInferMarks();
     cedictEntries.classList.add('hidden');
     wordInfoDiv.classList.add('hidden');

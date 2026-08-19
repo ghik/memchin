@@ -24,8 +24,12 @@ const PARTS_OF_SPEECH = [
   'interjection',
 ];
 
-/** Register labels — every input gets at least one of these on top of its structural label */
-const REGISTERS = ['casual', 'neutral', 'formal', 'written', 'vernacular', 'vulgar'];
+/**
+ * Register labels. Every input gets exactly one from the formality scale, optionally a medium
+ * (spoken/written) and the marked registers on top of that.
+ */
+const FORMALITY = ['colloquial', 'neutral', 'formal'];
+const REGISTERS = [...FORMALITY, 'spoken', 'written', 'vernacular', 'crude', 'vulgar'];
 
 const ALLOWED_CATEGORIES = new Set([
   'sentence',
@@ -38,6 +42,8 @@ const ALLOWED_CATEGORIES = new Set([
 const PROMPT = `You are a Mandarin Chinese lexicographer helping a learner add an entry to their vocabulary deck.
 
 You are given a piece of text the learner typed. It may be a single character, a word, a fixed expression, or a whole sentence.
+
+Everything you write must be about that exact text. Chinese is full of homophones, and a single character shares its reading with many others: 章 (chapter) is not 张 (the measure word for flat things), 干 is not 甘, 是 is not 事. Never borrow a sense, an example or a usage note from a similar-looking or similar-sounding character. Before you answer, check that every compound and example you cite actually contains the character you were given.
 
 Do three things:
 
@@ -70,14 +76,25 @@ Do three things:
      水, 行) — the test is whether a native speaker could use the character by itself.
      A separable verb-object compound (离合词) such as 吃饭, 睡觉, 帮忙, 结婚, 见面 — one whose two halves can be split by an aspect marker, measure phrase or modifier (吃了饭, 帮我的忙, 结过婚) — is labelled "verb-object compound" and NOT "verb". Use plain "verb" only for verbs that never split this way.
 
-   Then the register, from: ${REGISTERS.join(', ')}. Every input gets one, including sentences, expressions and text you judged unnatural — a register label is never optional.
-   - "neutral" is the default: usable in ordinary speech and writing alike
-   - "casual" for colloquial speech, slang and things you would not write in an essay
-   - "formal" for polite, official or ceremonious usage
-   - "written" for bookish usage that is rarely spoken
-   - "vernacular" for dialectal or strongly regional usage
-   - "vulgar" for obscene or offensive usage
-   Usually exactly one register applies, but combinations are allowed where they genuinely both hold (for example written + formal, or vernacular + vulgar).
+   Then the register. Two independent choices, plus two marked labels.
+
+   How formal it is — exactly one of ${FORMALITY.join(', ')}, never omitted, not for sentences, not for expressions, not for text you judged unnatural:
+   - "colloquial" for everyday speech and chat: slang, fillers, things you would not put in an essay
+   - "neutral" is the default: at home in ordinary speech and ordinary writing alike
+   - "formal" for polite, official, ceremonious or technical usage
+
+   Which medium it belongs to — add "spoken" or "written" only when the word genuinely leans one way:
+   - "spoken" for 口语 that is said but seldom written: sentence-final particles, fillers, greetings, spoken-only shortenings
+   - "written" for 书面语 that is read but seldom said: bookish connectives, chengyu in prose, documentary vocabulary
+   - add neither when it is equally usual in speech and in writing
+   This is independent of formality: a polite greeting is formal and spoken, chat slang is colloquial and written.
+
+   Add "vernacular" for dialectal or strongly regional usage.
+
+   Then, at most one label for how coarse the word is. These two are mutually exclusive, and both sit on top of the formality label rather than replacing it:
+   - "vulgar" only for language that genuinely offends. The test is narrow: is the word itself a swear word, a slur, or explicit sexual or scatological language used to shock or insult? 操, 傻逼, 牛逼, 混蛋, 屁话 pass it.
+   - "crude" for words that are coarse or earthy but not offensive — bodily functions and body parts in blunt everyday terms, cheerfully rough slang. Fine among friends, out of place in front of a teacher or a client. 屌丝, 放屁, 拉屎, 尿尿, 屁股 belong here.
+   Most words get neither. When a word is merely informal, that is what "colloquial" is for; reach for "crude" only when a learner would actually be caught out using it in polite company, and for "vulgar" only when it would cause offence.
 
    If the verdict is "invalid" there is nothing to label: return an empty "categories" array.
 
@@ -96,10 +113,10 @@ Input 睡觉:
 {"verdict": "ok", "pinyin": "shuìjiào", "english": ["to sleep", "to go to bed"], "categories": ["verb-object compound", "neutral"], "notes": "Separable, so it splits in real use: 睡了觉, 睡个好觉. 入睡 is narrower and means specifically to fall asleep.", "suggestion": null}
 
 Input 一带一路:
-{"verdict": "ok", "pinyin": "yīdàiyīlù", "english": ["the Belt and Road Initiative"], "categories": ["expression", "formal"], "notes": "A fixed policy term, short for 丝绸之路经济带和21世纪海上丝绸之路. It belongs to news, policy and business writing rather than conversation.", "suggestion": null}
+{"verdict": "ok", "pinyin": "yīdàiyīlù", "english": ["the Belt and Road Initiative"], "categories": ["expression", "formal", "written"], "notes": "A fixed policy term, short for 丝绸之路经济带和21世纪海上丝绸之路. It belongs to news, policy and business writing rather than conversation.", "suggestion": null}
 
 Input 你吃了吗:
-{"verdict": "ok", "pinyin": "nǐ chī le ma", "english": ["Have you eaten?"], "categories": ["sentence", "casual"], "notes": "A stock greeting as much as a real question, especially among older speakers; an answer about food is not always expected.", "suggestion": null}
+{"verdict": "ok", "pinyin": "nǐ chī le ma", "english": ["Have you eaten?"], "categories": ["sentence", "colloquial", "spoken"], "notes": "A stock greeting as much as a real question, especially among older speakers; an answer about food is not always expected.", "suggestion": null}
 
 Input 他给我打了一个电话昨天:
 {"verdict": "unnatural", "pinyin": "tā gěi wǒ dǎ le yī gè diànhuà zuótiān", "english": ["He called me yesterday"], "categories": ["sentence", "neutral"], "notes": "Understandable, but 昨天 is stranded at the end. A time expression belongs before the verb phrase.", "suggestion": "他昨天给我打了一个电话"}
@@ -253,6 +270,20 @@ async function inferPolish(text: string): Promise<string[]> {
   }
 }
 
+/**
+ * Homophone drift: the model sometimes answers about a character that sounds like the one it
+ * was given (章 answered as 张). Examples cited in the notes give it away — at least one of
+ * them should contain a character from the input.
+ */
+function notesAreAboutAnotherWord(text: string, notes: string): boolean {
+  const cited = notes.match(/[\u3400-\u9fff]+/g);
+  if (!cited) {
+    return false;
+  }
+  const characters = new Set([...text]);
+  return !cited.some((run) => [...run].some((character) => characters.has(character)));
+}
+
 /** Ask the model for the reading, meaning and a naturalness assessment of `text`. */
 async function inferMain(text: string): Promise<InferResponse> {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -268,6 +299,10 @@ async function inferMain(text: string): Promise<InferResponse> {
 
     const content = response.choices[0]?.message?.content;
     const result = content ? parseInferResponse(content) : null;
+    if (result && notesAreAboutAnotherWord(text, result.notes)) {
+      console.warn(`Inference for "${text}" cited only other characters, retrying...`);
+      continue;
+    }
     if (result) {
       return result;
     }

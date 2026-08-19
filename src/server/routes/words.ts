@@ -256,9 +256,6 @@ router.post('/', async (req, res) => {
           warnings.push(`No examples generated for "${entry.hanzi}"`);
         } else {
           updateWordExamples(entry.hanzi, examples);
-          for (const ex of examples) {
-            await generateSpeech(ex.hanzi, ex.pinyin);
-          }
         }
       } catch (error) {
         console.error(`Failed to generate examples for ${entry.hanzi}:`, error);
@@ -427,10 +424,6 @@ router.post('/:hanzi/regenerate-audio', async (req, res) => {
     }
     deleteAudio(existing.hanzi);
     await generateSpeech(existing.hanzi, existing.pinyin);
-    for (const ex of existing.examples ?? []) {
-      deleteAudio(ex.hanzi);
-      await generateSpeech(ex.hanzi, ex.pinyin);
-    }
     res.json(existing);
   } catch (error) {
     console.error('Failed to regenerate audio:', error);
@@ -451,9 +444,6 @@ router.post('/:hanzi/regenerate-examples', async (req, res) => {
     const examples = exampleMap.get(existing.hanzi) ?? [];
     updateWordExamples(existing.hanzi, examples);
     invalidateWordCache();
-    for (const ex of examples) {
-      await generateSpeech(ex.hanzi, ex.pinyin);
-    }
     const word = getWordByHanzi(hanzi);
     res.json(word);
   } catch (error) {

@@ -4,12 +4,21 @@ import https from 'https';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { initDb, getAllCategories, getDb, getWordByHanzi, insertWords, setCharQueuedAt } from './db.js';
+import {
+  initDb,
+  getAllCategories,
+  getDb,
+  getWordByHanzi,
+  insertWords,
+  reloadIfChangedExternally,
+  setCharQueuedAt,
+} from './db.js';
 import { loadCedict } from './services/cedict.js';
 import { loadIds } from './services/ids.js';
 import { lookupChar, loadWordFrequencyData } from './services/hanzi-freq.js';
 import wordsRouter from './routes/words.js';
 import practiceRouter from './routes/practice.js';
+import refreshRouter from './routes/refresh.js';
 import type { Example } from '../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -77,9 +86,18 @@ async function main() {
   app.use(cors());
   app.use(express.json());
 
+  // Pick up writes made by the scripts while the server was running
+  app.use((_req, _res, next) => {
+    if (reloadIfChangedExternally()) {
+      console.log('Database changed on disk, reloaded');
+    }
+    next();
+  });
+
   // API routes
   app.use('/api/words', wordsRouter);
   app.use('/api/practice', practiceRouter);
+  app.use('/api/refresh', refreshRouter);
   app.get('/api/categories', (_req, res) => {
     res.json(getAllCategories());
   });

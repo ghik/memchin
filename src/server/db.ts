@@ -17,9 +17,37 @@ const dbPath = path.join(process.env.HOME!, 'Dropbox/memchin/memchin.db');
 const dataDir = path.dirname(dbPath);
 
 let db: SqlJsDatabase;
+let sql: Awaited<ReturnType<typeof initSqlJs>>;
+/** Identity of the database file as this process last saw it, to spot outside writes */
+let dbFileStamp = '';
+
+function fileStamp(): string {
+  if (!fs.existsSync(dbPath)) {
+    return '';
+  }
+  const stats = fs.statSync(dbPath);
+  return `${stats.mtimeMs}:${stats.size}`;
+}
+
+/**
+ * The whole database lives in memory here, so a script writing to the file is invisible until
+ * it is read again. Called before serving a request: if the file moved on under us, load it
+ * and drop the caches built from the old contents.
+ */
+export function reloadIfChangedExternally(): boolean {
+  const stamp = fileStamp();
+  if (stamp === '' || stamp === dbFileStamp) {
+    return false;
+  }
+  db = new sql.Database(fs.readFileSync(dbPath));
+  dbFileStamp = stamp;
+  invalidateWordCache();
+  return true;
+}
 
 export async function initDb(): Promise<void> {
   const SQL = await initSqlJs();
+  sql = SQL;
 
   // Ensure data directory exists
   if (!fs.existsSync(dataDir)) {
@@ -153,6 +181,7 @@ export function saveDb(): void {
   const data = db.export();
   const buffer = Buffer.from(data);
   fs.writeFileSync(dbPath, buffer);
+  dbFileStamp = fileStamp();
 }
 
 // Word operations
@@ -982,19 +1011,12 @@ function matchesSearch(
 }
 
 // Category operations
-/** Which set of learned entries to walk, each with its own practice mode and review order */
-export type LearnedSelection = 'words' | 'characters';
-
 /**
- * Learned entries in the order practice would bring them up: `words` is the english2pinyin
- * word-mode queue (single-character words learned as words included), `characters` the
- * hanzi2pinyin character-mode queue. Both apply the same filters as practice itself, so the
- * head of the list is what you would actually see next. The two overlap wherever a
- * character is learned both ways.
+ * Learned entries in the order the given practice queue would bring them up, soonest first.
+ * Applies the same filters as practice itself, so the head of the list is what you would
+ * actually see next in that mode.
  */
-export function getLearnedWordsByReviewOrder(selection: LearnedSelection): Word[] {
-  const characterMode = selection === 'characters';
-  const mode: PracticeMode = characterMode ? 'hanzi2pinyin' : 'english2pinyin';
+export function getLearnedWordsByReviewOrder(mode: PracticeMode, characterMode: boolean): Word[] {
   const filters = getWordFilters(mode, [], [], characterMode);
   return queryWords(
     `SELECT w.* FROM words w JOIN progress p ON w.hanzi = p.hanzi

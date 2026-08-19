@@ -70,9 +70,6 @@ async function main() {
         ]);
         const examples = exampleMap.get(w.hanzi) || [];
         updateWordExamples(w.hanzi, examples);
-        for (const ex of examples) {
-          await generateSpeech(ex.hanzi, ex.pinyin);
-        }
       }
       await generateSpeech(w.hanzi, w.pinyin);
     } catch (error) {
