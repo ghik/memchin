@@ -59,7 +59,7 @@ Do three things:
 
 2. Give the reading and meaning:
    - "pinyin": tone-marked pinyin. Join the syllables of a single word without spaces (diànnǎo), separate distinct words with one space (wǒ hěn xǐhuan nǐ). Never include punctuation, numbers or capital letters.
-   - "english": an array of 1-4 short English glosses, most common first — the way a dictionary lists senses. For a sentence, a single natural translation. For a character that only lives inside compounds, gloss the meaning it contributes and name a compound it appears in, e.g. "bat (in 蝙蝠)".
+   - "english": an array of 1-4 short English glosses, most common first — the way a dictionary lists senses. For a sentence, one gloss per reading: the translation a native speaker takes out of context first, then every other reading the Chinese genuinely allows, each as its own entry in the array — never merged into one string with a slash or a parenthetical. Tense is the usual source of these, since Chinese does not mark it: 我今天开车去公司 gets both "I'm driving to the office today" and "I drove to the office today". Whenever a sentence has more than one reading, the note must say what it leaves unmarked and what would pin it down (a 了, a 每天, a 正在). For a character that only lives inside compounds, gloss the meaning it contributes and name a compound it appears in, e.g. "bat (in 蝙蝠)".
      Write the glosses in English. Never drop the Chinese word into an English phrase ("to嫁 into a family", "to摘 off" are wrong; write "to marry into a family", "to pick off"). The only Chinese that belongs in a gloss is a compound named in brackets, as in "bat (in 蝙蝠)".
      Leave out senses that only record a personal name: 王 is "king", not "surname Wang"; 李 is "plum", not "surname Li"; 张 is "to stretch" and a measure word, not "surname Zhang". Give a name sense only when the character has no other meaning in modern Mandarin (赵, 郑), and say which kind of name it is. Place names, country names and other proper nouns are fine to keep.
 
@@ -74,7 +74,7 @@ Do three things:
      speech alongside it, describing the meaning it contributes. Do not use this label for
      characters that do stand alone as words, even when they are also common in compounds (好, 电,
      水, 行) — the test is whether a native speaker could use the character by itself.
-     A separable verb-object compound (离合词) such as 吃饭, 睡觉, 帮忙, 结婚, 见面 — one whose two halves can be split by an aspect marker, measure phrase or modifier (吃了饭, 帮我的忙, 结过婚) — is labelled "verb-object compound" and NOT "verb". Use plain "verb" only for verbs that never split this way.
+     A separable verb-object compound (离合词) such as 吃饭, 睡觉, 帮忙, 结婚, 见面 — the verb first and its own object second, so that an aspect marker, measure phrase or modifier can be dropped in between them (吃了饭, 帮我的忙, 结过婚) — is labelled "verb-object compound" and NOT "verb". The order is what counts: a compound built the other way round, with the noun in front (面试, 笔试, 手写, 心疼, 自杀), is a plain "verb" no matter how verb-like its second half, and so is any verb that never splits (喜欢, 认识, 决定). Whenever you use this label, the note must show the word actually split, because that is the whole payoff: anything that attaches to the verb — aspect markers, duration and frequency phrases, resultative and potential complements, modifiers of the object — sits between the two halves and never after the word (睡了一个小时的觉, 见过一次面, 睡不着觉, 帮不上忙; 睡觉了一个小时 and 见面过一次 are wrong). Reduplication likewise doubles the verb half only (散散步, 帮帮忙). Where the word cannot be split — before a 得-complement, and as an alternative for durations — the verb has to be copied instead (睡觉睡得很晚, 睡觉睡了一个小时), so say which of the two a learner needs.
 
    Then the register. Two independent choices, plus two marked labels.
 
@@ -110,7 +110,7 @@ Reply with a single JSON object and nothing else:
 Worked examples of the expected output.
 
 Input 睡觉:
-{"verdict": "ok", "pinyin": "shuìjiào", "english": ["to sleep", "to go to bed"], "categories": ["verb-object compound", "neutral"], "notes": "Separable, so it splits in real use: 睡了觉, 睡个好觉. 入睡 is narrower and means specifically to fall asleep.", "suggestion": null}
+{"verdict": "ok", "pinyin": "shuìjiào", "english": ["to sleep", "to go to bed"], "categories": ["verb-object compound", "neutral"], "notes": "Separable, so durations and complements go inside — 睡了一个小时的觉, 睡不着觉, 睡个好觉 — or the verb is copied before a 得-complement: 睡觉睡得很晚, never 睡觉得很晚. 入睡 is narrower and means specifically to fall asleep.", "suggestion": null}
 
 Input 一带一路:
 {"verdict": "ok", "pinyin": "yīdàiyīlù", "english": ["the Belt and Road Initiative"], "categories": ["expression", "formal", "written"], "notes": "A fixed policy term, short for 丝绸之路经济带和21世纪海上丝绸之路. It belongs to news, policy and business writing rather than conversation.", "suggestion": null}
@@ -136,7 +136,7 @@ Dostajesz tekst po chińsku: pojedynczy znak, słowo, wyrażenie stałe albo ca�
 Podaj jego polskie odpowiedniki. Tłumacz prosto z chińskiego, tak jak zrobiłby to słownik chińsko-polski — nie przez angielski.
 
 Zasady:
-- od 1 do 4 krótkich odpowiedników, najczęstszy jako pierwszy; dla zdania jedno naturalne tłumaczenie
+- od 1 do 4 krótkich odpowiedników, najczęstszy jako pierwszy; dla zdania po jednym tłumaczeniu na każde możliwe odczytanie: najpierw to, które native speaker wybierze bez kontekstu, potem każde inne, na które chiński naprawdę pozwala, jako osobna pozycja listy — nigdy sklejone ukośnikiem ani wariantem w nawiasie. Chiński nie oznacza czasu, a polszczyzna wymusza dodatkowo wybór aspektu, więc 我今天开车去公司 to zarówno "Dziś jadę samochodem do firmy", jak i "Dziś pojechałem samochodem do firmy"
 - każdy odpowiednik to osobne znaczenie hasła, a nie stylistyczny wariant tego samego
 - formy słownikowe: czasowniki w bezokoliczniku, rzeczowniki w mianowniku liczby pojedynczej
 - gdy polszczyzna dzieli znaczenie inaczej niż chińszczyzna (pary aspektowe, czasowniki ruchu, formy grzecznościowe), trzymaj się podziału polskiego
@@ -166,6 +166,9 @@ Dla 牛逼:
 Dla 请问洗手间在哪里:
 {"tlumaczenia": ["Przepraszam, gdzie jest toaleta?"]}
 
+Dla 我今天开车去公司:
+{"tlumaczenia": ["Dziś jadę samochodem do firmy", "Dziś pojechałem samochodem do firmy"]}
+
 Dla 一带一路:
 {"tlumaczenia": ["Inicjatywa Pasa i Szlaku", "Nowy Jedwabny Szlak"]}
 
@@ -175,7 +178,7 @@ Typowe błędy, których masz unikać:
 - kalki z angielskiego: nie tłumacz przez angielski odpowiednik, tylko wprost z chińskiego
 - doklejanie tytułów i zwrotów grzecznościowych, których nie ma w oryginale (老师 to "nauczyciel", nie "pan profesor")
 - mieszanie odczytów wieloznacznego znaku: trzymaj się jednego, najczęstszego odczytania i jego znaczeń
-- podawanie kilku wariantów stylistycznych tego samego znaczenia zamiast osobnych znaczeń ("iść", "pójść", "chodzić" to jedna pozycja, nie trzy)
+- podawanie kilku wariantów stylistycznych tego samego znaczenia zamiast osobnych znaczeń ("iść", "pójść", "chodzić" to jedna pozycja, nie trzy) — to nie dotyczy zdań wieloznacznych: tam różne odczytania czasu czy aspektu są osobnymi pozycjami, bo znaczą co innego
 - tłumaczenie chińskich klasyfikatorów i partykuł osobnym polskim słowem, gdy polszczyzna ich nie wyraża — opisz wtedy funkcję jednym krótkim określeniem
 - zbyt książkowe słownictwo przy słowach potocznych i odwrotnie: rejestr polskiego odpowiednika ma odpowiadać rejestrowi chińskiego
 - podawanie znaczeń, które mówią tylko tyle, że znak bywa nazwiskiem albo imieniem: 王 to "król", a nie "nazwisko Wang"; 李 to "śliwka", a nie "nazwisko Li". Znaczenie "nazwisko" albo "imię" podaj wyłącznie wtedy, gdy znak nie ma we współczesnym chińskim żadnego innego znaczenia (赵, 郑). Nazwy geograficzne i inne nazwy własne są w porządku
