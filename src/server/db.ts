@@ -411,6 +411,12 @@ export function restoreWords(snapshots: WordSnapshot[]): void {
   invalidateWordCache();
 }
 
+/** Characters imported as HSK words carry a word rank but no character rank */
+export function setHanziRank(hanzi: string, rank: number): void {
+  db.run('UPDATE words SET hanzi_rank = ? WHERE hanzi = ?', [rank, hanzi]);
+  invalidateWordCache();
+}
+
 export function updateWordExamples(hanzi: string, examples: any[]): void {
   db.run('UPDATE words SET examples = ? WHERE hanzi = ?', [JSON.stringify(examples), hanzi]);
   // Invalidate cache so subsequent reads see the update

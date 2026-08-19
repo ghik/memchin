@@ -12,6 +12,8 @@ import {
   insertWords,
   reloadIfChangedExternally,
   setCharQueuedAt,
+  saveDb,
+  setHanziRank,
 } from './db.js';
 import { loadCedict } from './services/cedict.js';
 import { loadIds } from './services/ids.js';
@@ -92,12 +94,42 @@ function rollBackJobOnShutdown(): void {
   }
 }
 
+/**
+ * A character that came in as a one-character HSK word has a word rank but no character rank,
+ * and character lists sort on the latter — so it sits behind every ranked character, at the
+ * end of a list nobody scrolls to. The frequency file knows most of them; the few it does not
+ * (traditional forms, say) keep their null and stay at the back, which is where they belong.
+ */
+function backfillHanziRanks(): void {
+  const db = getDb();
+  const stmt = db.prepare('SELECT hanzi FROM words WHERE hanzi_rank IS NULL AND length(hanzi) = 1');
+  const unranked: string[] = [];
+  while (stmt.step()) {
+    unranked.push(stmt.getAsObject().hanzi as string);
+  }
+  stmt.free();
+
+  let ranked = 0;
+  for (const hanzi of unranked) {
+    const charInfo = lookupChar(hanzi);
+    if (charInfo) {
+      setHanziRank(hanzi, charInfo.rank);
+      ranked++;
+    }
+  }
+  if (ranked > 0) {
+    saveDb();
+    console.log(`Character migration: filled in the frequency rank of ${ranked} character(s)`);
+  }
+}
+
 async function main() {
   // Initialize database and data files
   await initDb();
   loadCedict();
   loadIds();
   migrateCharacterEntries();
+  backfillHanziRanks();
   rollBackJobOnShutdown();
   console.log('Database and data files initialized');
 
