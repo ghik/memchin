@@ -623,7 +623,10 @@ function getWordFilters(
   const queueColumn = characterMode ? 'w.char_queued_at' : 'w.queued_at';
 
   if (characterMode) {
-    wordParts.push('AND w.hanzi_rank IS NOT NULL');
+    // What character mode means is a single character — not one the frequency file happens to
+    // rank. Characters that came in as HSK words carry no hanzi_rank, and ranking them was
+    // never the point: it only hid them from the queue they had been added to.
+    wordParts.push('AND length(w.hanzi) = 1');
   }
 
   if (!characterMode) {
