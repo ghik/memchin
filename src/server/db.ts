@@ -376,6 +376,41 @@ export function updateWord(
   ambiguousTranslations = null;
 }
 
+/** The columns a refresh job writes, so an aborted one can put them back as they were */
+const REFRESHED_COLUMNS = [
+  'pinyin',
+  'english',
+  'polish',
+  'categories',
+  'ai_categories',
+  'ai_english',
+  'ai_notes',
+  'examples',
+];
+
+export interface WordSnapshot {
+  hanzi: string;
+  values: (string | null)[];
+}
+
+/** What `hanzi` looks like now, in the columns a refresh job touches */
+export function snapshotWord(hanzi: string): WordSnapshot | null {
+  const stmt = db.prepare(`SELECT ${REFRESHED_COLUMNS.join(', ')} FROM words WHERE hanzi = ?`);
+  stmt.bind([hanzi]);
+  const row = stmt.step() ? (stmt.getAsObject() as Record<string, string | null>) : null;
+  stmt.free();
+  return row ? { hanzi, values: REFRESHED_COLUMNS.map((column) => row[column] ?? null) } : null;
+}
+
+/** Puts snapshotted entries back. The caller saves. */
+export function restoreWords(snapshots: WordSnapshot[]): void {
+  const assignments = REFRESHED_COLUMNS.map((column) => `${column} = ?`).join(', ');
+  for (const snapshot of snapshots) {
+    db.run(`UPDATE words SET ${assignments} WHERE hanzi = ?`, [...snapshot.values, snapshot.hanzi]);
+  }
+  invalidateWordCache();
+}
+
 export function updateWordExamples(hanzi: string, examples: any[]): void {
   db.run('UPDATE words SET examples = ? WHERE hanzi = ?', [JSON.stringify(examples), hanzi]);
   // Invalidate cache so subsequent reads see the update

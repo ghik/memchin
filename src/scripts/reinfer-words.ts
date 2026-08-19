@@ -6,10 +6,16 @@
  * practice cannot overwrite each other and nothing needs restarting. This is only the client:
  * it starts the job and prints its log until it finishes.
  *
+ * Ctrl-C is not just a way out of the log: it aborts the job in the server and rolls back every
+ * entry it has written, leaving generated audio in place. Use --stop to keep the work instead.
+ * A server restart mid-job — a file save, `tsx watch` respawning — has the same effect: the
+ * server rolls the job back on its way down, and this reports that rather than a false "done".
+ *
  *   npm run reinfer-words -- [--mode MODE] [--words | --characters] [--limit N] [--force]
  *                            [--dry-run] [--skip-infer] [--skip-examples] [--concurrency N]
  *   npm run reinfer-words -- --status      follow a job that is already running
- *   npm run reinfer-words -- --stop        ask it to stop after the item in flight
+ *   npm run reinfer-words -- --stop        ask it to stop after the item in flight, keeping it
+ *   npm run reinfer-words -- --abort       stop it now and roll back everything it wrote
  *
  * The queue to walk:
  *   --mode <hanzi2pinyin | english2pinyin | english2hanzi>   default english2pinyin
@@ -23,6 +29,8 @@ import type { PracticeMode } from '../shared/types.js';
 
 const PRACTICE_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2pinyin', 'english2hanzi'];
 const POLL_INTERVAL_MS = 2000;
+/** How long a restarting server is given to come back before following gives up */
+const SERVER_WAIT_MS = 30000;
 
 interface Options {
   mode: PracticeMode;
@@ -34,9 +42,10 @@ interface Options {
   concurrency: number | null;
 }
 
-type Command = 'start' | 'preview' | 'status' | 'stop';
+type Command = 'start' | 'preview' | 'status' | 'stop' | 'abort';
 
 interface RefreshStatus {
+  instanceId: string;
   running: boolean;
   stage: string;
   queueSize: number;
@@ -79,6 +88,8 @@ function parseArgs(argv: string[]): { command: Command; options: Options } {
       command = 'status';
     } else if (arg === '--stop') {
       command = 'stop';
+    } else if (arg === '--abort') {
+      command = 'abort';
     } else if (arg === '--skip-infer') {
       options.skipInfer = true;
     } else if (arg === '--skip-examples') {
@@ -161,23 +172,81 @@ function requestBody(options: Options) {
   };
 }
 
+/** How much of the job log has been printed, so an abort can pick up the tail of it */
+let printedThrough = 0;
+
 function printLog(status: RefreshStatus): number {
   for (const line of status.log) {
     console.log(line);
   }
-  return status.logOffset + status.log.length;
+  printedThrough = status.logOffset + status.log.length;
+  return printedThrough;
 }
 
-/** Prints new log lines as they appear, until the job stops */
-async function follow(since: number): Promise<RefreshStatus> {
+/**
+ * Ctrl-C tears the job down in the server as well: the calls in flight are cancelled and
+ * everything written so far is put back. A second Ctrl-C gives up waiting for that to finish.
+ */
+function abortJobOnSigint(): void {
+  let aborting = false;
+  process.on('SIGINT', () => {
+    if (aborting) {
+      process.exit(130);
+    }
+    aborting = true;
+    console.log('\nAborting the job and rolling it back (Ctrl-C again to stop waiting)...');
+    void (async () => {
+      try {
+        await request<RefreshStatus>('POST', '/abort');
+        printLog(await request<RefreshStatus>('GET', `/status?since=${printedThrough}`));
+      } catch (error) {
+        console.error(`Could not abort the job: ${error instanceof Error ? error.message : error}`);
+        process.exit(1);
+      }
+      process.exit(130);
+    })();
+  });
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Prints new log lines as they appear, until the job stops. A server that goes away is given
+ * SERVER_WAIT_MS to come back, and one that comes back as a different process is reported: the
+ * job went down with the old one, which rolled it back on its way out.
+ */
+async function follow(since: number, instanceId: string): Promise<RefreshStatus> {
   let next = since;
+  let unreachableSince = 0;
   for (;;) {
-    const status = await request<RefreshStatus>('GET', `/status?since=${next}`);
+    let status: RefreshStatus;
+    try {
+      status = await request<RefreshStatus>('GET', `/status?since=${next}`);
+    } catch (error) {
+      if (unreachableSince === 0) {
+        unreachableSince = Date.now();
+        console.log('(the server is not answering — waiting for it to come back)');
+      }
+      if (Date.now() - unreachableSince > SERVER_WAIT_MS) {
+        throw error;
+      }
+      await sleep(POLL_INTERVAL_MS);
+      continue;
+    }
+    unreachableSince = 0;
+    if (status.instanceId !== instanceId) {
+      throw new Error(
+        'The server restarted, so the job went with it. Everything it had written was rolled ' +
+          'back, and the entries are as they were — start the job again.'
+      );
+    }
     next = printLog(status);
     if (!status.running) {
       return status;
     }
-    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    await sleep(POLL_INTERVAL_MS);
   }
 }
 
@@ -206,6 +275,12 @@ async function main() {
     return;
   }
 
+  if (command === 'abort') {
+    const status = await request<RefreshStatus>('POST', '/abort');
+    console.log(status.stage === 'aborted' ? 'Aborted and rolled back.' : 'No job is running.');
+    return;
+  }
+
   if (command === 'status') {
     const status = await request<RefreshStatus>('GET', '/status?since=0');
     if (!status.running) {
@@ -213,7 +288,7 @@ async function main() {
       printLog(status);
       return;
     }
-    await follow(0);
+    await follow(0, status.instanceId);
     return;
   }
 
@@ -222,8 +297,9 @@ async function main() {
   if (!started.running) {
     return;
   }
-  console.log('(the job runs inside the server — Ctrl-C only stops following it)\n');
-  const finished = await follow(since);
+  console.log('(the job runs inside the server — Ctrl-C aborts it and rolls it back)\n');
+  abortJobOnSigint();
+  const finished = await follow(since, started.instanceId);
   console.log(
     `\n${finished.stage}: ${finished.processed} processed, ${finished.failed} failed` +
       (finished.error ? ` — ${finished.error}` : '')

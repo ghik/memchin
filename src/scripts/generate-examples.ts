@@ -12,7 +12,10 @@ export const MAX_RETRIES = 10;
 
 const MODEL = 'gpt-5.4';
 
-export async function generateExamples(words: WordCore[]): Promise<Map<string, Example[]>> {
+export async function generateExamples(
+  words: WordCore[],
+  signal?: AbortSignal
+): Promise<Map<string, Example[]>> {
   const wordList = words
     .map((w) => `${w.hanzi} (${w.pinyin}) [HSK ${w.hskLevel}]: ${w.english.join(', ')}`)
     .join('\n');
@@ -39,13 +42,16 @@ Words:
 ${wordList}`;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      // Reasoning tokens share this budget, so it sits well above the size of a 25-word batch
-      max_completion_tokens: 32768,
-      response_format: { type: 'json_object' },
-      messages: [{ role: 'user', content: prompt }],
-    });
+    const response = await openai.chat.completions.create(
+      {
+        model: MODEL,
+        // Reasoning tokens share this budget, so it sits well above the size of a 25-word batch
+        max_completion_tokens: 32768,
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: prompt }],
+      },
+      { signal }
+    );
 
     const content = response.choices[0]?.message?.content;
     if (!content) {

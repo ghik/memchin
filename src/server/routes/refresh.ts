@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  abortRefresh,
   DEFAULT_REFRESH_OPTIONS,
   getRefreshStatus,
   selectWords,
@@ -69,6 +70,11 @@ router.get('/status', (req, res) => {
 
 router.post('/stop', (_req, res) => {
   res.json(stopRefresh());
+});
+
+// Stop now and undo everything the job wrote — what Ctrl-C in the script asks for
+router.post('/abort', async (_req, res) => {
+  res.json(await abortRefresh());
 });
 
 export default router;

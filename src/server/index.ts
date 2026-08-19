@@ -19,6 +19,7 @@ import { lookupChar, loadWordFrequencyData } from './services/hanzi-freq.js';
 import wordsRouter from './routes/words.js';
 import practiceRouter from './routes/practice.js';
 import refreshRouter from './routes/refresh.js';
+import { abortRefresh } from './services/word-refresh.js';
 import type { Example } from '../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -72,12 +73,32 @@ function migrateCharacterEntries(): void {
   }
 }
 
+/**
+ * `tsx watch` kills the server on every file save, and a refresh job dies with it. Take the
+ * job down properly first: the AI calls in flight are cancelled and everything it wrote is put
+ * back, so the entries are never left half-refreshed. A second signal stops waiting for that,
+ * at the price of leaving the entries written so far as the job left them.
+ */
+function rollBackJobOnShutdown(): void {
+  let shuttingDown = false;
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGUSR2'] as const) {
+    process.on(signal, () => {
+      if (shuttingDown) {
+        process.exit(1);
+      }
+      shuttingDown = true;
+      void abortRefresh().finally(() => process.exit(0));
+    });
+  }
+}
+
 async function main() {
   // Initialize database and data files
   await initDb();
   loadCedict();
   loadIds();
   migrateCharacterEntries();
+  rollBackJobOnShutdown();
   console.log('Database and data files initialized');
 
   const app = express();
