@@ -1,11 +1,21 @@
 import OpenAI from 'openai';
 import { notesAreAboutAHomophone } from './homophones.js';
+import { recordUsage } from './ai-usage.js';
 import type { InferResponse, InferVerdict } from '../../shared/types.js';
 
 const openai = new OpenAI();
 
 const MODEL = 'gpt-5.4';
 const MAX_RETRIES = 3;
+
+/**
+ * OpenAI caches the repeated prefix of a prompt by itself, at a fraction of the price, but
+ * only once the prompt is long enough: measured against gpt-5.4, nothing under 1792 tokens is
+ * cached at all, and above that the cached prefix grows in steps of 1024 (1792, 2816, 3840...).
+ * Both prompts below are sized to clear a step with a little room to spare — the English one
+ * runs about 3000 tokens and the Polish one about 1900 — so shortening either of them costs
+ * more than the tokens it saves. `prompt_cache_key` keeps each kind of call on one cache.
+ */
 
 const VERDICTS: InferVerdict[] = ['ok', 'unnatural', 'invalid'];
 
@@ -113,6 +123,12 @@ Worked examples of the expected output.
 Input 睡觉:
 {"verdict": "ok", "pinyin": "shuìjiào", "english": ["to sleep", "to go to bed"], "categories": ["verb-object compound", "neutral"], "notes": "Separable, so durations and complements go inside — 睡了一个小时的觉, 睡不着觉, 睡个好觉 — or the verb is copied before a 得-complement: 睡觉睡得很晚, never 睡觉得很晚. 入睡 is narrower and means specifically to fall asleep.", "suggestion": null}
 
+Input 我今天开车去公司:
+{"verdict": "ok", "pinyin": "wǒ jīntiān kāichē qù gōngsī", "english": ["I'm driving to the office today", "I drove to the office today"], "categories": ["sentence", "neutral"], "notes": "Nothing in the sentence marks time, so both readings stand: a 了 at the end would report it as done, 正在 or 每天 would settle it the other way. 开车 here says how the speaker gets there, and 去公司 is the point of it.", "suggestion": null}
+
+Input 吃饭:
+{"verdict": "ok", "pinyin": "chīfàn", "english": ["to eat", "to have a meal"], "categories": ["verb-object compound", "neutral"], "notes": "Separable, so a duration or a count goes inside — 吃了一个小时的饭, 吃过两次饭 — and before a 得-complement the verb is copied: 吃饭吃得很快. 吃饭了 reports a change of state ('we have eaten', or as a call, 'food is ready'), while 吃了饭 sets up whatever comes next.", "suggestion": null}
+
 Input 一带一路:
 {"verdict": "ok", "pinyin": "yīdàiyīlù", "english": ["the Belt and Road Initiative"], "categories": ["expression", "formal", "written"], "notes": "A fixed policy term, short for 丝绸之路经济带和21世纪海上丝绸之路. It belongs to news, policy and business writing rather than conversation.", "suggestion": null}
 
@@ -140,6 +156,7 @@ Zasady:
 - od 1 do 4 krótkich odpowiedników, najczęstszy jako pierwszy; dla zdania po jednym tłumaczeniu na każde możliwe odczytanie: najpierw to, które native speaker wybierze bez kontekstu, potem każde inne, na które chiński naprawdę pozwala, jako osobna pozycja listy — nigdy sklejone ukośnikiem ani wariantem w nawiasie. Chiński nie oznacza czasu, a polszczyzna wymusza dodatkowo wybór aspektu, więc 我今天开车去公司 to zarówno "Dziś jadę samochodem do firmy", jak i "Dziś pojechałem samochodem do firmy"
 - każdy odpowiednik to osobne znaczenie hasła, a nie stylistyczny wariant tego samego
 - formy słownikowe: czasowniki w bezokoliczniku, rzeczowniki w mianowniku liczby pojedynczej
+- aspekt: chiński go nie wyraża, więc domyślnie podawaj czasownik niedokonany ("jeść", "pisać", "uczyć się"). Formę dokonaną wybierz tylko wtedy, gdy sam chiński wyraz mówi o rezultacie albo o zakończeniu czynności (吃完 to "zjeść", 学会 to "nauczyć się", 到 to "dotrzeć"). Nie podawaj obu form tego samego czasownika jako dwóch pozycji
 - gdy polszczyzna dzieli znaczenie inaczej niż chińszczyzna (pary aspektowe, czasowniki ruchu, formy grzecznościowe), trzymaj się podziału polskiego
 - bez wyjaśnień, komentarzy, pinyinu i znaków chińskich w odpowiedzi
 - tekst niezręczny albo z błędem gramatycznym przetłumacz mimo to normalnie, zgodnie z tym, co autor chciał powiedzieć (dla 他给我打了一个电话昨天 poprawnie będzie "Wczoraj do mnie zadzwonił."); dosłowne znaczenia kolejnych znaków podawaj wyłącznie wtedy, gdy tekst w ogóle nie układa się w żadną sensowną całość
@@ -170,8 +187,22 @@ Dla 请问洗手间在哪里:
 Dla 我今天开车去公司:
 {"tlumaczenia": ["Dziś jadę samochodem do firmy", "Dziś pojechałem samochodem do firmy"]}
 
+Dla 结婚:
+{"tlumaczenia": ["ożenić się", "wyjść za mąż", "brać ślub"]}
+
+Dla 麻烦:
+{"tlumaczenia": ["kłopot", "sprawiać kłopot", "uciążliwy"]}
+
+Dla 上班:
+{"tlumaczenia": ["iść do pracy", "pracować", "być w pracy"]}
+
+Dla 吃完:
+{"tlumaczenia": ["zjeść", "skończyć jeść"]}
+
 Dla 一带一路:
 {"tlumaczenia": ["Inicjatywa Pasa i Szlaku", "Nowy Jedwabny Szlak"]}
+
+Zwróć uwagę na 结婚 i 麻烦: tam, gdzie polszczyzna dzieli znaczenie drobniej niż chiński — inaczej dla mężczyzny i dla kobiety, osobno rzeczownik, czasownik i przymiotnik — wypisz te znaczenia osobno, bo uczący się musi wiedzieć, którego słowa użyć. Odwrotnie, gdy to chiński jest drobniejszy, jedno polskie słowo w zupełności wystarczy.
 
 Zwróć uwagę, jak w tych przykładach dobrane są odpowiedniki: rejestr zgadza się z chińskim oryginałem (wulgarne z wulgarnym, urzędowe z urzędowym), czasowniki stoją w bezokoliczniku, a kolejne pozycje to naprawdę różne znaczenia, a nie synonimy tego samego. Nazwy własne i terminy przekładaj utrwalonym polskim odpowiednikiem, jeśli taki istnieje. Nie dodawaj rodzajników, przypisów ani znaków chińskich.
 
@@ -258,6 +289,9 @@ async function inferPolish(text: string, signal?: AbortSignal): Promise<string[]
         model: MODEL,
         max_completion_tokens: 2048,
         response_format: { type: 'json_object' },
+        // The Polish system prompt is the same on every call, so it is worth caching; the key
+        // keeps these requests together, away from the English ones with their own prefix
+        prompt_cache_key: 'memchin-infer-polish',
         messages: [
           { role: 'system', content: POLISH_PROMPT },
           { role: 'user', content: text },
@@ -265,6 +299,7 @@ async function inferPolish(text: string, signal?: AbortSignal): Promise<string[]
       },
       { signal }
     );
+    recordUsage('polish', response.usage);
     const content = response.choices[0]?.message?.content;
     if (!content) {
       return [];
@@ -285,6 +320,7 @@ async function inferMain(text: string, signal?: AbortSignal): Promise<InferRespo
         model: MODEL,
         max_completion_tokens: 4096,
         response_format: { type: 'json_object' },
+        prompt_cache_key: 'memchin-infer-main',
         messages: [
           { role: 'system', content: PROMPT },
           { role: 'user', content: text },
@@ -293,6 +329,7 @@ async function inferMain(text: string, signal?: AbortSignal): Promise<InferRespo
       { signal }
     );
 
+    recordUsage('main', response.usage);
     const content = response.choices[0]?.message?.content;
     const result = content ? parseInferResponse(content) : null;
     if (result && notesAreAboutAHomophone(text, result.notes)) {

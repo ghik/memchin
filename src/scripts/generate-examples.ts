@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { recordUsage } from '../server/services/ai-usage.js';
 import type { Example, WordCore } from '../shared/types.js';
 
 const openai = new OpenAI();
@@ -48,11 +49,13 @@ ${wordList}`;
         // Reasoning tokens share this budget, so it sits well above the size of a 25-word batch
         max_completion_tokens: 32768,
         response_format: { type: 'json_object' },
+        prompt_cache_key: 'memchin-examples',
         messages: [{ role: 'user', content: prompt }],
       },
       { signal }
     );
 
+    recordUsage('examples', response.usage);
     const content = response.choices[0]?.message?.content;
     if (!content) {
       throw new Error('Empty response from OpenAI');

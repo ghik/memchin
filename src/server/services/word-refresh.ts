@@ -25,6 +25,7 @@ import {
 import type { WordSnapshot } from '../db.js';
 import { inferWord } from './infer-word.js';
 import { generateExamples } from '../../scripts/generate-examples.js';
+import { resetUsage, usageSummary } from './ai-usage.js';
 import { generateSpeech } from './tts.js';
 import type { PracticeMode, Word } from '../../shared/types.js';
 
@@ -177,6 +178,8 @@ function rollBack(): void {
   restoreWords(originals);
   saveDb();
   state.stage = 'aborted';
+  // The calls were paid for even though nothing was kept
+  log(usageSummary());
   log(`aborted, rolled back ${originals.length} ${originals.length === 1 ? 'entry' : 'entries'}`);
 }
 
@@ -314,6 +317,7 @@ async function run(words: Word[], options: RefreshOptions): Promise<void> {
       await generateMissingAudio(words);
     }
     state.stage = state.stopRequested ? 'stopped' : 'done';
+    log(usageSummary());
     log(state.stopRequested ? 'stopped' : 'done');
   } catch (error) {
     state.stage = 'failed';
@@ -386,6 +390,7 @@ export function startRefresh(options: RefreshOptions): RefreshStatus {
     return getRefreshStatus();
   }
 
+  resetUsage();
   // Deliberately not awaited: the job outlives the request that started it
   state.job = run(pending, options);
   return getRefreshStatus();
