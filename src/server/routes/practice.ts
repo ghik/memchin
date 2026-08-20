@@ -43,6 +43,21 @@ import { assessPronunciation, isSpeechAssessAvailable } from '../services/speech
 
 const router = Router();
 
+/**
+ * Does the answer, already normalized, read as `candidate`? A word of more than one character
+ * gets the same slack on its last syllable wherever it is matched — the tone may be left off,
+ * or added to a neutral one, since dictionaries disagree about those themselves. The word being
+ * asked about is matched exactly first, so only there does the slack mean "close, try again";
+ * for a synonym the question is simply whether the learner typed that word.
+ */
+function readsAs(normalizedAnswer: string, candidate: Word): boolean {
+  const expected = normalizePinyin(candidate.pinyin);
+  return (
+    normalizedAnswer === expected ||
+    ([...candidate.hanzi].length > 1 && lastNeutralToneMismatch(normalizedAnswer, expected))
+  );
+}
+
 function enrichWord(word: Word): Word {
   return {
     ...word,
@@ -137,10 +152,7 @@ router.post('/answer', (req, res) => {
   switch (mode) {
     case 'hanzi2pinyin': {
       correct = pinyinMatches(answer, word.pinyin);
-      const na = normalizePinyin(answer);
-      const ne = normalizePinyin(word.pinyin);
-      synonym =
-        !correct && word.hanzi.length > 1 && lastNeutralToneMismatch(na, ne);
+      synonym = !correct && readsAs(normalizePinyin(answer), word);
       break;
     }
     case 'english2hanzi': {
@@ -156,14 +168,14 @@ router.post('/answer', (req, res) => {
       const normalizedExpected = normalizePinyin(word.pinyin);
       correct = normalizedAnswer === normalizedExpected;
       if (!correct) {
-        if (word.hanzi.length > 1 && lastNeutralToneMismatch(normalizedAnswer, normalizedExpected)) {
+        if (readsAs(normalizedAnswer, word)) {
           synonym = true;
         } else {
           // Check if the typed pinyin matches a registered hanzi synonym
           const synonymHanzis = getHanziSynonymHanzis(word.hanzi);
           for (const sh of synonymHanzis) {
             const synWord = getWordByHanzi(sh);
-            if (synWord && normalizePinyin(synWord.pinyin) === normalizedAnswer) {
+            if (synWord && readsAs(normalizedAnswer, synWord)) {
               synonym = true;
               break;
             }
@@ -171,7 +183,7 @@ router.post('/answer', (req, res) => {
           // Check if the typed pinyin matches another word with the same English translation
           if (!synonym && isAmbiguousTranslation(word.english)) {
             for (const w of getWordsWithSameEnglish(word.hanzi, word.english)) {
-              if (normalizePinyin(w.pinyin) === normalizedAnswer) {
+              if (readsAs(normalizedAnswer, w)) {
                 synonym = true;
                 break;
               }
