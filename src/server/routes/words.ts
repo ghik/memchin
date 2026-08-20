@@ -29,7 +29,8 @@ import { takesExamples } from '../../shared/labels.js';
 import { deleteAudio, generateSpeech } from '../services/tts.js';
 import { inferWord } from '../services/infer-word.js';
 import { decomposeWord } from '../services/ids.js';
-import { lookupChar, loadWordFrequencyData } from '../services/hanzi-freq.js';
+import { loadWordFrequencyData } from '../services/hanzi-freq.js';
+import { describeCharacter } from '../services/character-entry.js';
 import type { Example, SynonymEntry } from '../../shared/types.js';
 
 function synonymEntries(hanzi: string): SynonymEntry[] {
@@ -215,7 +216,7 @@ router.post('/', async (req, res) => {
         if (getWordByHanzi(char)) {
           continue;
         }
-        const charInfo = lookupChar(char);
+        const charInfo = describeCharacter(char);
         if (!charInfo) {
           continue;
         }
@@ -227,7 +228,9 @@ router.post('/', async (req, res) => {
           wordFrequencyRank: freq.get(char),
           hanziFrequencyRank: charInfo.rank,
           examples: [] as Example[],
-          translatable: true,
+          // A character CEDICT only cross-references has no gloss, so there is nothing to
+          // prompt with in the english modes; hanzi2pinyin still works, which is the point
+          translatable: charInfo.english.length > 0,
           categories: [] as string[],
           manual: true,
         });

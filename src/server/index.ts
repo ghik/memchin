@@ -18,6 +18,7 @@ import {
 import { loadCedict } from './services/cedict.js';
 import { loadIds } from './services/ids.js';
 import { lookupChar, loadWordFrequencyData } from './services/hanzi-freq.js';
+import { describeCharacter } from './services/character-entry.js';
 import wordsRouter from './routes/words.js';
 import practiceRouter from './routes/practice.js';
 import refreshRouter from './routes/refresh.js';
@@ -48,7 +49,7 @@ function migrateCharacterEntries(): void {
   for (const hanzi of practicedWords) {
     for (const char of [...hanzi]) {
       if (!getWordByHanzi(char)) {
-        const charInfo = lookupChar(char);
+        const charInfo = describeCharacter(char);
         if (!charInfo) {
           continue;
         }
@@ -60,7 +61,7 @@ function migrateCharacterEntries(): void {
           wordFrequencyRank: freq.get(char),
           hanziFrequencyRank: charInfo.rank,
           examples: [] as Example[],
-          translatable: true,
+          translatable: charInfo.english.length > 0,
           categories: [],
           manual: true,
         }]);
