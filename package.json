@@ -14,6 +14,7 @@
     "add-missing-chars": "tsx src/scripts/add-missing-chars.ts",
     "regenerate-missing": "tsx src/scripts/regenerate-missing.ts",
     "reinfer-words": "tsx src/scripts/reinfer-words.ts",
+    "shift-night-reviews": "tsx src/scripts/shift-night-reviews.ts",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\"",
     "test": "vitest run",

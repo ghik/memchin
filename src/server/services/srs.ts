@@ -17,15 +17,53 @@ const BUCKET_DELAYS_MINUTES = [
 
 export const MAX_BUCKET = BUCKET_DELAYS_MINUTES.length - 1;
 
+/** Nothing should come due between these hours, local time */
+const NIGHT_START_HOUR = 23;
+const NIGHT_END_HOUR = 6;
+const NIGHT_SHIFT_HOURS = 7;
+
+function isNight(date: Date): boolean {
+  const hour = date.getHours();
+  return hour >= NIGHT_START_HOUR || hour < NIGHT_END_HOUR;
+}
+
+/**
+ * Moves a time that lands in the night past it, so nothing falls due while the learner is
+ * asleep and greets them as a backlog in the morning.
+ *
+ * The window is seven hours wide and the shift is seven hours, so one pass normally clears it;
+ * the loop is for the clocks going back, where seven hours of elapsed time advance the local
+ * clock by only six and can leave 23:00 at 05:00. Each pass moves absolute time forward, so it
+ * always terminates.
+ */
+export function shiftOutOfTheNight(date: Date): Date {
+  const shifted = new Date(date);
+  while (isNight(shifted)) {
+    shifted.setTime(shifted.getTime() + NIGHT_SHIFT_HOURS * 60 * 60 * 1000);
+  }
+  return shifted;
+}
+
+/**
+ * Timestamps are stored as UTC without a zone marker ("2026-08-21 10:52:54"), which `new Date`
+ * would otherwise read as local time. Everything that touches the column goes through these.
+ */
+export function toStamp(date: Date): string {
+  return date
+    .toISOString()
+    .replace('T', ' ')
+    .replace(/\.\d+Z$/, '');
+}
+
+export function fromStamp(stamp: string): Date {
+  return new Date(`${stamp.replace(' ', 'T')}Z`);
+}
+
 export function calculateNextEligible(bucket: number): string {
   const delayMinutes = BUCKET_DELAYS_MINUTES[Math.min(bucket, MAX_BUCKET)];
   // Add ±25% jitter so words from the same session don't all become due at the same time
   const jitter = delayMinutes * (0.75 + Math.random() * 0.5);
-  const nextEligible = new Date(Date.now() + jitter * 60 * 1000);
-  return nextEligible
-    .toISOString()
-    .replace('T', ' ')
-    .replace(/\.\d+Z$/, '');
+  return toStamp(shiftOutOfTheNight(new Date(Date.now() + jitter * 60 * 1000)));
 }
 
 export function updateProgress(
@@ -38,8 +76,7 @@ export function updateProgress(
   const currentBucket = currentProgress?.bucket ?? 0;
 
   const isDue =
-    !currentProgress?.nextEligible ||
-    new Date(currentProgress.nextEligible) <= new Date();
+    !currentProgress?.nextEligible || new Date(currentProgress.nextEligible) <= new Date();
 
   if (!isDue && correct) {
     return;
