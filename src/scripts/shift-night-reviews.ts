@@ -8,7 +8,8 @@
  */
 import net from 'net';
 import { getDb, initDb, saveDb } from '../server/db.js';
-import { fromStamp, shiftOutOfTheNight, toStamp } from '../server/services/srs.js';
+import { shiftOutOfTheNight } from '../server/services/srs.js';
+import { fromStamp, toStamp } from '../shared/time.js';
 
 interface Row {
   hanzi: string;

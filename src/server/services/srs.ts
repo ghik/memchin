@@ -1,4 +1,5 @@
 import type { PracticeMode } from '../../shared/types.js';
+import { fromStamp, toStamp } from '../../shared/time.js';
 import { getProgress, upsertProgress } from '../db.js';
 
 // Bucket delays in minutes
@@ -44,21 +45,6 @@ export function shiftOutOfTheNight(date: Date): Date {
   return shifted;
 }
 
-/**
- * Timestamps are stored as UTC without a zone marker ("2026-08-21 10:52:54"), which `new Date`
- * would otherwise read as local time. Everything that touches the column goes through these.
- */
-export function toStamp(date: Date): string {
-  return date
-    .toISOString()
-    .replace('T', ' ')
-    .replace(/\.\d+Z$/, '');
-}
-
-export function fromStamp(stamp: string): Date {
-  return new Date(`${stamp.replace(' ', 'T')}Z`);
-}
-
 export function calculateNextEligible(bucket: number): string {
   const delayMinutes = BUCKET_DELAYS_MINUTES[Math.min(bucket, MAX_BUCKET)];
   // Add ±25% jitter so words from the same session don't all become due at the same time
@@ -76,7 +62,7 @@ export function updateProgress(
   const currentBucket = currentProgress?.bucket ?? 0;
 
   const isDue =
-    !currentProgress?.nextEligible || new Date(currentProgress.nextEligible) <= new Date();
+    !currentProgress?.nextEligible || fromStamp(currentProgress.nextEligible) <= new Date();
 
   if (!isDue && correct) {
     return;

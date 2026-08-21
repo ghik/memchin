@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateNextEligible, fromStamp, shiftOutOfTheNight, toStamp } from './srs.js';
+import { calculateNextEligible, shiftOutOfTheNight } from './srs.js';
+import { fromStamp, toStamp } from '../../shared/time.js';
 
 /** Built from local-time parts, since the night window is expressed in local time */
 function at(hour: number, minute = 0): Date {

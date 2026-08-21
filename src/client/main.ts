@@ -13,6 +13,7 @@ import type {
 } from './services.js';
 import type { Example, Stats } from '../shared/types.js';
 import { takesExamples } from '../shared/labels.js';
+import { fromStamp } from '../shared/time.js';
 import {
   toNumberedPinyin,
   validatePinyin,
@@ -479,8 +480,8 @@ function showScreen(screen: HTMLElement) {
   lastPracticeScreen = screen;
 }
 
-function formatNextEligible(isoString: string): string {
-  const diff = new Date(isoString).getTime() - Date.now();
+function formatNextEligible(stamp: string): string {
+  const diff = fromStamp(stamp).getTime() - Date.now();
   if (diff < 60_000) return '< 1m';
   if (diff < 3600_000) return `${Math.round(diff / 60_000)}m`;
   if (diff < 86400_000) return `${Math.round(diff / 3600_000)}h`;
@@ -3843,7 +3844,7 @@ function formatDue(nextEligible: string | null): string {
   if (nextEligible === null) {
     return '—';
   }
-  const diff = new Date(nextEligible).getTime() - Date.now();
+  const diff = fromStamp(nextEligible).getTime() - Date.now();
   if (diff <= 0) {
     return 'now';
   }
