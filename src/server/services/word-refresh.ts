@@ -147,7 +147,10 @@ function audioExists(hanzi: string): boolean {
 }
 
 function isDone(word: Word, options: RefreshOptions): boolean {
-  const inferDone = options.skipInfer || word.aiEnglish.length > 0;
+  // Inferred English is stored with anything the curated glosses already say stripped out, so a
+  // word the model simply agreed with ends up with an empty column and looks untouched. The
+  // note is kept whole and always written, which makes it the honest record that a word was done
+  const inferDone = options.skipInfer || word.aiEnglish.length > 0 || Boolean(word.aiNotes);
   // A sentence is never getting examples, so waiting for them would queue it up forever
   const examplesDone = options.skipExamples || word.examples.length > 0 || !takesExamples(word);
   return inferDone && examplesDone;
