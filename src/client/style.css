@@ -1892,6 +1892,20 @@ body.dark label.category-item.excluded input[type="checkbox"]::after {
   border-color: var(--accent);
 }
 
+/*
+ * The form controls were sized for a phone held at arm's length. On a desktop that reads as
+ * oversized next to the search fields, which have been lean all along. Kept at 16px below this
+ * width, both because a finger needs the target and because iOS zooms into anything smaller.
+ */
+@media (min-width: 900px) {
+  .add-word-form input[type='text'],
+  .add-word-form textarea,
+  .synonym-hanzi-input {
+    font-size: 15px;
+    border-width: 1px;
+  }
+}
+
 .add-word-form textarea.ai-inferred {
   border-color: var(--ai-border);
   border-left: 3px solid var(--ai-color);
