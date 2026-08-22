@@ -51,19 +51,25 @@
           <span id="progress-text">Question 1 of 10</span>
         </div>
 
-        <div id="prompt" class="prompt"></div>
+        <div class="practice-columns">
+          <div class="practice-question">
+            <div id="prompt" class="prompt"></div>
+          </div>
 
-        <div class="answer-section">
-          <input type="text" id="answer-input" placeholder="Your answer..." autocomplete="off">
-          <button id="submit-btn" class="primary-btn">Submit</button>
-          <button id="skip-btn" class="secondary-btn">I don't know</button>
-        </div>
+          <div class="practice-answer">
+            <div class="answer-section">
+              <input type="text" id="answer-input" placeholder="Your answer..." autocomplete="off">
+              <button id="submit-btn" class="primary-btn">Submit</button>
+              <button id="skip-btn" class="secondary-btn">I don't know</button>
+            </div>
 
-        <div id="feedback" class="feedback hidden"></div>
-        <div class="practice-actions hidden" id="practice-actions">
-          <button id="next-btn" class="primary-btn">Next</button>
-          <button id="edit-word-btn" class="edit-word-btn">Edit word</button>
-          <button id="reset-word-btn" class="edit-word-btn">Reset word</button>
+            <div id="feedback" class="feedback hidden"></div>
+            <div class="practice-actions hidden" id="practice-actions">
+              <button id="next-btn" class="primary-btn">Next</button>
+              <button id="edit-word-btn" class="edit-word-btn">Edit word</button>
+              <button id="reset-word-btn" class="edit-word-btn">Reset word</button>
+            </div>
+          </div>
         </div>
         <div class="quit-actions">
           <button id="finish-btn" class="quit-btn">Finish &amp; save progress</button>

@@ -816,6 +816,38 @@ body.dark .preview-queued {
   color: #e74c3c;
 }
 
+/*
+ * Practice is two columns once there is room: the question on the left, everything you do
+ * about it on the right. Stacked below that, which is what a phone gets.
+ */
+.practice-columns {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 900px) {
+  #practice-screen {
+    max-width: 1100px;
+  }
+
+  .practice-columns {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 40px;
+  }
+
+  .practice-question,
+  .practice-answer {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* The question sits opposite the answer box rather than above it, so it needs no gap under it */
+  .practice-columns .prompt {
+    margin-bottom: 0;
+  }
+}
+
 .prompt {
   text-align: center;
   font-size: 48px;
