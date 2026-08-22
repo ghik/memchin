@@ -817,78 +817,26 @@ body.dark .preview-queued {
 }
 
 /*
- * Practice is two columns once there is room: on the left the question and the box you answer
- * it in, on the right what comes back — the answer, its examples and notes. Stacked below that
- * width, which is what a phone gets.
+ * Practice reads down the page, and the question and the answer share one place in it: the
+ * question is there while you answer, the answer takes its place once you have. The rules
+ * below only trim the controls for a desktop; a phone keeps them at finger size.
  */
-.practice-columns {
-  display: flex;
-  flex-direction: column;
-}
-
 @media (min-width: 900px) {
-  /*
-   * Practice takes the whole window rather than a column down the middle of it: the card
-   * stretches, and the two halves inside it scroll on their own so a long note on the right
-   * never pushes the question off the top. The id is needed to outweigh `.screen.active`,
-   * and `.active` to keep an inactive screen hidden.
-   */
-  #practice-screen.active {
-    display: flex;
-    flex-direction: column;
-    /* The full width spread the two columns further apart than the eye wants to travel */
-    max-width: 75%;
-    align-self: stretch;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .practice-columns {
-    flex: 1;
-    flex-direction: row;
-    align-items: stretch;
-    gap: 40px;
-    min-height: 0;
-  }
-
-  .practice-question,
-  .practice-answer {
-    min-width: 0;
-    min-height: 0;
-    overflow-y: auto;
-  }
-
-  /* The answer carries the glosses, examples, breakdown and notes, so it gets the larger half */
-  .practice-question {
-    flex: 2;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .practice-answer {
-    flex: 3;
-  }
-
-  /* The input follows the question directly, so the gap under the question can be smaller */
-  .practice-columns .prompt {
-    margin-bottom: 24px;
-  }
-
-  /* The box on its own line with its buttons underneath, as Next and its neighbours are */
-  .practice-columns .answer-section {
+  /* The box on its own line with its buttons underneath, all of it centred under the question */
+  #practice-screen .answer-section {
     flex-direction: column;
     align-items: center;
     gap: 12px;
     margin-bottom: 0;
   }
 
-  .practice-columns .answer-buttons {
+  #practice-screen .answer-buttons {
     flex-wrap: wrap;
     justify-content: center;
   }
 
   /* Answers are a word or a few syllables, so the box is sized for one rather than for a line */
-  .practice-columns .answer-section input {
+  #practice-screen .answer-section input {
     flex: 0 0 auto;
     width: 100%;
     max-width: 280px;
@@ -901,27 +849,23 @@ body.dark .preview-queued {
    * One size for every button under the box, before answering and after: Submit and I don't
    * know give way to Next, Edit word and Reset word in the same place, at the same weight.
    */
-  .practice-columns .answer-buttons .primary-btn,
-  .practice-columns .answer-buttons .secondary-btn,
-  .practice-columns .practice-actions .primary-btn,
-  .practice-columns .practice-actions .edit-word-btn {
+  #practice-screen .answer-buttons .primary-btn,
+  #practice-screen .answer-buttons .secondary-btn,
+  #practice-screen .practice-actions .primary-btn,
+  #practice-screen .practice-actions .edit-word-btn {
     padding: 8px 16px;
     font-size: 14px;
   }
 
-  /*
-   * Everything you press is on this side, so Next lands under Submit rather than across the
-   * gap. Left to itself the primary button would stretch the width of the column.
-   */
-  /* Editing acts on the word being shown, so its button sits under what it would change */
-  .practice-columns .answer-actions {
-    display: flex;
-    justify-content: center;
-    margin-top: 12px;
+  /* .primary-btn is width: 100%, which in a flex row makes a button claim the line on its own */
+  #practice-screen .answer-buttons .primary-btn,
+  #practice-screen .practice-actions .primary-btn {
+    flex: 0 0 auto;
+    width: auto;
   }
 
   /* Try again and Synonym, and the search one of them opens, sit with the rest of the buttons */
-  .practice-columns .feedback-actions {
+  #practice-screen .feedback-actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -930,33 +874,21 @@ body.dark .preview-queued {
   }
 
   /* The margin those buttons carry for sitting inline in a sentence is the gap's job here */
-  .practice-columns .feedback-actions .synonym-btn {
+  #practice-screen .feedback-actions .synonym-btn {
     margin-left: 0;
   }
 
-  /* The search is a box and two buttons in a column too narrow to hold them side by side */
-  .practice-columns .feedback-actions .synonym-input-row {
+  #practice-screen .feedback-actions .synonym-input-row {
     flex-wrap: wrap;
     justify-content: center;
   }
 
   /* The same 12px under the box that .answer-section leaves for the row being replaced */
-  .practice-columns .practice-actions {
+  #practice-screen .practice-actions {
     justify-content: center;
+    flex-wrap: wrap;
     margin-top: 12px;
     margin-bottom: 0;
-    /*
-     * Three buttons rarely fit across the narrower column. Without this they overflow a centred
-     * row in both directions at once, and what goes off the left edge cannot be scrolled to.
-     */
-    flex-wrap: wrap;
-  }
-
-  /* .primary-btn is width: 100%, which in a flex row makes a button claim the line on its own */
-  .practice-columns .answer-buttons .primary-btn,
-  .practice-columns .practice-actions .primary-btn {
-    flex: 0 0 auto;
-    width: auto;
   }
 }
 
@@ -1186,6 +1118,18 @@ body.dark .answer-section input.invalid:focus {
 .synonym-hanzi-input:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* What you typed, kept next to what was wanted, so a near miss can be judged on sight */
+.your-answer {
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.your-answer-text {
+  font-weight: 600;
+  font-size: 18px;
 }
 
 .feedback .correct-answer {

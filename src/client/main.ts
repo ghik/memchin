@@ -76,12 +76,23 @@ const nextBtn = document.getElementById('next-btn')!;
 const skipBtn = document.getElementById('skip-btn')!;
 
 const practiceActions = document.getElementById('practice-actions')!;
-const answerActions = document.getElementById('answer-actions')!;
 
-/** Both rows belong to the answered state, one either side of the gap */
-function setPracticeActionsVisible(visible: boolean): void {
-  practiceActions.classList.toggle('hidden', !visible);
-  answerActions.classList.toggle('hidden', !visible);
+/**
+ * The answer stands where the question stood, rather than below it: one screen either way, and
+ * nothing to scroll past to see what you got wrong. Only a revealed answer takes the question's
+ * place — a note about an answer still being given leaves it up.
+ */
+function setAnswerRevealed(revealed: boolean): void {
+  promptDiv.classList.toggle('hidden', revealed);
+  practiceActions.classList.toggle('hidden', !revealed);
+}
+
+/** What you typed, so you can judge for yourself whether it was close enough to stand */
+function yourAnswerHtml(answer: string): string {
+  const typed = answer.trim();
+  return typed === ''
+    ? ''
+    : `<div class="your-answer">You wrote <span class="your-answer-text">${escapeHtml(typed)}</span></div>`;
 }
 const feedbackActions = document.getElementById('feedback-actions')!;
 
@@ -1467,18 +1478,18 @@ function showQuestion() {
     feedbackDiv.classList.add('correct');
     feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
     setFeedbackActions('');
+    setAnswerRevealed(true);
     playAudio(question.word.hanzi);
     submitBtn.classList.add('hidden');
     skipBtn.classList.add('hidden');
-    setPracticeActionsVisible(true);
     // Don't set results — will be retried in next round
     incorrectThisRound.push(question);
   } else {
     answerInput.disabled = false;
     answerInput.focus();
     feedbackDiv.classList.add('hidden');
+    setAnswerRevealed(false);
     setFeedbackActions('');
-    setPracticeActionsVisible(false);
     submitBtn.classList.remove('hidden');
     skipBtn.classList.remove('hidden');
   }
@@ -1576,14 +1587,14 @@ function formatFullAnswer(question: PracticeQuestion): string {
 }
 
 // Show incorrect feedback with optional synonym button
-function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
+function showIncorrectFeedback(question: PracticeQuestion, prefix?: string, answer = '') {
   const showSynonymBtn = currentMode === 'english2hanzi' || currentMode === 'english2pinyin';
   const synonymBtn = showSynonymBtn
     ? `<button class="synonym-btn" id="synonym-btn">Synonym</button>`
     : '';
   const acceptBtn = `<button class="synonym-btn" id="accept-btn">Try again</button>`;
   const label = prefix ?? '✗ Incorrect';
-  feedbackDiv.innerHTML = `${label}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+  feedbackDiv.innerHTML = `${label}${yourAnswerHtml(answer)}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
   setFeedbackActions(`${synonymBtn}${acceptBtn}`);
 
   document.getElementById('accept-btn')!.addEventListener('click', () => {
@@ -1593,12 +1604,12 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
     feedbackDiv.classList.add('synonym');
     feedbackDiv.innerHTML = `Try again!`;
     setFeedbackActions('');
+    setAnswerRevealed(false);
     answerInput.value = '';
     answerInput.disabled = false;
     answerInput.focus();
     submitBtn.classList.remove('hidden');
     skipBtn.classList.remove('hidden');
-    setPracticeActionsVisible(false);
 
     submitBlocked = true;
     const unblock = () => { submitBlocked = false; };
@@ -1624,12 +1635,12 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
           feedbackDiv.classList.add('synonym');
           feedbackDiv.innerHTML = `✓ Synonym saved. Try again!`;
           setFeedbackActions('');
+          setAnswerRevealed(false);
           answerInput.value = '';
           answerInput.disabled = false;
           answerInput.focus();
           submitBtn.classList.remove('hidden');
           skipBtn.classList.remove('hidden');
-          setPracticeActionsVisible(false);
 
           submitBlocked = true;
           const unblock = () => { submitBlocked = false; };
@@ -1659,7 +1670,7 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
 
       document.getElementById('synonym-cancel-btn')!.addEventListener('click', () => {
         // Re-render rather than restoring markup, so the buttons get listeners again
-        showIncorrectFeedback(question, prefix);
+        showIncorrectFeedback(question, prefix, answer);
       });
     });
   }
@@ -1673,26 +1684,33 @@ function showTryAgain(message: string) {
   setFeedbackActions('');
 }
 
+
 // Show final feedback (correct, incorrect, or skip) with common post-feedback actions
-function showFinalFeedback(question: PracticeQuestion, type: 'correct' | 'incorrect' | 'skip', label?: string) {
+function showFinalFeedback(
+  question: PracticeQuestion,
+  type: 'correct' | 'incorrect' | 'skip',
+  label?: string,
+  answer = ''
+) {
   feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
   setFeedbackActions('');
 
   if (type === 'correct') {
     feedbackDiv.classList.add('correct');
+    // Nothing to weigh up when it was accepted, and the box below still holds what was typed
     feedbackDiv.innerHTML = `${label ?? '✓ Correct!'}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
   } else if (type === 'incorrect') {
     feedbackDiv.classList.add('incorrect');
-    showIncorrectFeedback(question, label);
+    showIncorrectFeedback(question, label, answer);
   } else {
     feedbackDiv.classList.add('incorrect');
     feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
   }
 
+  setAnswerRevealed(true);
   playAudio(question.word.hanzi);
   submitBtn.classList.add('hidden');
   skipBtn.classList.add('hidden');
-  setPracticeActionsVisible(true);
   answerInput.disabled = true;
   if (type === 'incorrect') {
     nextBlocked = true;
@@ -1759,7 +1777,7 @@ async function handleSubmit() {
       incorrectThisRound.push(question);
     }
 
-    showFinalFeedback(question, response.correct ? 'correct' : 'incorrect');
+    showFinalFeedback(question, response.correct ? 'correct' : 'incorrect', undefined, answer);
   } catch (error) {
     alert(error instanceof Error ? error.message : 'Failed to submit answer');
   } finally {
