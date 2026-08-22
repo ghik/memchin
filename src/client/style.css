@@ -1126,11 +1126,11 @@ body.dark .answer-section input.invalid:focus {
 }
 
 /*
- * The same characters the question shows, set the same way: .hanzi-row's 48px at weight 300, in
- * the body font rather than the 500 the answer block around it carries.
+ * Set like the question's hanzi — weight 300 in the body font, not the 500 the answer block
+ * carries — but a size down from its 48px, since here it shares the line with the pinyin.
  */
 .answer-hanzi {
-  font-size: 48px;
+  font-size: 36px;
   font-weight: 300;
   line-height: 1.2;
 }
