@@ -87,13 +87,6 @@ function setAnswerRevealed(revealed: boolean): void {
   practiceActions.classList.toggle('hidden', !revealed);
 }
 
-/** What you typed, so you can judge for yourself whether it was close enough to stand */
-function yourAnswerHtml(answer: string): string {
-  const typed = answer.trim();
-  return typed === ''
-    ? ''
-    : `<div class="your-answer">You wrote <span class="your-answer-text">${escapeHtml(typed)}</span></div>`;
-}
 const feedbackActions = document.getElementById('feedback-actions')!;
 
 /**
@@ -1582,14 +1575,14 @@ function formatFullAnswer(question: PracticeQuestion): string {
 }
 
 // Show incorrect feedback with optional synonym button
-function showIncorrectFeedback(question: PracticeQuestion, prefix?: string, answer = '') {
+function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
   const showSynonymBtn = currentMode === 'english2hanzi' || currentMode === 'english2pinyin';
   const synonymBtn = showSynonymBtn
     ? `<button class="synonym-btn" id="synonym-btn">Synonym</button>`
     : '';
   const acceptBtn = `<button class="synonym-btn" id="accept-btn">Try again</button>`;
   const label = prefix ?? '✗ Incorrect';
-  feedbackDiv.innerHTML = `${label}${yourAnswerHtml(answer)}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+  feedbackDiv.innerHTML = `${label}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
   setFeedbackActions(`${synonymBtn}${acceptBtn}`);
 
   document.getElementById('accept-btn')!.addEventListener('click', () => {
@@ -1665,7 +1658,7 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string, answ
 
       document.getElementById('synonym-cancel-btn')!.addEventListener('click', () => {
         // Re-render rather than restoring markup, so the buttons get listeners again
-        showIncorrectFeedback(question, prefix, answer);
+        showIncorrectFeedback(question, prefix);
       });
     });
   }
@@ -1684,19 +1677,17 @@ function showTryAgain(message: string) {
 function showFinalFeedback(
   question: PracticeQuestion,
   type: 'correct' | 'incorrect' | 'skip',
-  label?: string,
-  answer = ''
+  label?: string
 ) {
   feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
   setFeedbackActions('');
 
   if (type === 'correct') {
     feedbackDiv.classList.add('correct');
-    // Nothing to weigh up when it was accepted, and the box below still holds what was typed
     feedbackDiv.innerHTML = `${label ?? '✓ Correct!'}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
   } else if (type === 'incorrect') {
     feedbackDiv.classList.add('incorrect');
-    showIncorrectFeedback(question, label, answer);
+    showIncorrectFeedback(question, label);
   } else {
     feedbackDiv.classList.add('incorrect');
     feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
@@ -1772,7 +1763,7 @@ async function handleSubmit() {
       incorrectThisRound.push(question);
     }
 
-    showFinalFeedback(question, response.correct ? 'correct' : 'incorrect', undefined, answer);
+    showFinalFeedback(question, response.correct ? 'correct' : 'incorrect');
   } catch (error) {
     alert(error instanceof Error ? error.message : 'Failed to submit answer');
   } finally {
