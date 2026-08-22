@@ -2250,8 +2250,19 @@ body.dark .ai-assessment.invalid {
   position: relative;
 }
 
+/*
+ * A suggestion is a word, its pinyin and its glosses, which does not fit the width of the box
+ * you type into — the English was being cut off with an ellipsis. Let the list take the width
+ * it needs, never narrower than the box, and centre it on the box so it has room either side.
+ */
 .synonym-suggestions {
   max-height: 280px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  min-width: 100%;
+  width: max-content;
+  max-width: min(560px, 80vw);
 }
 
 .synonym-suggestion {
