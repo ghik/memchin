@@ -9,25 +9,25 @@ function at(hour: number, minute = 0): Date {
 
 describe('shiftOutOfTheNight', () => {
   it('leaves waking hours alone', () => {
-    for (const hour of [6, 9, 12, 18, 22]) {
+    for (const hour of [4, 9, 12, 18, 22]) {
       expect(shiftOutOfTheNight(at(hour)).getTime()).toBe(at(hour).getTime());
     }
   });
 
-  it('moves the late evening into the morning', () => {
-    expect(shiftOutOfTheNight(at(23, 30)).getHours()).toBe(6);
+  it('moves the late evening past the small hours', () => {
+    expect(shiftOutOfTheNight(at(23, 30)).getHours()).toBe(4);
     expect(shiftOutOfTheNight(at(23, 30)).getMinutes()).toBe(30);
   });
 
-  it('moves the small hours into the afternoon', () => {
-    expect(shiftOutOfTheNight(at(3)).getHours()).toBe(10);
-    expect(shiftOutOfTheNight(at(5, 59)).getHours()).toBe(12);
+  it('moves the small hours into the morning', () => {
+    expect(shiftOutOfTheNight(at(1)).getHours()).toBe(6);
+    expect(shiftOutOfTheNight(at(3, 59)).getHours()).toBe(8);
   });
 
   it('never returns a time inside the window', () => {
     for (let hour = 0; hour < 24; hour++) {
       const hourOut = shiftOutOfTheNight(at(hour)).getHours();
-      expect(hourOut).toBeGreaterThanOrEqual(6);
+      expect(hourOut).toBeGreaterThanOrEqual(4);
       expect(hourOut).toBeLessThan(23);
     }
   });
@@ -52,7 +52,7 @@ describe('calculateNextEligible', () => {
     for (let bucket = 0; bucket <= 9; bucket++) {
       for (let run = 0; run < 20; run++) {
         const hour = fromStamp(calculateNextEligible(bucket)).getHours();
-        expect(hour).toBeGreaterThanOrEqual(6);
+        expect(hour).toBeGreaterThanOrEqual(4);
         expect(hour).toBeLessThan(23);
       }
     }

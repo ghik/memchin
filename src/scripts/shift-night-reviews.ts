@@ -1,5 +1,5 @@
 /**
- * Moves review times that already sit in the night — 23:00 to 06:00 local — past it, the same
+ * Moves review times that already sit in the night — 23:00 to 04:00 local — past it, the same
  * way new ones are placed as they are computed. Rows written before that rule existed keep
  * waking the deck up at four in the morning; this is a one-off pass to catch them up.
  *

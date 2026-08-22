@@ -20,8 +20,8 @@ export const MAX_BUCKET = BUCKET_DELAYS_MINUTES.length - 1;
 
 /** Nothing should come due between these hours, local time */
 const NIGHT_START_HOUR = 23;
-const NIGHT_END_HOUR = 6;
-const NIGHT_SHIFT_HOURS = 7;
+const NIGHT_END_HOUR = 4;
+const NIGHT_SHIFT_HOURS = 5;
 
 function isNight(date: Date): boolean {
   const hour = date.getHours();
@@ -32,10 +32,9 @@ function isNight(date: Date): boolean {
  * Moves a time that lands in the night past it, so nothing falls due while the learner is
  * asleep and greets them as a backlog in the morning.
  *
- * The window is seven hours wide and the shift is seven hours, so one pass normally clears it;
- * the loop is for the clocks going back, where seven hours of elapsed time advance the local
- * clock by only six and can leave 23:00 at 05:00. Each pass moves absolute time forward, so it
- * always terminates.
+ * The shift is as wide as the window, so one pass normally clears it; the loop is for the
+ * clocks going back, where the elapsed hours advance the local clock by one fewer and can
+ * leave 23:00 at 03:00. Each pass moves absolute time forward, so it always terminates.
  */
 export function shiftOutOfTheNight(date: Date): Date {
   const shifted = new Date(date);
