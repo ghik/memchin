@@ -1137,8 +1137,10 @@ body.dark .answer-section input.invalid:focus {
   font-weight: 500;
 }
 
+/* The word itself is what the answer is about, so it reads at something near the question's size */
 .answer-hanzi {
-  font-size: 1.3em;
+  font-size: 2.2em;
+  line-height: 1.2;
 }
 
 .answer-pinyin {
