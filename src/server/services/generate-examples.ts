@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
-import { recordUsage } from '../server/services/ai-usage.js';
-import type { Example, WordCore } from '../shared/types.js';
+import { recordUsage } from './ai-usage.js';
+import type { Example, WordCore } from '../../shared/types.js';
 
 const openai = new OpenAI();
 

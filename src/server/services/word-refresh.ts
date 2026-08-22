@@ -24,7 +24,7 @@ import {
 } from '../db.js';
 import type { WordSnapshot } from '../db.js';
 import { inferWord } from './infer-word.js';
-import { generateExamples } from '../../scripts/generate-examples.js';
+import { generateExamples } from './generate-examples.js';
 import { takesExamples } from '../../shared/labels.js';
 import { resetUsage, usageSummary } from './ai-usage.js';
 import { generateSpeech } from './tts.js';

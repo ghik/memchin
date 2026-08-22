@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getAllWords, initDb, saveDb, updateWordExamples } from '../server/db.js';
-import { generateExamples } from './generate-examples.js';
+import { generateExamples } from '../server/services/generate-examples.js';
 import { takesExamples } from '../shared/labels.js';
 import { generateSpeech } from '../server/services/tts.js';
 

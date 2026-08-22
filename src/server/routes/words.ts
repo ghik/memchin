@@ -24,7 +24,7 @@ import {
 } from '../db.js';
 import { lookupFiltered } from '../services/cedict.js';
 import { normalizePinyinInput, splitPinyin, splitPinyinQuery } from '../../shared/pinyin.js';
-import { generateExamples } from '../../scripts/generate-examples.js';
+import { generateExamples } from '../services/generate-examples.js';
 import { takesExamples } from '../../shared/labels.js';
 import { deleteAudio, generateSpeech } from '../services/tts.js';
 import { inferWord } from '../services/infer-word.js';

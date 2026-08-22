@@ -1,6 +1,6 @@
 import { getAllWords, getWordByHanzi, initDb, insertWords, saveDb, updateWordExamples } from '../server/db.js';
 import { lookupChar, loadWordFrequencyData } from '../server/services/hanzi-freq.js';
-import { generateExamples } from './generate-examples.js';
+import { generateExamples } from '../server/services/generate-examples.js';
 import { generateSpeech } from '../server/services/tts.js';
 import type { Example } from '../shared/types.js';
 

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { getAllWords, getDb, initDb, insertWords, saveDb, WordToInsert } from '../server/db.js';
 import { generateSpeech } from '../server/services/tts.js';
 import type { Example } from '../shared/types.js';
-import { generateExamples } from './generate-examples.js';
+import { generateExamples } from '../server/services/generate-examples.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const wordsPath = path.join(__dirname, '../../hsk_words.json');
