@@ -827,20 +827,42 @@ body.dark .preview-queued {
 }
 
 @media (min-width: 900px) {
-  #practice-screen {
-    max-width: 1100px;
+  /*
+   * Practice takes the whole window rather than a column down the middle of it: the card
+   * stretches, and the two halves inside it scroll on their own so a long note on the right
+   * never pushes the question off the top. The id is needed to outweigh `.screen.active`,
+   * and `.active` to keep an inactive screen hidden.
+   */
+  #practice-screen.active {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    align-self: stretch;
+    height: 100%;
+    overflow: hidden;
   }
 
   .practice-columns {
+    flex: 1;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 40px;
+    min-height: 0;
   }
 
   .practice-question,
   .practice-answer {
     flex: 1;
     min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Question and input travel together, centred against the height rather than pinned to it */
+  .practice-question {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   /* The input follows the question directly, so the gap under the question can be smaller */
