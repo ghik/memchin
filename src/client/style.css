@@ -910,8 +910,15 @@ body.dark .preview-queued {
     flex-wrap: wrap;
   }
 
+  /*
+   * .primary-btn is width: 100% by default, which in a flex row makes Next as wide as the whole
+   * row on its own. At the size of the buttons beside it, all three fit on one line.
+   */
   .practice-columns .practice-actions .primary-btn {
     flex: 0 0 auto;
+    width: auto;
+    padding: 10px 20px;
+    font-size: 14px;
   }
 }
 
