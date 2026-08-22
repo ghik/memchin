@@ -872,6 +872,11 @@ body.dark .preview-queued {
   .practice-columns .answer-section {
     margin-bottom: 0;
   }
+
+  /* Answers are a word or a few syllables; a box the width of the column only looks empty */
+  .practice-columns .answer-section input {
+    max-width: 360px;
+  }
 }
 
 .prompt {
