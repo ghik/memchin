@@ -839,9 +839,9 @@ body.dark .preview-queued {
   #practice-screen .answer-section input {
     flex: 0 0 auto;
     width: 100%;
-    max-width: 280px;
-    padding: 8px 12px;
-    font-size: 15px;
+    max-width: 340px;
+    padding: 10px 14px;
+    font-size: 17px;
     border-width: 1px;
   }
 
