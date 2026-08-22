@@ -1540,20 +1540,15 @@ function formatFullAnswer(question: PracticeQuestion): string {
   const word = question.word;
   const hanzi = clickableHanzi(word.hanzi, 'answer-hanzi');
   const pinyin = `<span class="answer-pinyin">${word.pinyin}</span>`;
-  const english = `<span class="answer-english">${formatTranslations(word.english)}</span>`;
   const polishHtml = formatPolish(word.polish);
   const polishBlock = polishHtml ? `<div class="answer-polish">${polishHtml}</div>` : '';
 
-  let result: string;
-  if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
-    // The translations were the question — repeating them in the answer adds nothing
-    result = `${hanzi} ${pinyin}`;
-  } else {
-    // hanzi2pinyin: hanzi was the question, reveal pinyin and every translation
-    result =
-      `${pinyin}<div class="answer-english">${formatTranslations(word.english)}</div>` +
-      `${aiEnglishHtml(word)}${polishBlock}`;
-  }
+  // Everything known about the word, whichever side of it was the question: the question is no
+  // longer on the screen to be read off, so an answer that leaves half of it out leaves a gap
+  let result =
+    `${hanzi} ${pinyin}` +
+    `<div class="answer-english">${formatTranslations(word.english)}</div>` +
+    `${aiEnglishHtml(word)}${polishBlock}`;
 
   // Show categories
   if (hasCategoryTags(word)) {
