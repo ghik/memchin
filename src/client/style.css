@@ -903,6 +903,11 @@ body.dark .preview-queued {
     justify-content: center;
     margin-top: 20px;
     margin-bottom: 0;
+    /*
+     * Three buttons rarely fit across the narrower column. Without this they overflow a centred
+     * row in both directions at once, and what goes off the left edge cannot be scrolled to.
+     */
+    flex-wrap: wrap;
   }
 
   .practice-columns .practice-actions .primary-btn {
