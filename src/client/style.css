@@ -850,12 +850,23 @@ body.dark .preview-queued {
     min-height: 0;
   }
 
+  /*
+   * The question is a word and a text box; the answer carries its glosses, examples, breakdown
+   * and notes. Two parts to three, so the half that has something to say gets the room.
+   */
   .practice-question,
   .practice-answer {
-    flex: 1;
     min-width: 0;
     min-height: 0;
     overflow-y: auto;
+  }
+
+  .practice-question {
+    flex: 2;
+  }
+
+  .practice-answer {
+    flex: 3;
   }
 
   .practice-question {
@@ -875,6 +886,8 @@ body.dark .preview-queued {
   .practice-columns .answer-section {
     margin-bottom: 0;
     justify-content: center;
+    /* The narrower column cannot always hold the box and both buttons on one line */
+    flex-wrap: wrap;
   }
 
   /* Answers are a word or a few syllables; a box the width of the column only looks empty */
