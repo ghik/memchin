@@ -868,9 +868,13 @@ body.dark .preview-queued {
     margin-bottom: 24px;
   }
 
-  /* Nothing follows the input on this side, so its own gap is dead space */
+  /*
+   * Nothing follows the input on this side, so its own gap is dead space, and the row sits
+   * under the middle of the question rather than against the left edge of the column.
+   */
   .practice-columns .answer-section {
     margin-bottom: 0;
+    justify-content: center;
   }
 
   /* Answers are a word or a few syllables; a box the width of the column only looks empty */
