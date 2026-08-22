@@ -1137,12 +1137,14 @@ body.dark .answer-section input.invalid:focus {
   font-weight: 500;
 }
 
-/* The word itself is what the answer is about, so it reads at something near the question's size */
+/*
+ * The same characters the question shows, set the same way: .hanzi-row's 48px at weight 300, in
+ * the body font rather than the 500 the answer block around it carries.
+ */
 .answer-hanzi {
-  font-size: 2.2em;
-  line-height: 1.2;
-  /* The 500 the answer block carries reads as heavy at this size; the question sets hanzi at 300 */
+  font-size: 48px;
   font-weight: 300;
+  line-height: 1.2;
 }
 
 .answer-pinyin {
