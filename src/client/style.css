@@ -916,6 +916,13 @@ body.dark .preview-queued {
    * Everything you press is on this side, so Next lands under Submit rather than across the
    * gap. Left to itself the primary button would stretch the width of the column.
    */
+  /* Editing acts on the word being shown, so its button sits under what it would change */
+  .practice-columns .answer-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+  }
+
   /* Try again and Synonym, and the search one of them opens, sit with the rest of the buttons */
   .practice-columns .feedback-actions {
     display: flex;

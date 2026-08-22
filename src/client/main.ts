@@ -76,6 +76,13 @@ const nextBtn = document.getElementById('next-btn')!;
 const skipBtn = document.getElementById('skip-btn')!;
 
 const practiceActions = document.getElementById('practice-actions')!;
+const answerActions = document.getElementById('answer-actions')!;
+
+/** Both rows belong to the answered state, one either side of the gap */
+function setPracticeActionsVisible(visible: boolean): void {
+  practiceActions.classList.toggle('hidden', !visible);
+  answerActions.classList.toggle('hidden', !visible);
+}
 const feedbackActions = document.getElementById('feedback-actions')!;
 
 /**
@@ -1463,7 +1470,7 @@ function showQuestion() {
     playAudio(question.word.hanzi);
     submitBtn.classList.add('hidden');
     skipBtn.classList.add('hidden');
-    practiceActions.classList.remove('hidden');
+    setPracticeActionsVisible(true);
     // Don't set results — will be retried in next round
     incorrectThisRound.push(question);
   } else {
@@ -1471,7 +1478,7 @@ function showQuestion() {
     answerInput.focus();
     feedbackDiv.classList.add('hidden');
     setFeedbackActions('');
-    practiceActions.classList.add('hidden');
+    setPracticeActionsVisible(false);
     submitBtn.classList.remove('hidden');
     skipBtn.classList.remove('hidden');
   }
@@ -1591,7 +1598,7 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
     answerInput.focus();
     submitBtn.classList.remove('hidden');
     skipBtn.classList.remove('hidden');
-    practiceActions.classList.add('hidden');
+    setPracticeActionsVisible(false);
 
     submitBlocked = true;
     const unblock = () => { submitBlocked = false; };
@@ -1622,7 +1629,7 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
           answerInput.focus();
           submitBtn.classList.remove('hidden');
           skipBtn.classList.remove('hidden');
-          practiceActions.classList.add('hidden');
+          setPracticeActionsVisible(false);
 
           submitBlocked = true;
           const unblock = () => { submitBlocked = false; };
@@ -1685,7 +1692,7 @@ function showFinalFeedback(question: PracticeQuestion, type: 'correct' | 'incorr
   playAudio(question.word.hanzi);
   submitBtn.classList.add('hidden');
   skipBtn.classList.add('hidden');
-  practiceActions.classList.remove('hidden');
+  setPracticeActionsVisible(true);
   answerInput.disabled = true;
   if (type === 'incorrect') {
     nextBlocked = true;
