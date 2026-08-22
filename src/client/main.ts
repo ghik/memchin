@@ -76,6 +76,17 @@ const nextBtn = document.getElementById('next-btn')!;
 const skipBtn = document.getElementById('skip-btn')!;
 
 const practiceActions = document.getElementById('practice-actions')!;
+const feedbackActions = document.getElementById('feedback-actions')!;
+
+/**
+ * What the feedback offers you to do about it — Try again, Synonym, and the synonym search that
+ * one of them opens. It lives with the other buttons, under the question, rather than inside
+ * the feedback panel it belongs to.
+ */
+function setFeedbackActions(html: string): void {
+  feedbackActions.innerHTML = html;
+  feedbackActions.classList.toggle('hidden', html === '');
+}
 const editWordBtn = document.getElementById('edit-word-btn')!;
 const resetWordBtn = document.getElementById('reset-word-btn')!;
 const cancelEditBtn = document.getElementById('cancel-edit-btn') as HTMLButtonElement;
@@ -1448,6 +1459,7 @@ function showQuestion() {
     feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
     feedbackDiv.classList.add('correct');
     feedbackDiv.innerHTML = `<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+    setFeedbackActions('');
     playAudio(question.word.hanzi);
     submitBtn.classList.add('hidden');
     skipBtn.classList.add('hidden');
@@ -1458,6 +1470,7 @@ function showQuestion() {
     answerInput.disabled = false;
     answerInput.focus();
     feedbackDiv.classList.add('hidden');
+    setFeedbackActions('');
     practiceActions.classList.add('hidden');
     submitBtn.classList.remove('hidden');
     skipBtn.classList.remove('hidden');
@@ -1563,7 +1576,8 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
     : '';
   const acceptBtn = `<button class="synonym-btn" id="accept-btn">Try again</button>`;
   const label = prefix ?? '✗ Incorrect';
-  feedbackDiv.innerHTML = `${label}${synonymBtn}${acceptBtn}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+  feedbackDiv.innerHTML = `${label}<div class="correct-answer">${formatFullAnswer(question)}</div>`;
+  setFeedbackActions(`${synonymBtn}${acceptBtn}`);
 
   document.getElementById('accept-btn')!.addEventListener('click', () => {
     incorrectThisRound = incorrectThisRound.filter((q) => q !== question);
@@ -1571,6 +1585,7 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
     feedbackDiv.classList.remove('incorrect');
     feedbackDiv.classList.add('synonym');
     feedbackDiv.innerHTML = `Try again!`;
+    setFeedbackActions('');
     answerInput.value = '';
     answerInput.disabled = false;
     answerInput.focus();
@@ -1587,7 +1602,7 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
 
   if (showSynonymBtn) {
     document.getElementById('synonym-btn')!.addEventListener('click', () => {
-      feedbackDiv.innerHTML = `<div class="synonym-input-row"><div class="synonym-search-container"><input type="text" id="synonym-hanzi-input" placeholder="Search learned words by hanzi or pinyin" class="synonym-hanzi-input" autocomplete="off"><div id="synonym-hanzi-suggestions" class="category-suggestions synonym-suggestions hidden"></div></div><button id="synonym-confirm-btn" class="primary-btn">Confirm</button><button id="synonym-cancel-btn" class="secondary-btn">Cancel</button></div><div id="synonym-search-hint" class="synonym-search-hint hidden"></div>`;
+      setFeedbackActions(`<div class="synonym-input-row"><div class="synonym-search-container"><input type="text" id="synonym-hanzi-input" placeholder="Search learned words by hanzi or pinyin" class="synonym-hanzi-input" autocomplete="off"><div id="synonym-hanzi-suggestions" class="category-suggestions synonym-suggestions hidden"></div></div><button id="synonym-confirm-btn" class="primary-btn">Confirm</button><button id="synonym-cancel-btn" class="secondary-btn">Cancel</button></div><div id="synonym-search-hint" class="synonym-search-hint hidden"></div>`);
       const synonymInput = document.getElementById('synonym-hanzi-input') as HTMLInputElement;
       const synonymDropdown = document.getElementById('synonym-hanzi-suggestions')!;
       const synonymHint = document.getElementById('synonym-search-hint')!;
@@ -1601,6 +1616,7 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
           feedbackDiv.classList.remove('incorrect');
           feedbackDiv.classList.add('synonym');
           feedbackDiv.innerHTML = `✓ Synonym saved. Try again!`;
+          setFeedbackActions('');
           answerInput.value = '';
           answerInput.disabled = false;
           answerInput.focus();
@@ -1614,7 +1630,7 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
           answerInput.addEventListener('input', () => { clearTimeout(timer); unblock(); }, { once: true });
         } catch (error) {
           console.error('Failed to save synonym:', error);
-          feedbackDiv.innerHTML = `<span class="error">Failed to save synonym</span>`;
+          setFeedbackActions(`<span class="error">Failed to save synonym</span>`);
         }
       };
 
@@ -1647,11 +1663,13 @@ function showTryAgain(message: string) {
   feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
   feedbackDiv.classList.add('synonym');
   feedbackDiv.innerHTML = message;
+  setFeedbackActions('');
 }
 
 // Show final feedback (correct, incorrect, or skip) with common post-feedback actions
 function showFinalFeedback(question: PracticeQuestion, type: 'correct' | 'incorrect' | 'skip', label?: string) {
   feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
+  setFeedbackActions('');
 
   if (type === 'correct') {
     feedbackDiv.classList.add('correct');

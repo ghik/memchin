@@ -916,6 +916,26 @@ body.dark .preview-queued {
    * Everything you press is on this side, so Next lands under Submit rather than across the
    * gap. Left to itself the primary button would stretch the width of the column.
    */
+  /* Try again and Synonym, and the search one of them opens, sit with the rest of the buttons */
+  .practice-columns .feedback-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  /* The margin those buttons carry for sitting inline in a sentence is the gap's job here */
+  .practice-columns .feedback-actions .synonym-btn {
+    margin-left: 0;
+  }
+
+  /* The search is a box and two buttons in a column too narrow to hold them side by side */
+  .practice-columns .feedback-actions .synonym-input-row {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
   /* The same 12px under the box that .answer-section leaves for the row being replaced */
   .practice-columns .practice-actions {
     justify-content: center;
