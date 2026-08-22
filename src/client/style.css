@@ -853,15 +853,20 @@ body.dark .preview-queued {
 
   .practice-question,
   .practice-answer {
-    flex: 1;
     min-width: 0;
     min-height: 0;
     overflow-y: auto;
   }
 
+  /* The answer carries the glosses, examples, breakdown and notes, so it gets the larger half */
   .practice-question {
+    flex: 2;
     display: flex;
     flex-direction: column;
+  }
+
+  .practice-answer {
+    flex: 3;
   }
 
   /* The input follows the question directly, so the gap under the question can be smaller */
