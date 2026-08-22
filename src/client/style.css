@@ -1141,6 +1141,8 @@ body.dark .answer-section input.invalid:focus {
 .answer-hanzi {
   font-size: 2.2em;
   line-height: 1.2;
+  /* The 500 the answer block carries reads as heavy at this size; the question sets hanzi at 300 */
+  font-weight: 300;
 }
 
 .answer-pinyin {
