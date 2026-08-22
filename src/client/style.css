@@ -858,11 +858,9 @@ body.dark .preview-queued {
     overflow-y: auto;
   }
 
-  /* Question and input travel together, centred against the height rather than pinned to it */
   .practice-question {
     display: flex;
     flex-direction: column;
-    justify-content: center;
   }
 
   /* The input follows the question directly, so the gap under the question can be smaller */
