@@ -881,6 +881,20 @@ body.dark .preview-queued {
   .practice-columns .answer-section input {
     max-width: 360px;
   }
+
+  /*
+   * Everything you press is on this side, so Next lands under Submit rather than across the
+   * gap. Left to itself the primary button would stretch the width of the column.
+   */
+  .practice-columns .practice-actions {
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 0;
+  }
+
+  .practice-columns .practice-actions .primary-btn {
+    flex: 0 0 auto;
+  }
 }
 
 .prompt {
