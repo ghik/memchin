@@ -883,15 +883,23 @@ body.dark .preview-queued {
    * Nothing follows the input on this side, so its own gap is dead space, and the row sits
    * under the middle of the question rather than against the left edge of the column.
    */
+  /* The box on its own line with its buttons underneath, as Next and its neighbours are */
   .practice-columns .answer-section {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
     margin-bottom: 0;
-    justify-content: center;
-    /* The narrower column cannot always hold the box and both buttons on one line */
+  }
+
+  .practice-columns .answer-buttons {
     flex-wrap: wrap;
+    justify-content: center;
   }
 
   /* Answers are a word or a few syllables, so the box is sized for one rather than for a line */
   .practice-columns .answer-section input {
+    flex: 0 0 auto;
+    width: 100%;
     max-width: 280px;
     padding: 8px 12px;
     font-size: 15px;
@@ -998,6 +1006,11 @@ body.dark .feedback.synonym {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
+}
+
+.answer-buttons {
+  display: flex;
+  gap: 10px;
 }
 
 .answer-section input {
