@@ -836,7 +836,8 @@ body.dark .preview-queued {
   #practice-screen.active {
     display: flex;
     flex-direction: column;
-    max-width: none;
+    /* The full width spread the two columns further apart than the eye wants to travel */
+    max-width: 75%;
     align-self: stretch;
     height: 100%;
     overflow: hidden;
