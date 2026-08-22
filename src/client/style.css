@@ -890,9 +890,19 @@ body.dark .preview-queued {
     flex-wrap: wrap;
   }
 
-  /* Answers are a word or a few syllables; a box the width of the column only looks empty */
+  /* Answers are a word or a few syllables, so the box is sized for one rather than for a line */
   .practice-columns .answer-section input {
-    max-width: 360px;
+    max-width: 280px;
+    padding: 8px 12px;
+    font-size: 15px;
+    border-width: 1px;
+  }
+
+  /* Buttons the weight of the box beside them, or they make it look smaller than it is */
+  .practice-columns .answer-section .primary-btn,
+  .practice-columns .answer-section .secondary-btn {
+    padding: 8px 16px;
+    font-size: 14px;
   }
 
   /*
