@@ -863,15 +863,12 @@ body.dark .preview-queued {
 
   .practice-question {
     flex: 2;
+    display: flex;
+    flex-direction: column;
   }
 
   .practice-answer {
     flex: 3;
-  }
-
-  .practice-question {
-    display: flex;
-    flex-direction: column;
   }
 
   /* The input follows the question directly, so the gap under the question can be smaller */
@@ -879,10 +876,6 @@ body.dark .preview-queued {
     margin-bottom: 24px;
   }
 
-  /*
-   * Nothing follows the input on this side, so its own gap is dead space, and the row sits
-   * under the middle of the question rather than against the left edge of the column.
-   */
   /* The box on its own line with its buttons underneath, as Next and its neighbours are */
   .practice-columns .answer-section {
     flex-direction: column;
@@ -906,9 +899,14 @@ body.dark .preview-queued {
     border-width: 1px;
   }
 
-  /* Buttons the weight of the box beside them, or they make it look smaller than it is */
-  .practice-columns .answer-section .primary-btn,
-  .practice-columns .answer-section .secondary-btn {
+  /*
+   * One size for every button under the box, before answering and after: Submit and I don't
+   * know give way to Next, Edit word and Reset word in the same place, at the same weight.
+   */
+  .practice-columns .answer-buttons .primary-btn,
+  .practice-columns .answer-buttons .secondary-btn,
+  .practice-columns .practice-actions .primary-btn,
+  .practice-columns .practice-actions .edit-word-btn {
     padding: 8px 16px;
     font-size: 14px;
   }
@@ -917,9 +915,10 @@ body.dark .preview-queued {
    * Everything you press is on this side, so Next lands under Submit rather than across the
    * gap. Left to itself the primary button would stretch the width of the column.
    */
+  /* The same 12px under the box that .answer-section leaves for the row being replaced */
   .practice-columns .practice-actions {
     justify-content: center;
-    margin-top: 20px;
+    margin-top: 12px;
     margin-bottom: 0;
     /*
      * Three buttons rarely fit across the narrower column. Without this they overflow a centred
@@ -928,15 +927,11 @@ body.dark .preview-queued {
     flex-wrap: wrap;
   }
 
-  /*
-   * .primary-btn is width: 100% by default, which in a flex row makes Next as wide as the whole
-   * row on its own. At the size of the buttons beside it, all three fit on one line.
-   */
+  /* .primary-btn is width: 100%, which in a flex row makes a button claim the line on its own */
+  .practice-columns .answer-buttons .primary-btn,
   .practice-columns .practice-actions .primary-btn {
     flex: 0 0 auto;
     width: auto;
-    padding: 10px 20px;
-    font-size: 14px;
   }
 }
 
@@ -1011,6 +1006,15 @@ body.dark .feedback.synonym {
 .answer-buttons {
   display: flex;
   gap: 10px;
+}
+
+/*
+ * Answering hides the two buttons one by one, which would leave the row itself in place still
+ * claiming its share of the gap, and the buttons that replace them would sit lower than the
+ * ones they replace. With both gone the row goes too.
+ */
+.answer-buttons:not(:has(button:not(.hidden))) {
+  display: none;
 }
 
 .answer-section input {
