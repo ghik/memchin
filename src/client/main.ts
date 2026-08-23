@@ -1094,7 +1094,21 @@ function clickableHanzi(hanzi: string, className: string): string {
 
 function formatTranslations(english: string[]): string {
   const sep = '<span class="english-sep"> • </span>';
-  return `<span class="translations">${english.map(renderFullTranslationItem).join(sep)}</span>`;
+  return `<span class="translations">${english.map((t) => renderFullTranslationItem(t)).join(sep)}</span>`;
+}
+
+/**
+ * The curated glosses and the inferred ones as a single list, reading on from one another in
+ * one line. The inferred ones are only ever what the curated list does not already say, and
+ * they carry a colour rather than a heading of their own.
+ */
+function formatTranslationsWithInferred(word: Word): string {
+  const sep = '<span class="english-sep"> • </span>';
+  const items = [
+    ...word.english.map((t) => renderFullTranslationItem(t)),
+    ...(word.aiEnglish ?? []).map((t) => renderFullTranslationItem(t, true)),
+  ];
+  return `<span class="translations">${items.join(sep)}</span>`;
 }
 
 const TRANSLATION_TRUNCATE_ABOVE = 10;
@@ -1202,9 +1216,10 @@ function segmentLen(seg: Segment): number {
   return seg.type === 'badge' ? seg.label.length : seg.text.length;
 }
 
-function renderFullTranslationItem(text: string): string {
+function renderFullTranslationItem(text: string, inferred = false): string {
   const inner = tokenizeBadges(text).map(renderSegment).join('');
-  return `<span class="translation-item">${inner}</span>`;
+  const className = inferred ? 'translation-item inferred' : 'translation-item';
+  return `<span class="${className}">${inner}</span>`;
 }
 
 // Non-nested parenthetical group. Used to collapse the "( ... )" tail of a
@@ -1391,8 +1406,7 @@ function renderPrompt(question: PracticeQuestion) {
   // Show example hints alongside the question
   if (currentMode === 'english2hanzi' || currentMode === 'english2pinyin') {
     // english->X mode: show english prompt, no clickable hanzi
-    const translationsHtml = formatTranslations(word.english);
-    let promptHtml = translationsHtml + aiEnglishHtml(word);
+    let promptHtml = formatTranslationsWithInferred(word);
     const polishHtml = formatPolish(word.polish);
     if (polishHtml) {
       promptHtml += `<div class="prompt-polish">${polishHtml}</div>`;
@@ -1540,8 +1554,8 @@ function formatFullAnswer(question: PracticeQuestion): string {
   // longer on the screen to be read off, so an answer that leaves half of it out leaves a gap
   let result =
     `${hanzi} ${pinyin}` +
-    `<div class="answer-english">${formatTranslations(word.english)}</div>` +
-    `${aiEnglishHtml(word)}${polishBlock}`;
+    `<div class="answer-english">${formatTranslationsWithInferred(word)}</div>` +
+    polishBlock;
 
   // Show categories
   if (hasCategoryTags(word)) {
@@ -3835,13 +3849,6 @@ function categoryTagsHtml(word: Word): string {
   return tags.join(' ');
 }
 
-/** AI-inferred English glosses, shown under the curated ones */
-function aiEnglishHtml(word: Word): string {
-  if (!word.aiEnglish || word.aiEnglish.length === 0) {
-    return '';
-  }
-  return `<div class="answer-ai-english"><span class="ai-mark" aria-hidden="true">✨</span>${formatTranslations(word.aiEnglish)}</div>`;
-}
 
 /** The AI's usage note for a word, badged so its origin is obvious */
 function aiNotesHtml(word: Word): string {
@@ -3894,15 +3901,13 @@ function formatWordDetail(word: Word, progress: Progress[]): string {
   let html = `<div class="search-detail-top">
     ${clickableHanzi(word.hanzi, 'answer-hanzi')}
     <span class="answer-pinyin">${word.pinyin}</span>
-    <span class="answer-english">${formatTranslations(word.english)}</span>
+    <span class="answer-english">${formatTranslationsWithInferred(word)}</span>
     ${polishHtml ? `<span class="answer-polish">${polishHtml}</span>` : ''}
   </div>`;
 
   if (hasCategoryTags(word)) {
     html += `<div class="answer-categories">${categoryTagsHtml(word)}</div>`;
   }
-
-  html += aiEnglishHtml(word);
 
   const progressByMode = new Map(progress.map((p) => [p.mode, p]));
   const progressParts = (['hanzi2pinyin', 'english2pinyin', 'english2hanzi'] as const).map((mode) => {

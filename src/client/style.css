@@ -413,13 +413,11 @@ body.dark input[type="checkbox"] {
 /* Secondary translations read smaller than the line they belong to. The prompt sets its own
    large font, so it needs a much bigger reduction than the answer, which is already at body
    size. */
-.prompt .prompt-polish,
-.prompt .answer-ai-english {
+.prompt .prompt-polish {
   font-size: 0.65em;
 }
 
-.feedback .answer-polish,
-.feedback .answer-ai-english {
+.feedback .answer-polish {
   font-size: 0.8em;
 }
 
@@ -428,6 +426,11 @@ body.dark input[type="checkbox"] {
 }
 .translation-item {
   white-space: nowrap;
+}
+
+/* Inferred glosses read as part of the same list; only the colour says where they came from */
+.translation-item.inferred {
+  color: var(--ai-color);
 }
 
 .preview-rank {
@@ -2191,21 +2194,6 @@ body.dark .ai-assessment.invalid {
 
 .ai-english-promote:hover {
   opacity: 1;
-}
-
-.answer-ai-english {
-  margin-top: 4px;
-  font-size: 0.9em;
-  color: var(--ai-color);
-}
-
-.answer-ai-english .ai-mark {
-  margin-right: 4px;
-}
-
-.answer-ai-english .translations,
-.answer-ai-english .translation-item {
-  color: inherit;
 }
 
 /* The AI's usage note, shown wherever a word is displayed in full */
