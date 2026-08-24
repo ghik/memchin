@@ -2529,6 +2529,27 @@ body.dark .add-word-status.error {
 }
 
 /* Search screen */
+/*
+ * Explore is a list of results, and a list is easier to read across than down: it takes the
+ * window rather than the 700px card the other screens sit in. The id outweighs `.screen.active`,
+ * and `.active` keeps an inactive screen hidden.
+ */
+#search-screen.active {
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+  align-self: stretch;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The fields stay put and the results scroll under them */
+#search-results {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 #search-inputs {
   display: flex;
   gap: 12px;
