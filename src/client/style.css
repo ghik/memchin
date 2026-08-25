@@ -2561,6 +2561,9 @@ body.dark .add-word-status.error {
   flex-direction: column;
   gap: 4px;
   flex: 1;
+  /* Wide enough for the four match-mode buttons under it, and no wider: now that the screen
+     takes the window, a field set to grow would run the whole way across it */
+  max-width: 280px;
 }
 
 .search-label {
