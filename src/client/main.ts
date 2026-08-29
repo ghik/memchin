@@ -4544,8 +4544,7 @@ const sentenceSummary = document.getElementById('sentence-summary')!;
 const sentenceSummaryStats = document.getElementById('sentence-summary-stats')!;
 const sentencePoolInfo = document.getElementById('sentence-pool-info')!;
 const sentenceCountInput = document.getElementById('sentence-count') as HTMLInputElement;
-const sentenceCountPresets = document.getElementById('sentence-count-presets')!;
-const sentenceStartBtn = document.getElementById('sentence-start-btn') as HTMLButtonElement;
+const sentenceCountRow = document.getElementById('sentence-count-row')!;
 const sentenceQuitBtn = document.getElementById('sentence-quit-btn')!;
 const sentenceAgainBtn = document.getElementById('sentence-again-btn')!;
 
@@ -4655,7 +4654,8 @@ async function refreshSentencePoolInfo(): Promise<void> {
     sentencePoolInfo.textContent =
       total === 0
         ? 'No sentences yet — they come from the example sentences of words you have learned.'
-        : `${total} sentences available, from the words you have learned.`;
+        : `${total} sentences available, from the words you have learned. ` +
+          `How many would you like to do?`;
   } catch {
     sentencePoolInfo.textContent = '';
   }
@@ -4667,13 +4667,9 @@ async function startSentenceRound(): Promise<void> {
     MAX_SENTENCE_ROUND
   );
   localStorage.setItem('sentenceCount', String(count));
+  sentencePoolInfo.textContent = 'Loading sentences…';
   try {
-    const result = await withButtonBusy(sentenceStartBtn, 'Loading…', () =>
-      getSentenceQuestions(count)
-    );
-    if (!result) {
-      return;
-    }
+    const result = await getSentenceQuestions(count);
     if (result.questions.length === 0) {
       sentencePoolInfo.textContent = 'No sentences to practise yet.';
       return;
@@ -4935,17 +4931,22 @@ function handleSentenceRetry(): void {
   void handleSentenceSubmit();
 }
 
-sentenceCountPresets.innerHTML = SENTENCE_COUNT_PRESETS.map(
-  (n) => `<button class="count-preset" data-count="${n}">${n}</button>`
-).join('');
-sentenceCountPresets.querySelectorAll('.count-preset').forEach((btn) => {
+// Appended rather than written into the markup so the presets are flex children of the row
+// itself, which is what the practice cards' spacing and colouring key off
+sentenceCountRow.insertAdjacentHTML(
+  'beforeend',
+  SENTENCE_COUNT_PRESETS.map(
+    (n) => `<button class="count-preset" data-count="${n}">${n}</button>`
+  ).join('')
+);
+sentenceCountRow.querySelectorAll('.count-preset').forEach((btn) => {
   btn.addEventListener('click', () => {
     sentenceCountInput.value = (btn as HTMLElement).dataset.count!;
     void startSentenceRound();
   });
 });
 
-sentenceStartBtn.addEventListener('click', () => void startSentenceRound());
+// No Start of its own: a preset starts a round, and so does Enter in the box
 sentenceCountInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     void startSentenceRound();
