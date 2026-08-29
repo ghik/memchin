@@ -820,26 +820,27 @@ body.dark .preview-queued {
 }
 
 /*
- * Practice reads down the page, and the question and the answer share one place in it: the
- * question is there while you answer, the answer takes its place once you have. The rules
- * below only trim the controls for a desktop; a phone keeps them at finger size.
+ * A screen that asks a question with an answer box under it — word practice and sentence
+ * practice alike. Both read down the page with the question and the answer sharing one place
+ * in it: the question is there while you answer, the answer takes its place once you have. The
+ * rules below only trim the controls for a desktop; a phone keeps them at finger size.
  */
 @media (min-width: 900px) {
   /* The box on its own line with its buttons underneath, all of it centred under the question */
-  #practice-screen .answer-section {
+  .answer-flow .answer-section {
     flex-direction: column;
     align-items: center;
     gap: 12px;
     margin-bottom: 0;
   }
 
-  #practice-screen .answer-buttons {
+  .answer-flow .answer-buttons {
     flex-wrap: wrap;
     justify-content: center;
   }
 
   /* Answers are a word or a few syllables, so the box is sized for one rather than for a line */
-  #practice-screen .answer-section input {
+  .answer-flow .answer-section input {
     flex: 0 0 auto;
     width: 100%;
     max-width: 340px;
@@ -852,23 +853,23 @@ body.dark .preview-queued {
    * One size for every button under the box, before answering and after: Submit and I don't
    * know give way to Next, Edit word and Reset word in the same place, at the same weight.
    */
-  #practice-screen .answer-buttons .primary-btn,
-  #practice-screen .answer-buttons .secondary-btn,
-  #practice-screen .practice-actions .primary-btn,
-  #practice-screen .practice-actions .edit-word-btn {
+  .answer-flow .answer-buttons .primary-btn,
+  .answer-flow .answer-buttons .secondary-btn,
+  .answer-flow .practice-actions .primary-btn,
+  .answer-flow .practice-actions .edit-word-btn {
     padding: 8px 16px;
     font-size: 14px;
   }
 
   /* .primary-btn is width: 100%, which in a flex row makes a button claim the line on its own */
-  #practice-screen .answer-buttons .primary-btn,
-  #practice-screen .practice-actions .primary-btn {
+  .answer-flow .answer-buttons .primary-btn,
+  .answer-flow .practice-actions .primary-btn {
     flex: 0 0 auto;
     width: auto;
   }
 
   /* Try again and Synonym, and the search one of them opens, sit with the rest of the buttons */
-  #practice-screen .feedback-actions {
+  .answer-flow .feedback-actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -877,17 +878,17 @@ body.dark .preview-queued {
   }
 
   /* The margin those buttons carry for sitting inline in a sentence is the gap's job here */
-  #practice-screen .feedback-actions .synonym-btn {
+  .answer-flow .feedback-actions .synonym-btn {
     margin-left: 0;
   }
 
-  #practice-screen .feedback-actions .synonym-input-row {
+  .answer-flow .feedback-actions .synonym-input-row {
     flex-wrap: wrap;
     justify-content: center;
   }
 
   /* The same 12px under the box that .answer-section leaves for the row being replaced */
-  #practice-screen .practice-actions {
+  .answer-flow .practice-actions {
     justify-content: center;
     flex-wrap: wrap;
     margin-top: 12px;
@@ -2817,4 +2818,29 @@ mark.search-match {
 
 .search-progress-none {
   color: var(--text-4);
+}
+
+/* Grading a sentence takes a few seconds; the wait sits where the verdict will land */
+.feedback.pending {
+  background: var(--surface-3);
+  color: var(--text-3);
+}
+
+/* A verdict is two or three sentences of prose, which reads badly centred as a word does */
+.feedback .verdict {
+  display: block;
+  font-weight: 600;
+}
+
+.feedback .explanation,
+.feedback .sentence-suggestion,
+.feedback .sentence-reference {
+  display: block;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.feedback .sentence-label {
+  color: var(--text-3);
+  margin-right: 6px;
 }

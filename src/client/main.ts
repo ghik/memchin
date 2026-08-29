@@ -6,6 +6,8 @@ import type {
   PracticeQuestion,
   Progress,
   SearchResult,
+  SentenceGradeResponse,
+  SentenceQuestion,
   SynonymEntry,
   WordProgress,
   CedictEntry,
@@ -13,6 +15,7 @@ import type {
 } from './services.js';
 import type { Example, Stats } from '../shared/types.js';
 import { takesExamples } from '../shared/labels.js';
+import { sentenceMatches } from '../shared/sentence-match.js';
 import { fromStamp } from '../shared/time.js';
 import {
   toNumberedPinyin,
@@ -33,8 +36,10 @@ import {
   clearWordQueued,
   completePractice,
   getCategories,
+  getSentenceQuestions,
   getStats,
   getWordCount,
+  gradeSentence,
   learnNow,
   inferWord,
   lookupHanzi,
@@ -58,6 +63,7 @@ const practiceScreen = document.getElementById('practice-screen')!;
 const resultScreen = document.getElementById('result-screen')!;
 const addWordScreen = document.getElementById('add-word-screen')!;
 const searchScreen = document.getElementById('search-screen')!;
+const sentenceScreen = document.getElementById('sentence-screen')!;
 const searchHanziInput = document.getElementById('search-hanzi') as HTMLInputElement;
 const searchPinyinInput = document.getElementById('search-pinyin') as HTMLInputElement;
 const searchEnglishInput = document.getElementById('search-english') as HTMLInputElement;
@@ -166,25 +172,29 @@ themeCheckbox.addEventListener('change', () => {
 
 // Sidebar nav
 const navItems = document.querySelectorAll('.nav-item');
-let currentView: 'practice' | 'search' | 'add-word' = 'practice';
+type View = 'practice' | 'sentences' | 'search' | 'add-word';
+
+let currentView: View = 'practice';
 let lastPracticeScreen: HTMLElement = startScreen;
 
-const VIEW_PATHS: Record<string, 'practice' | 'search' | 'add-word'> = {
+const VIEW_PATHS: Record<string, View> = {
   '/': 'practice',
+  '/sentences': 'sentences',
   '/explore': 'search',
   '/add': 'add-word',
 };
 const PATH_FOR_VIEW: Record<string, string> = {
-  'practice': '/',
-  'search': '/explore',
+  practice: '/',
+  sentences: '/sentences',
+  search: '/explore',
   'add-word': '/add',
 };
 
-function viewFromPath(): 'practice' | 'search' | 'add-word' {
+function viewFromPath(): View {
   return VIEW_PATHS[location.pathname] ?? 'practice';
 }
 
-function showView(view: 'practice' | 'search' | 'add-word', push = true) {
+function showView(view: View, push = true) {
   currentView = view;
 
   // Update nav active state
@@ -192,16 +202,14 @@ function showView(view: 'practice' | 'search' | 'add-word', push = true) {
     item.classList.toggle('active', (item as HTMLElement).dataset.view === view);
   });
 
-  // Hide all screens
-  startScreen.classList.remove('active');
-  practiceScreen.classList.remove('active');
-  resultScreen.classList.remove('active');
-  addWordScreen.classList.remove('active');
-  searchScreen.classList.remove('active');
+  hideAllScreens();
 
   if (view === 'practice') {
     lastPracticeScreen.classList.add('active');
     reloadStats();
+  } else if (view === 'sentences') {
+    sentenceScreen.classList.add('active');
+    void ensureSentenceSession();
   } else if (view === 'search') {
     searchScreen.classList.add('active');
     searchHanziInput.focus();
@@ -256,13 +264,15 @@ function restoreSearchFromUrl(): void {
   searchEnglishInput.value = e;
   if (hm && ['prefix', 'contains', 'suffix', 'exact'].includes(hm)) {
     hanziMode = hm as MatchMode;
-    hanziModeGroup.querySelectorAll('.match-mode-btn').forEach((b) =>
-      b.classList.toggle('active', (b as HTMLElement).dataset.mode === hm));
+    hanziModeGroup
+      .querySelectorAll('.match-mode-btn')
+      .forEach((b) => b.classList.toggle('active', (b as HTMLElement).dataset.mode === hm));
   }
   if (pm && ['prefix', 'contains', 'suffix', 'exact'].includes(pm)) {
     pinyinMode = pm as MatchMode;
-    pinyinModeGroup.querySelectorAll('.match-mode-btn').forEach((b) =>
-      b.classList.toggle('active', (b as HTMLElement).dataset.mode === pm));
+    pinyinModeGroup
+      .querySelectorAll('.match-mode-btn')
+      .forEach((b) => b.classList.toggle('active', (b as HTMLElement).dataset.mode === pm));
   }
   if (h || p || e) {
     triggerSearch(true);
@@ -332,8 +342,12 @@ audioVolumeInput.addEventListener('input', () => {
 categorySearch.addEventListener('input', filterCategoryList);
 const ALL_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2pinyin', 'english2hanzi'];
 
-const savedWordCounts: Record<string, number> = JSON.parse(localStorage.getItem('wordCounts') ?? '{}');
-const savedCardCollapsed: Record<string, boolean> = JSON.parse(localStorage.getItem('cardCollapsed') ?? '{}');
+const savedWordCounts: Record<string, number> = JSON.parse(
+  localStorage.getItem('wordCounts') ?? '{}'
+);
+const savedCardCollapsed: Record<string, boolean> = JSON.parse(
+  localStorage.getItem('cardCollapsed') ?? '{}'
+);
 function getCardCollapsed(key: string): boolean {
   return savedCardCollapsed[key] ?? false;
 }
@@ -354,17 +368,20 @@ function getModeWordCount(mode: PracticeMode, charMode: boolean, selection?: str
   const key = selection ? `${modeKey(mode, charMode)}:${selection}` : modeKey(mode, charMode);
   return savedWordCounts[key] ?? 10;
 }
-function setModeWordCount(mode: PracticeMode, charMode: boolean, count: number, selection?: string) {
+function setModeWordCount(
+  mode: PracticeMode,
+  charMode: boolean,
+  count: number,
+  selection?: string
+) {
   const key = selection ? `${modeKey(mode, charMode)}:${selection}` : modeKey(mode, charMode);
   savedWordCounts[key] = count;
   localStorage.setItem('wordCounts', JSON.stringify(savedWordCounts));
 }
 
-
 // State
 let latestStats: Stats[] = [];
-let currentMode: PracticeMode =
-  (localStorage.getItem('mode') as PracticeMode) || 'hanzi2pinyin';
+let currentMode: PracticeMode = (localStorage.getItem('mode') as PracticeMode) || 'hanzi2pinyin';
 let questions: PracticeQuestion[] = [];
 let currentIndex = 0;
 let results: Map<string, number> = new Map(); // hanzi -> round answered correctly (1 = first try)
@@ -449,20 +466,22 @@ function isPinyinMode(): boolean {
   return currentMode === 'hanzi2pinyin' || currentMode === 'english2pinyin';
 }
 
-
 // Session persistence
 function saveSession() {
-  sessionStorage.setItem('practiceSession', JSON.stringify({
-    currentMode,
-    characterMode,
-    questions,
-    allQuestions,
-    currentIndex,
-    results: [...results.entries()],
-    newWords: [...newWords],
-    incorrectThisRound,
-    roundNumber,
-  }));
+  sessionStorage.setItem(
+    'practiceSession',
+    JSON.stringify({
+      currentMode,
+      characterMode,
+      questions,
+      allQuestions,
+      currentIndex,
+      results: [...results.entries()],
+      newWords: [...newWords],
+      incorrectThisRound,
+      roundNumber,
+    })
+  );
 }
 
 function clearSession() {
@@ -493,11 +512,17 @@ function restoreSession(): boolean {
 }
 
 // Utility functions
+/**
+ * One sweep rather than a list per caller, so a screen added later cannot be forgotten in one
+ * of them — which is how the search screen came to be missing from showScreen's list.
+ */
+function hideAllScreens(): void {
+  document.querySelectorAll('.screen').forEach((screen) => screen.classList.remove('active'));
+}
+
+/** Switches between the screens the practice view owns; sentence practice never comes here */
 function showScreen(screen: HTMLElement) {
-  startScreen.classList.remove('active');
-  practiceScreen.classList.remove('active');
-  resultScreen.classList.remove('active');
-  addWordScreen.classList.remove('active');
+  hideAllScreens();
   screen.classList.add('active');
   lastPracticeScreen = screen;
 }
@@ -699,15 +724,19 @@ const BUCKET_LABELS = ['now', '5m', '30m', '4h', '1d', '3d', '7d', '14d', '30d',
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function makeBucketTimings(s: Stats): string {
-  return s.buckets.map((_, i) => `<span class="bucket-timing">${BUCKET_LABELS[i] ?? ''}</span>`).join('');
+  return s.buckets
+    .map((_, i) => `<span class="bucket-timing">${BUCKET_LABELS[i] ?? ''}</span>`)
+    .join('');
 }
 
 function makeBucketBar(s: Stats): string {
-  return s.buckets.map((count, i) => {
-    const due = s.dueBuckets[i] || 0;
-    const dueLabel = due > 0 ? `<span class="bucket-due">${due}</span> ` : '';
-    return `<span class="bucket-count" title="Bucket ${i}: ${count} total, ${due} due">${dueLabel}${count}</span>`;
-  }).join('');
+  return s.buckets
+    .map((count, i) => {
+      const due = s.dueBuckets[i] || 0;
+      const dueLabel = due > 0 ? `<span class="bucket-due">${due}</span> ` : '';
+      return `<span class="bucket-count" title="Bucket ${i}: ${count} total, ${due} due">${dueLabel}${count}</span>`;
+    })
+    .join('');
 }
 
 function makeForecastTimings(): string {
@@ -723,18 +752,23 @@ function makeForecastTimings(): string {
 
 function makeForecastBar(s: Stats): string {
   const today = new Date();
-  return (s.dueByDay ?? []).map((count, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() + i);
-    const dayLabel = i === 0 ? 'today' : d.toDateString();
-    const cls = count > 0 ? 'bucket-count forecast-count' : 'bucket-count forecast-count forecast-empty';
-    return `<span class="${cls}" title="${dayLabel}: ${count} due">${count}</span>`;
-  }).join('');
+  return (s.dueByDay ?? [])
+    .map((count, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      const dayLabel = i === 0 ? 'today' : d.toDateString();
+      const cls =
+        count > 0 ? 'bucket-count forecast-count' : 'bucket-count forecast-count forecast-empty';
+      return `<span class="${cls}" title="${dayLabel}: ${count} due">${count}</span>`;
+    })
+    .join('');
 }
 
 function updateStatsInPlace(stats: Stats[]): void {
   for (const s of stats) {
-    const card = statsDiv.querySelector(`.mode-card[data-key="${modeKey(s.mode, s.characterMode)}"]`);
+    const card = statsDiv.querySelector(
+      `.mode-card[data-key="${modeKey(s.mode, s.characterMode)}"]`
+    );
     if (!card) {
       return;
     }
@@ -785,7 +819,13 @@ async function renderStats(stats: Stats[]) {
       const presets = [10, 20, 30, 40, 50];
       const reviewCount = getModeWordCount(s.mode, cm, 'review');
       const randomCount = getModeWordCount(s.mode, cm, 'random');
-      const actionRow = (sel: string, btnClass: string, label: string, count: number, extra = '') => {
+      const actionRow = (
+        sel: string,
+        btnClass: string,
+        label: string,
+        count: number,
+        extra = ''
+      ) => {
         return `<div class="mode-card-actions action-row-${sel}">
           <span class="action-btn-combo ${btnClass}">
             <button class="${btnClass} action-btn-label" data-mode="${s.mode}" data-charmode="${cm}">${label}</button>
@@ -869,8 +909,6 @@ async function renderStats(stats: Stats[]) {
     });
   });
 
-
-
   // Due buttons — review all due words
   statsDiv.querySelectorAll('.due-mode-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -886,12 +924,18 @@ async function renderStats(stats: Stats[]) {
 
   function setPreviewBtnActive(key: string | null) {
     statsDiv.querySelectorAll('.mode-preview-btn').forEach((b) => {
-      b.classList.toggle('active', modeKey((b as HTMLElement).dataset.mode as PracticeMode, cardCharMode(b)) === key);
+      b.classList.toggle(
+        'active',
+        modeKey((b as HTMLElement).dataset.mode as PracticeMode, cardCharMode(b)) === key
+      );
     });
   }
   function setBrowseBtnActive(key: string | null) {
     statsDiv.querySelectorAll('.mode-browse-btn').forEach((b) => {
-      b.classList.toggle('active', modeKey((b as HTMLElement).dataset.mode as PracticeMode, cardCharMode(b)) === key);
+      b.classList.toggle(
+        'active',
+        modeKey((b as HTMLElement).dataset.mode as PracticeMode, cardCharMode(b)) === key
+      );
     });
   }
 
@@ -913,7 +957,9 @@ async function renderStats(stats: Stats[]) {
       }
       // Close any other open preview
       if (previewMode) {
-        const prev = statsDiv.querySelector(`.preview-section[data-key="${previewMode}"]`) as HTMLElement;
+        const prev = statsDiv.querySelector(
+          `.preview-section[data-key="${previewMode}"]`
+        ) as HTMLElement;
         prev.classList.add('hidden');
         prev.innerHTML = '';
       }
@@ -943,7 +989,9 @@ async function renderStats(stats: Stats[]) {
         return;
       }
       if (browseMode) {
-        const prev = statsDiv.querySelector(`.browse-section[data-key="${browseMode}"]`) as HTMLElement;
+        const prev = statsDiv.querySelector(
+          `.browse-section[data-key="${browseMode}"]`
+        ) as HTMLElement;
         prev.classList.add('hidden');
         prev.innerHTML = '';
       }
@@ -1038,7 +1086,11 @@ function getExcludedCategories(): string[] {
 }
 
 // Start practice
-async function handleStart(hanziList?: string[], wordSelection: string = 'review', countOverride?: number) {
+async function handleStart(
+  hanziList?: string[],
+  wordSelection: string = 'review',
+  countOverride?: number
+) {
   const count = countOverride ?? getModeWordCount(currentMode, characterMode, wordSelection);
 
   try {
@@ -1086,7 +1138,6 @@ function playAudio(hanzi: string) {
   audio.play().catch((err) => console.warn('Audio playback failed:', err));
 }
 
-
 // Make hanzi clickable for audio
 function clickableHanzi(hanzi: string, className: string): string {
   return `<span class="${className} clickable-hanzi" data-hanzi="${hanzi}">${hanzi}</span>`;
@@ -1123,17 +1174,20 @@ const ITEM_VISIBLE = 20;
 const CEDICT_REF_RE = /(?:([一-鿿]+)(?:\|([一-鿿]+))?)?\[([a-zA-Z0-9: ]+)\]/g;
 
 function formatCedictRefs(text: string): string {
-  return text.replace(CEDICT_REF_RE, (_match, trad: string | undefined, simp: string | undefined, pinyin: string) => {
-    let pretty: string;
-    try {
-      pretty = numberedToToneMarked(pinyin.trim());
-    } catch {
-      pretty = pinyin.trim();
+  return text.replace(
+    CEDICT_REF_RE,
+    (_match, trad: string | undefined, simp: string | undefined, pinyin: string) => {
+      let pretty: string;
+      try {
+        pretty = numberedToToneMarked(pinyin.trim());
+      } catch {
+        pretty = pinyin.trim();
+      }
+      const display = simp || trad;
+      const hanziHtml = display ? `<span class="cedict-ref-hanzi">${display}</span>` : '';
+      return `<span class="cedict-ref">${hanziHtml}<span class="cedict-ref-pinyin">${pretty}</span></span>`;
     }
-    const display = simp || trad;
-    const hanziHtml = display ? `<span class="cedict-ref-hanzi">${display}</span>` : '';
-    return `<span class="cedict-ref">${hanziHtml}<span class="cedict-ref-pinyin">${pretty}</span></span>`;
-  });
+  );
 }
 
 // `Beijing dialect` must come before `dialect` so the longer match wins.
@@ -1233,7 +1287,11 @@ const PAREN_RE = /\(([^()]+)\)/g;
 // or null to let the caller fall back to character truncation. Among qualifying
 // parentheticals we collapse the smallest one that suffices — only hide more
 // than necessary when a single collapse isn't enough (then the caller truncates).
-function tryParenCollapse(segments: Segment[], displayLen: number, fullText: string): string | null {
+function tryParenCollapse(
+  segments: Segment[],
+  displayLen: number,
+  fullText: string
+): string | null {
   let best: { si: number; open: number; closeEnd: number; save: number } | null = null;
   for (let si = 0; si < segments.length; si++) {
     const seg = segments[si];
@@ -1466,9 +1524,11 @@ function showQuestion() {
 
   answerInput.value = '';
   answerInput.placeholder =
-    currentMode === 'english2hanzi' ? 'Enter hanzi…' :
-    currentMode === 'english2pinyin' || currentMode === 'hanzi2pinyin' ? 'Enter pinyin…' :
-    'Enter English…';
+    currentMode === 'english2hanzi'
+      ? 'Enter hanzi…'
+      : currentMode === 'english2pinyin' || currentMode === 'hanzi2pinyin'
+        ? 'Enter pinyin…'
+        : 'Enter English…';
   pendingAudioData = null;
   speechAttemptCount = 0;
   answerInput.classList.remove('has-audio', 'recording', 'assessing', 'invalid');
@@ -1522,8 +1582,8 @@ function formatTreeNodes(nodes: CharacterInfo[], isRoot: boolean): string {
         ? `<span class="tree-prefix-mirror" aria-hidden="true">${componentsToggle}${hanziSpan}<button type="button" class="tree-alt-toggle" tabindex="-1">▸</button></span>`
         : '';
       const altBlock = hasAlternates
-        ? `<div class="tree-alternates hidden">${node.alternates!
-            .map(
+        ? `<div class="tree-alternates hidden">${node
+            .alternates!.map(
               (a) =>
                 `<div class="tree-alt">${altRowPrefix}<span class="tree-pinyin">${a.pinyin}</span><span class="tree-meaning">${formatTranslationsTruncated(a.meaning)}</span></div>`
             )
@@ -1614,15 +1674,26 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
     skipBtn.classList.remove('hidden');
 
     submitBlocked = true;
-    const unblock = () => { submitBlocked = false; };
+    const unblock = () => {
+      submitBlocked = false;
+    };
     const timer = setTimeout(unblock, 1000);
-    answerInput.addEventListener('input', () => { clearTimeout(timer); unblock(); }, { once: true });
+    answerInput.addEventListener(
+      'input',
+      () => {
+        clearTimeout(timer);
+        unblock();
+      },
+      { once: true }
+    );
     saveSession();
   });
 
   if (showSynonymBtn) {
     document.getElementById('synonym-btn')!.addEventListener('click', () => {
-      setFeedbackActions(`<div class="synonym-input-row"><div class="synonym-search-container"><input type="text" id="synonym-hanzi-input" placeholder="Search learned words by hanzi or pinyin" class="synonym-hanzi-input" autocomplete="off"><div id="synonym-hanzi-suggestions" class="category-suggestions synonym-suggestions hidden"></div></div><button id="synonym-confirm-btn" class="primary-btn">Confirm</button><button id="synonym-cancel-btn" class="secondary-btn">Cancel</button></div><div id="synonym-search-hint" class="synonym-search-hint hidden"></div>`);
+      setFeedbackActions(
+        `<div class="synonym-input-row"><div class="synonym-search-container"><input type="text" id="synonym-hanzi-input" placeholder="Search learned words by hanzi or pinyin" class="synonym-hanzi-input" autocomplete="off"><div id="synonym-hanzi-suggestions" class="category-suggestions synonym-suggestions hidden"></div></div><button id="synonym-confirm-btn" class="primary-btn">Confirm</button><button id="synonym-cancel-btn" class="secondary-btn">Cancel</button></div><div id="synonym-search-hint" class="synonym-search-hint hidden"></div>`
+      );
       const synonymInput = document.getElementById('synonym-hanzi-input') as HTMLInputElement;
       const synonymDropdown = document.getElementById('synonym-hanzi-suggestions')!;
       const synonymHint = document.getElementById('synonym-search-hint')!;
@@ -1645,9 +1716,18 @@ function showIncorrectFeedback(question: PracticeQuestion, prefix?: string) {
           skipBtn.classList.remove('hidden');
 
           submitBlocked = true;
-          const unblock = () => { submitBlocked = false; };
+          const unblock = () => {
+            submitBlocked = false;
+          };
           const timer = setTimeout(unblock, 1000);
-          answerInput.addEventListener('input', () => { clearTimeout(timer); unblock(); }, { once: true });
+          answerInput.addEventListener(
+            'input',
+            () => {
+              clearTimeout(timer);
+              unblock();
+            },
+            { once: true }
+          );
         } catch (error) {
           console.error('Failed to save synonym:', error);
           setFeedbackActions(`<span class="error">Failed to save synonym</span>`);
@@ -1686,7 +1766,6 @@ function showTryAgain(message: string) {
   setFeedbackActions('');
 }
 
-
 // Show final feedback (correct, incorrect, or skip) with common post-feedback actions
 function showFinalFeedback(
   question: PracticeQuestion,
@@ -1717,7 +1796,10 @@ function showFinalFeedback(
     if (nextBlockedTimer !== null) {
       clearTimeout(nextBlockedTimer);
     }
-    nextBlockedTimer = setTimeout(() => { nextBlocked = false; nextBlockedTimer = null; }, 1000);
+    nextBlockedTimer = setTimeout(() => {
+      nextBlocked = false;
+      nextBlockedTimer = null;
+    }, 1000);
   }
   saveSession();
 }
@@ -1735,7 +1817,10 @@ async function handleSubmit() {
   }
 
   // Validate pinyin input for pinyin-answer modes
-  if ((currentMode === 'hanzi2pinyin' || currentMode === 'english2pinyin') && !validatePinyin(answer)) {
+  if (
+    (currentMode === 'hanzi2pinyin' || currentMode === 'english2pinyin') &&
+    !validatePinyin(answer)
+  ) {
     feedbackDiv.classList.remove('hidden', 'correct', 'incorrect', 'synonym');
     feedbackDiv.classList.add('incorrect');
     feedbackDiv.innerHTML = 'Not valid pinyin. Use tone marks (zhōng) or tone numbers (zhong1).';
@@ -1764,9 +1849,18 @@ async function handleSubmit() {
       submitBtn.disabled = false;
 
       submitBlocked = true;
-      const unblock = () => { submitBlocked = false; };
+      const unblock = () => {
+        submitBlocked = false;
+      };
       const timer = setTimeout(unblock, 1000);
-      answerInput.addEventListener('input', () => { clearTimeout(timer); unblock(); }, { once: true });
+      answerInput.addEventListener(
+        'input',
+        () => {
+          clearTimeout(timer);
+          unblock();
+        },
+        { once: true }
+      );
       return;
     }
 
@@ -1829,11 +1923,7 @@ async function finishPractice() {
       };
     });
 
-    const response = await completePractice(
-      currentMode,
-      resultArray,
-      characterMode
-    );
+    const response = await completePractice(currentMode, resultArray, characterMode);
     const progressMap = new Map(response.progress.map((p) => [p.hanzi, p]));
 
     // Show results
@@ -1973,7 +2063,7 @@ resetWordBtn.addEventListener('click', async () => {
       await resetWordBucket(hanzi, currentMode, toCharacterModeOnly);
     }
     // Remove this word from all remaining state
-    questions = questions.filter((q, i) => i === currentIndex ? false : q.word.hanzi !== hanzi);
+    questions = questions.filter((q, i) => (i === currentIndex ? false : q.word.hanzi !== hanzi));
     incorrectThisRound = incorrectThisRound.filter((q) => q.word.hanzi !== hanzi);
     allQuestions = allQuestions.filter((q) => q.word.hanzi !== hanzi);
     results.delete(hanzi);
@@ -2019,7 +2109,9 @@ async function submitPendingAudio() {
     const failThreshold = speechAttemptCount === 1 ? 0 : 30;
 
     if (result.synonym && score >= 50) {
-      showTryAgain(`✓ "${result.synonym}" is correct, but not the word I'm looking for. Try again!`);
+      showTryAgain(
+        `✓ "${result.synonym}" is correct, but not the word I'm looking for. Try again!`
+      );
     } else if (score >= 50) {
       if (!results.has(question.word.hanzi)) {
         results.set(question.word.hanzi, roundNumber);
@@ -2154,7 +2246,11 @@ resetProgressBtn.addEventListener('click', async () => {
   }
 });
 
-async function withButtonBusy<T>(btn: HTMLButtonElement, busyLabel: string, fn: () => Promise<T>): Promise<T | undefined> {
+async function withButtonBusy<T>(
+  btn: HTMLButtonElement,
+  busyLabel: string,
+  fn: () => Promise<T>
+): Promise<T | undefined> {
   const original = btn.textContent;
   btn.disabled = true;
   btn.textContent = busyLabel;
@@ -2172,11 +2268,16 @@ regenAudioBtn.addEventListener('click', async () => {
     return;
   }
   try {
-    const updated = await withButtonBusy(regenAudioBtn, 'Regenerating…', () => regenerateAudio(hanzi));
+    const updated = await withButtonBusy(regenAudioBtn, 'Regenerating…', () =>
+      regenerateAudio(hanzi)
+    );
     audioCacheBust.set(hanzi, Date.now());
     showAddWordStatus(`Regenerated audio for "${hanzi}"`, 'success');
   } catch (error) {
-    showAddWordStatus(error instanceof Error ? error.message : 'Failed to regenerate audio', 'error');
+    showAddWordStatus(
+      error instanceof Error ? error.message : 'Failed to regenerate audio',
+      'error'
+    );
   }
 });
 
@@ -2190,16 +2291,24 @@ makeCharOnlyBtn.addEventListener('click', async () => {
     return;
   }
   try {
-    const { changed } = await withButtonBusy(makeCharOnlyBtn, 'Updating…', () => makeProgressCharOnly(hanzi)) ?? { changed: 0 };
+    const { changed } = (await withButtonBusy(makeCharOnlyBtn, 'Updating…', () =>
+      makeProgressCharOnly(hanzi)
+    )) ?? { changed: 0 };
     makeCharOnlyBtn.disabled = true;
     if (changed > 0) {
-      showAddWordStatus(`Marked ${changed} progress row${changed === 1 ? '' : 's'} char-only for "${hanzi}"`, 'success');
+      showAddWordStatus(
+        `Marked ${changed} progress row${changed === 1 ? '' : 's'} char-only for "${hanzi}"`,
+        'success'
+      );
     } else {
       showAddWordStatus(`No word-mode progress to convert for "${hanzi}"`, 'success');
     }
     loadStats();
   } catch (error) {
-    showAddWordStatus(error instanceof Error ? error.message : 'Failed to convert progress', 'error');
+    showAddWordStatus(
+      error instanceof Error ? error.message : 'Failed to convert progress',
+      'error'
+    );
   }
 });
 
@@ -2213,16 +2322,24 @@ makeWordModeBtn.addEventListener('click', async () => {
     return;
   }
   try {
-    const { changed } = await withButtonBusy(makeWordModeBtn, 'Updating…', () => makeProgressWordMode(hanzi)) ?? { changed: 0 };
+    const { changed } = (await withButtonBusy(makeWordModeBtn, 'Updating…', () =>
+      makeProgressWordMode(hanzi)
+    )) ?? { changed: 0 };
     makeWordModeBtn.disabled = true;
     if (changed > 0) {
-      showAddWordStatus(`Promoted ${changed} progress row${changed === 1 ? '' : 's'} to word mode for "${hanzi}"`, 'success');
+      showAddWordStatus(
+        `Promoted ${changed} progress row${changed === 1 ? '' : 's'} to word mode for "${hanzi}"`,
+        'success'
+      );
     } else {
       showAddWordStatus(`No char-only progress to convert for "${hanzi}"`, 'success');
     }
     loadStats();
   } catch (error) {
-    showAddWordStatus(error instanceof Error ? error.message : 'Failed to convert progress', 'error');
+    showAddWordStatus(
+      error instanceof Error ? error.message : 'Failed to convert progress',
+      'error'
+    );
   }
 });
 
@@ -2232,7 +2349,9 @@ regenExamplesBtn.addEventListener('click', async () => {
     return;
   }
   try {
-    const updated = await withButtonBusy(regenExamplesBtn, 'Regenerating…', () => regenerateExamples(hanzi));
+    const updated = await withButtonBusy(regenExamplesBtn, 'Regenerating…', () =>
+      regenerateExamples(hanzi)
+    );
     if (updated) {
       for (const q of [...questions, ...allQuestions, ...incorrectThisRound]) {
         if (q.word.hanzi === hanzi) {
@@ -2242,7 +2361,10 @@ regenExamplesBtn.addEventListener('click', async () => {
     }
     showAddWordStatus(`Regenerated examples for "${hanzi}"`, 'success');
   } catch (error) {
-    showAddWordStatus(error instanceof Error ? error.message : 'Failed to regenerate examples', 'error');
+    showAddWordStatus(
+      error instanceof Error ? error.message : 'Failed to regenerate examples',
+      'error'
+    );
   }
 });
 
@@ -2275,29 +2397,41 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-
 // Pagination helpers shared by preview/browse
 function paginationHtml(offset: number, count: number, total: number): string {
   const pageStart = offset + 1;
   const pageEnd = offset + count;
   const hasPrev = offset > 0;
   const hasNext = pageEnd < total;
-  const pageSizeOpts = PAGE_SIZE_OPTIONS.map((n) =>
-    `<option value="${n}"${n === pageSize ? ' selected' : ''}>${n} per page</option>`
+  const pageSizeOpts = PAGE_SIZE_OPTIONS.map(
+    (n) => `<option value="${n}"${n === pageSize ? ' selected' : ''}>${n} per page</option>`
   ).join('');
-  return `<div class="preview-pagination">` +
+  return (
+    `<div class="preview-pagination">` +
     `<button class="pagination-prev secondary-btn" ${hasPrev ? '' : 'disabled'}>Prev</button>` +
     `<span class="preview-page-info">${pageStart}–${pageEnd} of ${total}</span>` +
     `<button class="pagination-next secondary-btn" ${hasNext ? '' : 'disabled'}>Next</button>` +
     `<select class="page-size-select">${pageSizeOpts}</select>` +
-    `</div>`;
+    `</div>`
+  );
 }
 
-function bindPagination(section: Element, onPrev: () => void, onNext: () => void, onPageSize: (size: number) => void): void {
-  section.querySelectorAll('.pagination-prev').forEach((b) => b.addEventListener('click', () => onPrev()));
-  section.querySelectorAll('.pagination-next').forEach((b) => b.addEventListener('click', () => onNext()));
+function bindPagination(
+  section: Element,
+  onPrev: () => void,
+  onNext: () => void,
+  onPageSize: (size: number) => void
+): void {
+  section
+    .querySelectorAll('.pagination-prev')
+    .forEach((b) => b.addEventListener('click', () => onPrev()));
+  section
+    .querySelectorAll('.pagination-next')
+    .forEach((b) => b.addEventListener('click', () => onNext()));
   section.querySelectorAll('.page-size-select').forEach((sel) => {
-    sel.addEventListener('change', () => onPageSize(parseInt((sel as HTMLSelectElement).value, 10)));
+    sel.addEventListener('change', () =>
+      onPageSize(parseInt((sel as HTMLSelectElement).value, 10))
+    );
   });
 }
 
@@ -2357,7 +2491,9 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
   previewOffset = offset;
   const originalLabel = triggerBtn?.textContent ?? null;
   const loadingTimer = triggerBtn
-    ? setTimeout(() => { triggerBtn.textContent = 'Loading…'; }, 100)
+    ? setTimeout(() => {
+        triggerBtn.textContent = 'Loading…';
+      }, 100)
     : null;
   try {
     const { words, total, learnedElsewhere } = await previewNewWords(
@@ -2375,9 +2511,10 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     const selectLearnedLabel = characterMode
       ? `Select ${learnedElsewhere.length} from word mode`
       : `Select ${learnedElsewhere.length} from other modes`;
-    const selectLearnedHtml = learnedElsewhere.length > 0
-      ? `<label class="preview-select-all"><input type="checkbox" class="select-learned-cb"> ${selectLearnedLabel}</label>`
-      : '';
+    const selectLearnedHtml =
+      learnedElsewhere.length > 0
+        ? `<label class="preview-select-all"><input type="checkbox" class="select-learned-cb"> ${selectLearnedLabel}</label>`
+        : '';
 
     if (total === 0) {
       section.innerHTML = '<p class="preview-empty">No new words available.</p>';
@@ -2407,7 +2544,10 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
             : '';
           const resetTag = `<button class="preview-dismiss-btn" data-hanzi="${w.hanzi}">✕</button>`;
           const checked = previewSelected.has(w.hanzi) ? 'checked' : '';
-          const polishSpan = w.polish && w.polish.length > 0 ? ` <span class="preview-polish">${w.polish.join('; ')}</span>` : '';
+          const polishSpan =
+            w.polish && w.polish.length > 0
+              ? ` <span class="preview-polish">${w.polish.join('; ')}</span>`
+              : '';
           return `<label class="preview-word"><input type="checkbox" class="preview-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${polishSpan}${rankSpan}${cats}${resetTag}</label>`;
         })
         .join('') +
@@ -2437,12 +2577,24 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     selectAllCb.addEventListener('change', async (e) => {
       const checked = (e.target as HTMLInputElement).checked;
       if (checked) {
-        const { words: allWords } = await previewNewWords(currentMode, getSelectedCategories(), getExcludedCategories(), characterMode, previewTotal, 0, previewReverse);
+        const { words: allWords } = await previewNewWords(
+          currentMode,
+          getSelectedCategories(),
+          getExcludedCategories(),
+          characterMode,
+          previewTotal,
+          0,
+          previewReverse
+        );
         allWords.forEach((w) => previewSelected.add(w.hanzi));
-        section.querySelectorAll('.preview-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = true; });
+        section.querySelectorAll('.preview-checkbox').forEach((cb) => {
+          (cb as HTMLInputElement).checked = true;
+        });
       } else {
         previewSelected.clear();
-        section.querySelectorAll('.preview-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = false; });
+        section.querySelectorAll('.preview-checkbox').forEach((cb) => {
+          (cb as HTMLInputElement).checked = false;
+        });
       }
       updatePracticeSelectedBtn();
     });
@@ -2479,7 +2631,11 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       section,
       () => loadPreviewPage(Math.max(0, previewOffset - pageSize)),
       () => loadPreviewPage(previewOffset + pageSize),
-      (size) => { pageSize = size; localStorage.setItem('pageSize', String(size)); loadPreviewPage(0); },
+      (size) => {
+        pageSize = size;
+        localStorage.setItem('pageSize', String(size));
+        loadPreviewPage(0);
+      }
     );
 
     // Order toggle (segmented)
@@ -2498,7 +2654,8 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     // Select learned elsewhere handler
     const selectLearnedCb = section.querySelector('.select-learned-cb') as HTMLInputElement | null;
     if (selectLearnedCb) {
-      selectLearnedCb.checked = learnedElsewhere.length > 0 && learnedElsewhere.every((h) => previewSelected.has(h));
+      selectLearnedCb.checked =
+        learnedElsewhere.length > 0 && learnedElsewhere.every((h) => previewSelected.has(h));
       selectLearnedCb.addEventListener('change', () => {
         const checked = selectLearnedCb.checked;
         if (checked) {
@@ -2528,7 +2685,6 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
     }
   }
 }
-
 
 function getBrowseSection(): HTMLElement | null {
   if (!browseMode) return null;
@@ -2573,7 +2729,9 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
   browseOffset = offset;
   const originalLabel = triggerBtn?.textContent ?? null;
   const loadingTimer = triggerBtn
-    ? setTimeout(() => { triggerBtn.textContent = 'Loading…'; }, 100)
+    ? setTimeout(() => {
+        triggerBtn.textContent = 'Loading…';
+      }, 100)
     : null;
   try {
     const { words, total } = await browseUnqueuedWords(
@@ -2600,19 +2758,26 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
       `<button class="browse-learn-now-btn primary-btn" disabled>Mark as known</button>` +
       `<button class="browse-practice-btn primary-btn" disabled>Practice selected</button></div></div>` +
       pagerHtml +
-      words.map((w) => {
-        const ranks = [
-          w.wordFrequencyRank != null ? `word #${w.wordFrequencyRank}` : null,
-          w.hanziFrequencyRank != null ? `char #${w.hanziFrequencyRank}` : null,
-        ].filter(Boolean).join(', ');
-        const rankSpan = ranks ? ` <span class="preview-rank">${ranks}</span>` : '';
-        const cats = hasCategoryTags(w)
-          ? ` <span class="preview-categories">${categoryTagsHtml(w)}</span>`
-          : '';
-        const checked = browseSelected.has(w.hanzi) ? 'checked' : '';
-        const polishSpan = w.polish && w.polish.length > 0 ? ` <span class="preview-polish">${w.polish.join('; ')}</span>` : '';
-        return `<label class="preview-word"><input type="checkbox" class="browse-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${polishSpan}${rankSpan}${cats}</label>`;
-      }).join('') +
+      words
+        .map((w) => {
+          const ranks = [
+            w.wordFrequencyRank != null ? `word #${w.wordFrequencyRank}` : null,
+            w.hanziFrequencyRank != null ? `char #${w.hanziFrequencyRank}` : null,
+          ]
+            .filter(Boolean)
+            .join(', ');
+          const rankSpan = ranks ? ` <span class="preview-rank">${ranks}</span>` : '';
+          const cats = hasCategoryTags(w)
+            ? ` <span class="preview-categories">${categoryTagsHtml(w)}</span>`
+            : '';
+          const checked = browseSelected.has(w.hanzi) ? 'checked' : '';
+          const polishSpan =
+            w.polish && w.polish.length > 0
+              ? ` <span class="preview-polish">${w.polish.join('; ')}</span>`
+              : '';
+          return `<label class="preview-word"><input type="checkbox" class="browse-checkbox" data-hanzi="${w.hanzi}" ${checked}> ${clickableHanzi(w.hanzi, 'preview-hanzi')} <span class="preview-pinyin">${w.pinyin}</span> <span class="preview-english">${w.english.join('; ')}</span>${polishSpan}${rankSpan}${cats}</label>`;
+        })
+        .join('') +
       pagerHtml;
 
     const pageHanzis = words.map((w) => w.hanzi);
@@ -2636,12 +2801,23 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
     selectAllCb.addEventListener('change', async (e) => {
       const checked = (e.target as HTMLInputElement).checked;
       if (checked) {
-        const { words: allWords } = await browseUnqueuedWords(currentMode, getSelectedCategories(), getExcludedCategories(), characterMode, browseTotal, 0);
+        const { words: allWords } = await browseUnqueuedWords(
+          currentMode,
+          getSelectedCategories(),
+          getExcludedCategories(),
+          characterMode,
+          browseTotal,
+          0
+        );
         allWords.forEach((w) => browseSelected.add(w.hanzi));
-        section.querySelectorAll('.browse-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = true; });
+        section.querySelectorAll('.browse-checkbox').forEach((cb) => {
+          (cb as HTMLInputElement).checked = true;
+        });
       } else {
         browseSelected.clear();
-        section.querySelectorAll('.browse-checkbox').forEach((cb) => { (cb as HTMLInputElement).checked = false; });
+        section.querySelectorAll('.browse-checkbox').forEach((cb) => {
+          (cb as HTMLInputElement).checked = false;
+        });
       }
       updateBrowseActionBtns();
     });
@@ -2675,7 +2851,11 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
       section,
       () => loadBrowsePage(Math.max(0, browseOffset - pageSize)),
       () => loadBrowsePage(browseOffset + pageSize),
-      (size) => { pageSize = size; localStorage.setItem('pageSize', String(size)); loadBrowsePage(0); },
+      (size) => {
+        pageSize = size;
+        localStorage.setItem('pageSize', String(size));
+        loadBrowsePage(0);
+      }
     );
 
     updateBrowseActionBtns();
@@ -2879,7 +3059,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-
 // Add word form
 const addWordForm = document.getElementById('add-word-screen')!;
 const addHanziInput = document.getElementById('add-hanzi') as HTMLInputElement;
@@ -2912,7 +3091,7 @@ const queueAsNewLabel = document.getElementById('queue-as-new-label')!;
 function setQueueAsNewDisabled(disabled: boolean) {
   queueAsNewCb.disabled = disabled;
   queueAsNewLabel.classList.toggle('disabled', disabled);
-};
+}
 
 class TranslationList {
   values: string[] = [];
@@ -3729,10 +3908,7 @@ addWordBtn.addEventListener('click', async () => {
   }
 
   if (!validatePinyin(pinyin)) {
-    showAddWordStatus(
-      'Invalid pinyin. Use tone marks (zhōng) or tone numbers (zhong1).',
-      'error'
-    );
+    showAddWordStatus('Invalid pinyin. Use tone marks (zhōng) or tone numbers (zhong1).', 'error');
     return;
   }
 
@@ -3849,7 +4025,6 @@ function categoryTagsHtml(word: Word): string {
   return tags.join(' ');
 }
 
-
 /** The AI's usage note for a word, badged so its origin is obvious */
 function aiNotesHtml(word: Word): string {
   if (!word.aiNotes) {
@@ -3910,14 +4085,16 @@ function formatWordDetail(word: Word, progress: Progress[]): string {
   }
 
   const progressByMode = new Map(progress.map((p) => [p.mode, p]));
-  const progressParts = (['hanzi2pinyin', 'english2pinyin', 'english2hanzi'] as const).map((mode) => {
-    const p = progressByMode.get(mode);
-    const label = MODE_SHORT[mode];
-    if (!p || p.bucket === null) {
-      return `<span class="search-progress-item search-progress-none">${label}: —</span>`;
+  const progressParts = (['hanzi2pinyin', 'english2pinyin', 'english2hanzi'] as const).map(
+    (mode) => {
+      const p = progressByMode.get(mode);
+      const label = MODE_SHORT[mode];
+      if (!p || p.bucket === null) {
+        return `<span class="search-progress-item search-progress-none">${label}: —</span>`;
+      }
+      return `<span class="search-progress-item">${label}: bucket ${p.bucket} <span class="search-due-time">${formatDue(p.nextEligible)}</span></span>`;
     }
-    return `<span class="search-progress-item">${label}: bucket ${p.bucket} <span class="search-due-time">${formatDue(p.nextEligible)}</span></span>`;
-  });
+  );
   html += `<div class="search-progress">${progressParts.join('')}</div>`;
 
   if (word.examples.length > 0) {
@@ -3965,7 +4142,11 @@ function removeRelatedDuplicates() {
   searchResultsDiv.querySelectorAll('.search-result-duplicate').forEach((el) => el.remove());
 }
 
-function initModeGroup(group: HTMLElement, getCurrent: () => MatchMode, setCurrent: (m: MatchMode) => void) {
+function initModeGroup(
+  group: HTMLElement,
+  getCurrent: () => MatchMode,
+  setCurrent: (m: MatchMode) => void
+) {
   group.querySelectorAll<HTMLButtonElement>('.match-mode-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const mode = btn.dataset.mode as MatchMode;
@@ -3977,8 +4158,20 @@ function initModeGroup(group: HTMLElement, getCurrent: () => MatchMode, setCurre
   });
 }
 
-initModeGroup(hanziModeGroup, () => hanziMode, (m) => { hanziMode = m; });
-initModeGroup(pinyinModeGroup, () => pinyinMode, (m) => { pinyinMode = m; });
+initModeGroup(
+  hanziModeGroup,
+  () => hanziMode,
+  (m) => {
+    hanziMode = m;
+  }
+);
+initModeGroup(
+  pinyinModeGroup,
+  () => pinyinMode,
+  (m) => {
+    pinyinMode = m;
+  }
+);
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -4056,17 +4249,19 @@ function highlightEnglish(english: string[], englishQuery: string): string {
   const q = englishQuery.toLowerCase();
   const qEscaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const re = new RegExp(`\\b${qEscaped}`, 'gi');
-  return english.map((def) => {
-    let result = '';
-    let lastIndex = 0;
-    for (const m of def.matchAll(re)) {
-      result += escapeHtml(def.slice(lastIndex, m.index));
-      result += `<mark class="search-match">${escapeHtml(def.slice(m.index, m.index + q.length))}</mark>`;
-      lastIndex = m.index + q.length;
-    }
-    result += escapeHtml(def.slice(lastIndex));
-    return result;
-  }).join(sep);
+  return english
+    .map((def) => {
+      let result = '';
+      let lastIndex = 0;
+      for (const m of def.matchAll(re)) {
+        result += escapeHtml(def.slice(lastIndex, m.index));
+        result += `<mark class="search-match">${escapeHtml(def.slice(m.index, m.index + q.length))}</mark>`;
+        lastIndex = m.index + q.length;
+      }
+      result += escapeHtml(def.slice(lastIndex));
+      return result;
+    })
+    .join(sep);
 }
 
 function renderSearchResults(
@@ -4088,19 +4283,22 @@ function renderSearchResults(
     <span class="search-rank-col">Char</span>
   </div>`;
 
-  searchResultsDiv.innerHTML = header + results
-    .map((r) => {
-      const hanziHtml = highlightHanzi(r.word.hanzi, hanziQ, hanziMode);
-      const pinyinHtml = highlightPinyin(r.word.pinyin, pinyinQ, pinyinMode);
-      const englishHtml = highlightEnglish(r.word.english, englishQ);
-      const polishInline = r.word.polish && r.word.polish.length > 0
-        ? `<div class="search-polish">${r.word.polish.map((p) => escapeHtml(p)).join('; ')}</div>`
-        : '';
-      const wordRank = r.word.wordFrequencyRank != null ? `#${r.word.wordFrequencyRank}` : '—';
-      const charRank = r.word.hanziFrequencyRank != null ? `#${r.word.hanziFrequencyRank}` : '—';
-      const queuedClass = r.queued ? ' search-result-queued' : '';
-      const queuedTitle = r.queued ? ' title="Queued for practice, not yet learned"' : '';
-      return `<div class="search-result${queuedClass}" data-hanzi="${escapeHtml(r.word.hanzi)}"${queuedTitle}>
+  searchResultsDiv.innerHTML =
+    header +
+    results
+      .map((r) => {
+        const hanziHtml = highlightHanzi(r.word.hanzi, hanziQ, hanziMode);
+        const pinyinHtml = highlightPinyin(r.word.pinyin, pinyinQ, pinyinMode);
+        const englishHtml = highlightEnglish(r.word.english, englishQ);
+        const polishInline =
+          r.word.polish && r.word.polish.length > 0
+            ? `<div class="search-polish">${r.word.polish.map((p) => escapeHtml(p)).join('; ')}</div>`
+            : '';
+        const wordRank = r.word.wordFrequencyRank != null ? `#${r.word.wordFrequencyRank}` : '—';
+        const charRank = r.word.hanziFrequencyRank != null ? `#${r.word.hanziFrequencyRank}` : '—';
+        const queuedClass = r.queued ? ' search-result-queued' : '';
+        const queuedTitle = r.queued ? ' title="Queued for practice, not yet learned"' : '';
+        return `<div class="search-result${queuedClass}" data-hanzi="${escapeHtml(r.word.hanzi)}"${queuedTitle}>
       <div class="search-result-summary">
         <span class="search-col-focus"><button class="search-focus-btn" data-hanzi="${escapeHtml(r.word.hanzi)}"></button></span>
         <span class="search-hanzi">${hanziHtml}</span>
@@ -4111,10 +4309,12 @@ function renderSearchResults(
       </div>
       <div class="search-detail hidden">${formatWordDetail(r.word, r.progress)}</div>
     </div>`;
-    })
-    .join('');
+      })
+      .join('');
 
-  originalResultOrder = Array.from(searchResultsDiv.querySelectorAll<HTMLElement>('.search-result'));
+  originalResultOrder = Array.from(
+    searchResultsDiv.querySelectorAll<HTMLElement>('.search-result')
+  );
 
   searchResultsDiv.querySelectorAll<HTMLElement>('.search-result').forEach((el) => {
     el.querySelector('.search-result-summary')!.addEventListener('click', () => {
@@ -4135,7 +4335,6 @@ function renderSearchResults(
         expandedSearchEl = el;
       }
     });
-
 
     el.querySelector('.search-focus-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -4200,14 +4399,250 @@ for (const input of [searchHanziInput, searchPinyinInput, searchEnglishInput]) {
   });
 }
 
-// Initialize
-if (!restoreSession()) {
-  const initialView = viewFromPath();
-  if (initialView === 'practice') {
-    showScreen(startScreen);
-  } else {
-    showView(initialView, false);
+// ---------------------------------------------------------------------------------------------
+// Sentence practice: translate an English sentence into Chinese, and have the AI mark it.
+//
+// Deliberately apart from the SRS flow above — nothing here is stored, so there is no bucket, no
+// schedule and no result screen. The server hands over the whole pool in a random order, which
+// is what lets a session see every sentence before it sees one twice without anything having to
+// remember what was asked.
+// ---------------------------------------------------------------------------------------------
+
+const sentencePrompt = document.getElementById('sentence-prompt')!;
+const sentenceFeedback = document.getElementById('sentence-feedback')!;
+const sentenceInput = document.getElementById('sentence-input') as HTMLInputElement;
+const sentenceSubmitBtn = document.getElementById('sentence-submit-btn') as HTMLButtonElement;
+const sentenceSkipBtn = document.getElementById('sentence-skip-btn') as HTMLButtonElement;
+const sentenceActions = document.getElementById('sentence-actions')!;
+const sentenceNextBtn = document.getElementById('sentence-next-btn')!;
+const sentenceProgressText = document.getElementById('sentence-progress-text')!;
+
+let sentenceQuestions: SentenceQuestion[] = [];
+let sentenceIndex = 0;
+let sentencePassed = 0;
+/** A grading request is in flight */
+let sentenceGrading = false;
+/** This sentence has been answered and the reference is on screen */
+let sentenceAnswered = false;
+
+type SentenceOutcome =
+  | { kind: 'graded'; grading: SentenceGradeResponse; exact: boolean }
+  | { kind: 'skipped' }
+  | { kind: 'ungraded'; message: string };
+
+const SENTENCE_VERDICT_LABEL: Record<SentenceGradeResponse['verdict'], string> = {
+  correct: '✓ Correct',
+  acceptable: '✓ Acceptable',
+  wrong: '✗ Not quite',
+};
+
+/** correct and acceptable both count; only the colour distinguishes them */
+const SENTENCE_VERDICT_CLASS: Record<SentenceGradeResponse['verdict'], string> = {
+  correct: 'correct',
+  acceptable: 'synonym',
+  wrong: 'incorrect',
+};
+
+function currentSentence(): SentenceQuestion | undefined {
+  return sentenceQuestions[sentenceIndex];
+}
+
+/** Fetches a shuffled pool the first time the view is opened, and reshuffles when it runs out */
+async function ensureSentenceSession(): Promise<void> {
+  if (sentenceQuestions.length > 0) {
+    // Coming back to the view mid-sentence should not lose your place
+    if (!sentenceAnswered) {
+      sentenceInput.focus();
+    }
+    return;
   }
+  sentencePrompt.textContent = 'Loading sentences…';
+  try {
+    const { questions } = await getSentenceQuestions();
+    sentenceQuestions = questions;
+    sentenceIndex = 0;
+    sentencePassed = 0;
+    showSentenceQuestion();
+  } catch (error) {
+    sentencePrompt.textContent =
+      error instanceof Error ? error.message : 'Could not load sentences';
+  }
+}
+
+function showSentenceQuestion(): void {
+  const question = currentSentence();
+  if (!question) {
+    return;
+  }
+  sentenceAnswered = false;
+  sentencePrompt.textContent = question.english;
+  sentencePrompt.classList.remove('hidden');
+  sentenceFeedback.className = 'feedback hidden';
+  sentenceFeedback.innerHTML = '';
+  sentenceInput.value = '';
+  sentenceInput.disabled = false;
+  sentenceSubmitBtn.classList.remove('hidden');
+  sentenceSkipBtn.classList.remove('hidden');
+  sentenceActions.classList.add('hidden');
+  sentenceProgressText.textContent = `Sentence ${sentenceIndex + 1} of ${sentenceQuestions.length} · ${sentencePassed} right`;
+  sentenceInput.focus();
+}
+
+function referenceHtml(question: SentenceQuestion): string {
+  // Not clickableHanzi: audio is generated per word, and these sentences have no file, so a
+  // clickable reference would be a dead click on every card
+  return (
+    `<span class="sentence-reference"><span class="sentence-label">Reference</span>` +
+    `<span class="ex-hanzi">${escapeHtml(question.reference.hanzi)}</span> ` +
+    `<span class="ex-pinyin">${escapeHtml(question.reference.pinyin)}</span></span>`
+  );
+}
+
+function revealSentence(outcome: SentenceOutcome): void {
+  const question = currentSentence();
+  if (!question) {
+    return;
+  }
+
+  let cssClass: string;
+  let parts: string;
+
+  if (outcome.kind === 'graded') {
+    const { verdict, explanation, suggestion } = outcome.grading;
+    cssClass = SENTENCE_VERDICT_CLASS[verdict];
+    parts = `<span class="verdict">${SENTENCE_VERDICT_LABEL[verdict]}</span>`;
+    if (explanation) {
+      parts += `<span class="explanation">${escapeHtml(explanation)}</span>`;
+    }
+    if (suggestion) {
+      parts +=
+        `<span class="sentence-suggestion"><span class="sentence-label">Try</span>` +
+        `<span class="ex-hanzi">${escapeHtml(suggestion)}</span></span>`;
+    }
+    // Typing the reference itself needs no reference shown back
+    if (!outcome.exact) {
+      parts += referenceHtml(question);
+    }
+    if (verdict !== 'wrong') {
+      sentencePassed++;
+    }
+  } else if (outcome.kind === 'skipped') {
+    cssClass = 'synonym';
+    parts = `<span class="verdict">Skipped</span>${referenceHtml(question)}`;
+  } else {
+    cssClass = 'synonym';
+    parts =
+      `<span class="verdict">Couldn't grade that</span>` +
+      `<span class="explanation">${escapeHtml(outcome.message)}</span>` +
+      referenceHtml(question);
+  }
+
+  sentenceFeedback.className = `feedback ${cssClass}`;
+  sentenceFeedback.innerHTML = parts;
+  sentenceAnswered = true;
+  sentenceInput.disabled = true;
+  sentenceSubmitBtn.classList.add('hidden');
+  sentenceSkipBtn.classList.add('hidden');
+  sentenceActions.classList.remove('hidden');
+  sentenceProgressText.textContent = `Sentence ${sentenceIndex + 1} of ${sentenceQuestions.length} · ${sentencePassed} right`;
+  sentenceNextBtn.focus();
+}
+
+async function handleSentenceSubmit(): Promise<void> {
+  const question = currentSentence();
+  if (!question || sentenceGrading || sentenceAnswered) {
+    return;
+  }
+  const answer = sentenceInput.value.trim();
+  if (answer === '') {
+    handleSentenceSkip();
+    return;
+  }
+
+  // The server checks this too, but doing it here means an exact answer costs neither a round
+  // trip nor an AI call
+  if (sentenceMatches(answer, question.reference.hanzi)) {
+    revealSentence({
+      kind: 'graded',
+      exact: true,
+      grading: { verdict: 'correct', explanation: '' },
+    });
+    return;
+  }
+
+  sentenceGrading = true;
+  sentenceInput.disabled = true;
+  sentenceFeedback.className = 'feedback pending';
+  sentenceFeedback.textContent = 'Grading your answer…';
+  try {
+    const grading = await withButtonBusy(sentenceSubmitBtn, 'Grading…', () =>
+      gradeSentence(question.hanzi, answer)
+    );
+    if (grading) {
+      revealSentence({ kind: 'graded', grading, exact: false });
+    }
+  } catch (error) {
+    // The reference is already here, so a grader that is down costs the marking, not the lesson
+    revealSentence({
+      kind: 'ungraded',
+      message: error instanceof Error ? error.message : 'Grading failed',
+    });
+  } finally {
+    sentenceGrading = false;
+  }
+}
+
+/** Nothing to grade, and nothing to bill for grading it */
+function handleSentenceSkip(): void {
+  if (sentenceGrading || sentenceAnswered || !currentSentence()) {
+    return;
+  }
+  revealSentence({ kind: 'skipped' });
+}
+
+function handleSentenceNext(): void {
+  if (sentenceGrading) {
+    return;
+  }
+  sentenceIndex++;
+  if (sentenceIndex >= sentenceQuestions.length) {
+    // Round the pool again, in a fresh order
+    sentenceQuestions = [];
+    void ensureSentenceSession();
+    return;
+  }
+  showSentenceQuestion();
+}
+
+sentenceSubmitBtn.addEventListener('click', () => void handleSentenceSubmit());
+sentenceSkipBtn.addEventListener('click', handleSentenceSkip);
+sentenceNextBtn.addEventListener('click', handleSentenceNext);
+
+sentenceInput.addEventListener('keydown', (e) => {
+  // The whole mode is typed through a Chinese IME, where Enter accepts a candidate rather than
+  // submitting anything
+  if (e.isComposing || e.key !== 'Enter') {
+    return;
+  }
+  e.stopPropagation();
+  void handleSentenceSubmit();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.isComposing || currentView !== 'sentences' || e.key !== 'Enter') {
+    return;
+  }
+  if (!sentenceActions.classList.contains('hidden')) {
+    handleSentenceNext();
+  }
+});
+
+// Initialize. A saved session only speaks for the practice view, so the path wins elsewhere.
+const initialView = viewFromPath();
+if (initialView !== 'practice') {
+  showView(initialView, false);
+} else if (!restoreSession()) {
+  showScreen(startScreen);
 }
 loadStats();
 setInterval(() => {

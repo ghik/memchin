@@ -11,6 +11,7 @@
     <nav class="sidebar">
       <h2 class="sidebar-title">Memchin</h2>
       <a class="nav-item active" data-view="practice" href="/">Practice</a>
+      <a class="nav-item" data-view="sentences" href="/sentences">Sentences</a>
       <a class="nav-item" data-view="search" href="/explore">Explore</a>
       <a class="nav-item" data-view="add-word" href="/add">Add Word</a>
     </nav>
@@ -46,7 +47,7 @@
         </div>
       </div>
 
-      <div id="practice-screen" class="screen">
+      <div id="practice-screen" class="screen answer-flow">
         <div class="progress-bar">
           <span id="progress-text">Question 1 of 10</span>
         </div>
@@ -73,6 +74,27 @@
         <div class="quit-actions">
           <button id="finish-btn" class="quit-btn">Finish &amp; save progress</button>
           <button id="quit-btn" class="quit-btn">Quit without saving</button>
+        </div>
+      </div>
+
+      <div id="sentence-screen" class="screen answer-flow">
+        <div class="progress-bar">
+          <span id="sentence-progress-text"></span>
+        </div>
+
+        <div id="sentence-prompt" class="prompt english-prompt"></div>
+        <div id="sentence-feedback" class="feedback hidden"></div>
+
+        <div class="answer-section">
+          <input type="text" id="sentence-input" placeholder="Type the Chinese…" autocomplete="off" lang="zh-Hans">
+          <div class="answer-buttons">
+            <button id="sentence-submit-btn" class="primary-btn">Submit</button>
+            <button id="sentence-skip-btn" class="secondary-btn">I don't know</button>
+          </div>
+        </div>
+
+        <div class="practice-actions hidden" id="sentence-actions">
+          <button id="sentence-next-btn" class="primary-btn">Next</button>
         </div>
       </div>
 

@@ -195,3 +195,39 @@ export interface SearchResult {
 }
 
 export type MatchMode = 'prefix' | 'contains' | 'suffix' | 'exact';
+
+/**
+ * How the AI marked a sentence the learner translated:
+ * - `correct` — says what the English says, grammatical, and how a native would put it. The
+ *   wording need not match the reference: there is more than one right answer.
+ * - `acceptable` — understandable, grammatical and faithful, but not what a native reaches
+ *   for first. Counts as a pass.
+ * - `wrong` — a grammar or vocabulary mistake, or Chinese that does not say what was asked.
+ */
+export type SentenceVerdict = 'correct' | 'acceptable' | 'wrong';
+
+/** One sentence to translate: the English is the prompt, the reference one right answer */
+export interface SentenceQuestion {
+  /** The deck word this example belongs to — how the server finds the reference again */
+  hanzi: string;
+  english: string;
+  /** Shown once the learner has committed to an answer of their own */
+  reference: Example;
+}
+
+export interface SentenceQuestionsResponse {
+  questions: SentenceQuestion[];
+}
+
+export interface SentenceGradeRequest {
+  hanzi: string;
+  answer: string;
+}
+
+export interface SentenceGradeResponse {
+  verdict: SentenceVerdict;
+  /** Why, in English. Empty only when the answer was the reference itself. */
+  explanation: string;
+  /** The learner's own sentence corrected — never merely the reference */
+  suggestion?: string;
+}

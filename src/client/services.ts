@@ -11,6 +11,8 @@ import type {
   PracticeResult,
   Progress,
   SearchResult,
+  SentenceGradeResponse,
+  SentenceQuestionsResponse,
   SpeechAssessResponse,
   StartResponse,
   Stats,
@@ -29,6 +31,9 @@ export type {
   PracticeQuestion,
   Progress,
   SearchResult,
+  SentenceGradeResponse,
+  SentenceQuestion,
+  SentenceVerdict,
   SynonymEntry,
   Word,
   WordProgress,
@@ -326,4 +331,12 @@ export async function assessSpeech(audio: ArrayBuffer, hanzi: string): Promise<S
     throw new Error(body.error || 'Speech assessment failed');
   }
   return response.json();
+}
+
+export function getSentenceQuestions(): Promise<SentenceQuestionsResponse> {
+  return apiGet<SentenceQuestionsResponse>('/sentences/questions');
+}
+
+export function gradeSentence(hanzi: string, answer: string): Promise<SentenceGradeResponse> {
+  return apiPost<SentenceGradeResponse>('/sentences/grade', { hanzi, answer });
 }

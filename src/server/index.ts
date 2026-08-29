@@ -22,6 +22,7 @@ import { describeCharacter } from './services/character-entry.js';
 import wordsRouter from './routes/words.js';
 import practiceRouter from './routes/practice.js';
 import refreshRouter from './routes/refresh.js';
+import sentencesRouter from './routes/sentences.js';
 import { abortRefresh } from './services/word-refresh.js';
 import type { Example } from '../shared/types.js';
 
@@ -152,6 +153,7 @@ async function main() {
   app.use('/api/words', wordsRouter);
   app.use('/api/practice', practiceRouter);
   app.use('/api/refresh', refreshRouter);
+  app.use('/api/sentences', sentencesRouter);
   app.get('/api/categories', (_req, res) => {
     res.json(getAllCategories());
   });
