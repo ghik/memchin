@@ -14,7 +14,8 @@ import {
 import type { PinyinToken } from '../shared/pinyin.js';
 
 const dbPath = path.join(process.env.HOME!, 'Dropbox/memchin/memchin.db');
-const dataDir = path.dirname(dbPath);
+/** Where the deck lives, and with it anything else worth keeping alongside it */
+export const dataDir = path.dirname(dbPath);
 
 let db: SqlJsDatabase;
 let sql: Awaited<ReturnType<typeof initSqlJs>>;
