@@ -954,18 +954,19 @@ body.dark .preview-queued {
   margin-bottom: 16px;
 }
 
-.sentence-option {
+/* Two classes, to outweigh the label.checkbox-label rule that zeroes the margin */
+.checkbox-label.sentence-option {
   margin-bottom: 10px;
   font-size: 14px;
   color: var(--text-2);
 }
 
-.sentence-option.disabled {
+.checkbox-label.sentence-option.disabled {
   opacity: 0.45;
 }
 
-.sentence-option:last-of-type {
-  margin-bottom: 16px;
+.checkbox-label.sentence-option:last-of-type {
+  margin-bottom: 20px;
 }
 
 
