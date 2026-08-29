@@ -887,11 +887,11 @@ body.dark .preview-queued {
   }
 
   /*
-   * A sentence is not a word. A long example runs to thirty characters, which at this size is
-   * most of the card's width, so the box is given as much of it as the padding leaves.
+   * A sentence is not a word. A long example runs to thirty characters, so the box drops the
+   * word-sized cap entirely and takes the full width the card leaves it.
    */
   .answer-flow#sentence-screen .answer-section input {
-    max-width: 580px;
+    max-width: none;
   }
 
   /*
