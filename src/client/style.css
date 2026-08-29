@@ -932,6 +932,43 @@ body.dark .preview-queued {
   font-size: 24px;
 }
 
+/* Sentence practice asks how long a round should be before it starts one */
+.sentence-pool-info {
+  color: var(--text-3);
+  margin-bottom: 20px;
+}
+
+.sentence-count-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sentence-count-row .count-input {
+  width: 70px;
+  padding: 6px 8px;
+  font-size: 14px;
+  background: var(--surface-2);
+  color: inherit;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.sentence-count-presets {
+  display: flex;
+  gap: 4px;
+}
+
+.sentence-count-row .primary-btn {
+  width: auto;
+  margin-left: 8px;
+}
+
+.sentence-summary-of {
+  color: var(--text-3);
+  font-size: 14px;
+}
+
 .prompt-categories {
   margin-top: 15px;
   font-size: 0.65em;

@@ -38,6 +38,7 @@ import {
   clearWordQueued,
   completePractice,
   getCategories,
+  getSentencePoolSize,
   getSentenceQuestions,
   getStats,
   getWordCount,
@@ -213,7 +214,7 @@ function showView(view: View, push = true) {
     reloadStats();
   } else if (view === 'sentences') {
     sentenceScreen.classList.add('active');
-    void ensureSentenceSession();
+    openSentenceView();
   } else if (view === 'search') {
     searchScreen.classList.add('active');
     searchHanziInput.focus();
@@ -4537,6 +4538,16 @@ const sentenceActions = document.getElementById('sentence-actions')!;
 const sentenceNextBtn = document.getElementById('sentence-next-btn')!;
 const sentenceRetryBtn = document.getElementById('sentence-retry-btn')!;
 const sentenceProgressText = document.getElementById('sentence-progress-text')!;
+const sentenceSetup = document.getElementById('sentence-setup')!;
+const sentenceRound = document.getElementById('sentence-round')!;
+const sentenceSummary = document.getElementById('sentence-summary')!;
+const sentenceSummaryStats = document.getElementById('sentence-summary-stats')!;
+const sentencePoolInfo = document.getElementById('sentence-pool-info')!;
+const sentenceCountInput = document.getElementById('sentence-count') as HTMLInputElement;
+const sentenceCountPresets = document.getElementById('sentence-count-presets')!;
+const sentenceStartBtn = document.getElementById('sentence-start-btn') as HTMLButtonElement;
+const sentenceQuitBtn = document.getElementById('sentence-quit-btn')!;
+const sentenceAgainBtn = document.getElementById('sentence-again-btn')!;
 
 let sentenceQuestions: SentenceQuestion[] = [];
 let sentenceIndex = 0;
@@ -4597,26 +4608,109 @@ function currentSentence(): SentenceQuestion | undefined {
 }
 
 /** Fetches a shuffled pool the first time the view is opened, and reshuffles when it runs out */
-async function ensureSentenceSession(): Promise<void> {
-  if (sentenceQuestions.length > 0) {
-    // Coming back to the view mid-sentence should not lose your place
+const SENTENCE_COUNT_PRESETS = [10, 20, 30, 50];
+const MAX_SENTENCE_ROUND = 200;
+
+function savedSentenceCount(): number {
+  const stored = parseInt(localStorage.getItem('sentenceCount') ?? '', 10);
+  return Number.isInteger(stored) && stored >= 1 && stored <= MAX_SENTENCE_ROUND ? stored : 20;
+}
+
+/** Which of the three parts of the screen is showing: the setup, the round, or what it came to */
+function showSentencePart(part: 'setup' | 'round' | 'summary'): void {
+  sentenceSetup.classList.toggle('hidden', part !== 'setup');
+  sentenceRound.classList.toggle('hidden', part !== 'round');
+  sentenceSummary.classList.toggle('hidden', part !== 'summary');
+}
+
+/**
+ * Opening the view. A round already under way keeps its place — leaving to look a word up in
+ * Explore and coming back should not throw the round away.
+ */
+function openSentenceView(): void {
+  if (sentenceQuestions.length > 0 && !sentenceRound.classList.contains('hidden')) {
     if (!sentenceAnswered) {
       sentenceInput.focus();
     }
     return;
   }
-  sentencePrompt.textContent = 'Loading sentences…';
-  sentencePrompt.classList.remove('hidden');
+  if (!sentenceSummary.classList.contains('hidden')) {
+    return;
+  }
+  showSentenceSetup();
+}
+
+function showSentenceSetup(): void {
+  showSentencePart('setup');
+  sentenceCountInput.value = String(savedSentenceCount());
+  sentenceCountInput.focus();
+  sentenceCountInput.select();
+  void refreshSentencePoolInfo();
+}
+
+/** Said on the setup screen because the pool grows as words are learned, and that is worth seeing */
+async function refreshSentencePoolInfo(): Promise<void> {
   try {
-    const { questions } = await getSentenceQuestions();
-    sentenceQuestions = questions;
+    const { total } = await getSentencePoolSize();
+    sentencePoolInfo.textContent =
+      total === 0
+        ? 'No sentences yet — they come from the example sentences of words you have learned.'
+        : `${total} sentences available, from the words you have learned.`;
+  } catch {
+    sentencePoolInfo.textContent = '';
+  }
+}
+
+async function startSentenceRound(): Promise<void> {
+  const count = Math.min(
+    Math.max(parseInt(sentenceCountInput.value, 10) || 0, 1),
+    MAX_SENTENCE_ROUND
+  );
+  localStorage.setItem('sentenceCount', String(count));
+  try {
+    const result = await withButtonBusy(sentenceStartBtn, 'Loading…', () =>
+      getSentenceQuestions(count)
+    );
+    if (!result) {
+      return;
+    }
+    if (result.questions.length === 0) {
+      sentencePoolInfo.textContent = 'No sentences to practise yet.';
+      return;
+    }
+    sentenceQuestions = result.questions;
     sentenceIndex = 0;
     sentencePassed = 0;
+    sentenceAnswered = false;
+    showSentencePart('round');
     showSentenceQuestion();
   } catch (error) {
-    sentencePrompt.textContent =
+    sentencePoolInfo.textContent =
       error instanceof Error ? error.message : 'Could not load sentences';
   }
+}
+
+/**
+ * Ends the round, whether it ran out or was walked away from. Nothing is scheduled here, so
+ * quitting costs only the sentences not asked — everything answered is already recorded.
+ */
+function endSentenceRound(): void {
+  const answered = sentenceIndex + (sentenceAnswered ? 1 : 0);
+  sentenceSummaryStats.innerHTML =
+    `<p class="success">✓ ${sentencePassed} right</p>` +
+    `<p class="retry">✗ ${answered - sentencePassed} not</p>` +
+    `<p class="sentence-summary-of">out of ${answered} answered` +
+    `${answered < sentenceQuestions.length ? ` of ${sentenceQuestions.length}` : ''}</p>`;
+  sentenceQuestions = [];
+  sentenceIndex = 0;
+  // Next is still on screen from the last answer, and the document-level Enter handler goes by
+  // whether it is showing — left visible, one Enter on the summary would end the round again
+  sentenceActions.classList.add('hidden');
+  showSentencePart('summary');
+}
+
+function showSentenceProgress(): void {
+  sentenceProgressText.textContent = `Sentence ${sentenceIndex + 1} of ${sentenceQuestions.length} · ${sentencePassed} right`;
 }
 
 function showSentenceQuestion(): void {
@@ -4634,7 +4728,7 @@ function showSentenceQuestion(): void {
   sentenceSubmitBtn.classList.remove('hidden');
   sentenceSkipBtn.classList.remove('hidden');
   sentenceActions.classList.add('hidden');
-  sentenceProgressText.textContent = `Sentence ${sentenceIndex + 1} of ${sentenceQuestions.length} · ${sentencePassed} right`;
+  showSentenceProgress();
   sentenceInput.focus();
 }
 
@@ -4739,7 +4833,7 @@ function revealSentence(outcome: SentenceOutcome, answer: string): void {
   // A grader that fell over is the one outcome worth another go: the answer is still there and
   // nothing about it has been decided
   sentenceRetryBtn.classList.toggle('hidden', outcome.kind !== 'ungraded');
-  sentenceProgressText.textContent = `Sentence ${sentenceIndex + 1} of ${sentenceQuestions.length} · ${sentencePassed} right`;
+  showSentenceProgress();
 
   // Deliberately not focusing Next: a focused button takes Enter as a click of its own, which
   // would slip past the guard below
@@ -4811,7 +4905,7 @@ function handleSentenceSkip(): void {
 }
 
 function handleSentenceNext(): void {
-  if (sentenceGrading) {
+  if (sentenceGrading || sentenceQuestions.length === 0) {
     return;
   }
   if (sentenceNextBlockedTimer !== null) {
@@ -4819,13 +4913,11 @@ function handleSentenceNext(): void {
     sentenceNextBlockedTimer = null;
   }
   sentenceNextBlocked = false;
-  sentenceIndex++;
-  if (sentenceIndex >= sentenceQuestions.length) {
-    // Round the pool again, in a fresh order
-    sentenceQuestions = [];
-    void ensureSentenceSession();
+  if (sentenceIndex + 1 >= sentenceQuestions.length) {
+    endSentenceRound();
     return;
   }
+  sentenceIndex++;
   showSentenceQuestion();
 }
 
@@ -4842,6 +4934,25 @@ function handleSentenceRetry(): void {
   sentenceRetryBtn.classList.add('hidden');
   void handleSentenceSubmit();
 }
+
+sentenceCountPresets.innerHTML = SENTENCE_COUNT_PRESETS.map(
+  (n) => `<button class="count-preset" data-count="${n}">${n}</button>`
+).join('');
+sentenceCountPresets.querySelectorAll('.count-preset').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    sentenceCountInput.value = (btn as HTMLElement).dataset.count!;
+    void startSentenceRound();
+  });
+});
+
+sentenceStartBtn.addEventListener('click', () => void startSentenceRound());
+sentenceCountInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    void startSentenceRound();
+  }
+});
+sentenceQuitBtn.addEventListener('click', endSentenceRound);
+sentenceAgainBtn.addEventListener('click', showSentenceSetup);
 
 sentenceSubmitBtn.addEventListener('click', () => void handleSentenceSubmit());
 sentenceRetryBtn.addEventListener('click', handleSentenceRetry);

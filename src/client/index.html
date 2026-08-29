@@ -78,24 +78,47 @@
       </div>
 
       <div id="sentence-screen" class="screen answer-flow">
-        <div class="progress-bar">
-          <span id="sentence-progress-text"></span>
-        </div>
-
-        <div id="sentence-prompt" class="prompt english-prompt"></div>
-        <div id="sentence-feedback" class="feedback hidden"></div>
-
-        <div class="answer-section">
-          <input type="text" id="sentence-input" placeholder="Type the Chinese…" autocomplete="off" lang="zh-Hans">
-          <div class="answer-buttons">
-            <button id="sentence-submit-btn" class="primary-btn">Submit</button>
-            <button id="sentence-skip-btn" class="secondary-btn">I don't know</button>
+        <div id="sentence-setup">
+          <h1>Sentence Practice</h1>
+          <p id="sentence-pool-info" class="sentence-pool-info"></p>
+          <div class="sentence-count-row">
+            <label for="sentence-count">Sentences</label>
+            <input type="number" id="sentence-count" class="count-input" min="1" max="200" value="20">
+            <span class="sentence-count-presets" id="sentence-count-presets"></span>
+            <button id="sentence-start-btn" class="primary-btn">Start</button>
           </div>
         </div>
 
-        <div class="practice-actions hidden" id="sentence-actions">
-          <button id="sentence-next-btn" class="primary-btn">Next</button>
-          <button id="sentence-retry-btn" class="secondary-btn hidden">Grade again</button>
+        <div id="sentence-round" class="hidden">
+          <div class="progress-bar">
+            <span id="sentence-progress-text"></span>
+          </div>
+
+          <div id="sentence-prompt" class="prompt english-prompt"></div>
+          <div id="sentence-feedback" class="feedback hidden"></div>
+
+          <div class="answer-section">
+            <input type="text" id="sentence-input" placeholder="Type the Chinese…" autocomplete="off" lang="zh-Hans">
+            <div class="answer-buttons">
+              <button id="sentence-submit-btn" class="primary-btn">Submit</button>
+              <button id="sentence-skip-btn" class="secondary-btn">I don't know</button>
+            </div>
+          </div>
+
+          <div class="practice-actions hidden" id="sentence-actions">
+            <button id="sentence-next-btn" class="primary-btn">Next</button>
+            <button id="sentence-retry-btn" class="secondary-btn hidden">Grade again</button>
+          </div>
+
+          <div class="quit-actions">
+            <button id="sentence-quit-btn" class="quit-btn">Quit</button>
+          </div>
+        </div>
+
+        <div id="sentence-summary" class="hidden">
+          <h2>Round Complete!</h2>
+          <div id="sentence-summary-stats" class="result-stats"></div>
+          <button id="sentence-again-btn" class="primary-btn">Practice Again</button>
         </div>
       </div>
 

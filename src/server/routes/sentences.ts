@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { gradeSentence } from '../services/grade-sentence.js';
-import { referenceFor, shuffledPool } from '../services/sentence-pool.js';
+import { referenceFor, sentencePool, shuffledPool } from '../services/sentence-pool.js';
 import { SENTENCE_ATTEMPT_OUTCOMES } from '../services/sentence-verdict.js';
 import { recordSentenceAttempt } from '../db.js';
 import { normalizeSentence } from '../../shared/sentence-match.js';
@@ -12,12 +12,28 @@ import type {
 
 const router = Router();
 
+const DEFAULT_ROUND = 20;
+/** A round longer than this is not a round; the cap is what keeps one request bounded */
+const MAX_ROUND = 200;
+
+/** How much material there is, for the screen that asks how much of it to do */
+router.get('/pool-size', (_req, res) => {
+  res.json({ total: sentencePool().length });
+});
+
 /**
- * The whole pool, shuffled. One request per session is what lets the client work through every
- * sentence before repeating one without anything having to be stored.
+ * A round's worth, shuffled. Drawn here rather than filtered on the client so a round costs only
+ * what it asks for: the pool runs to thousands of sentences and sending all of them would be
+ * paying megabytes for questions the round never reaches.
  */
-router.get('/questions', (_req, res) => {
-  const response: SentenceQuestionsResponse = { questions: shuffledPool() };
+router.get('/questions', (req, res) => {
+  const count = Number(req.query.count ?? DEFAULT_ROUND);
+  if (!Number.isInteger(count) || count < 1 || count > MAX_ROUND) {
+    return res
+      .status(400)
+      .json({ error: `count must be a whole number between 1 and ${MAX_ROUND}` });
+  }
+  const response: SentenceQuestionsResponse = { questions: shuffledPool(count) };
   res.json(response);
 });
 

@@ -358,8 +358,13 @@ export async function assessSpeech(audio: ArrayBuffer, hanzi: string): Promise<S
   return response.json();
 }
 
-export function getSentenceQuestions(): Promise<SentenceQuestionsResponse> {
-  return apiGet<SentenceQuestionsResponse>('/sentences/questions');
+export function getSentenceQuestions(count: number): Promise<SentenceQuestionsResponse> {
+  return apiGet<SentenceQuestionsResponse>(`/sentences/questions?count=${count}`);
+}
+
+/** How many sentences there are to draw a round from */
+export function getSentencePoolSize(): Promise<{ total: number }> {
+  return apiGet('/sentences/pool-size');
 }
 
 export function gradeSentence(hanzi: string, answer: string): Promise<SentenceGradeResponse> {

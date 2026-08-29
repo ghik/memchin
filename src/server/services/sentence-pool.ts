@@ -11,14 +11,6 @@ import { usesWord } from '../../shared/sentence-match.js';
 import type { Example, SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
 
 /**
- * How many questions one fetch hands over. The whole pool runs to a few thousand sentences and a
- * session never comes near the end of even a fraction of it, so shipping all of it would be
- * paying megabytes for sentences nobody reaches. A shuffled slice this size keeps the client's
- * "no repeats until the end" true of the session, which is all it was ever true of.
- */
-const QUESTIONS_PER_FETCH = 500;
-
-/**
  * The middle example. generate-examples.ts asks for a phrase, then a sentence of 5-12
  * characters, then one of 12-30: the second is the only one that is reliably a whole sentence
  * and still short enough to type.
@@ -107,12 +99,12 @@ export function referenceFor(hanzi: string): Example | null {
   return cachedByHanzi.get(hanzi)?.reference ?? null;
 }
 
-/** A session's worth, in a random order, so nothing repeats before the session runs out */
-export function shuffledPool(): SentenceQuestion[] {
+/** A round's worth, drawn at random, so nothing repeats inside the round */
+export function shuffledPool(count: number): SentenceQuestion[] {
   const questions = [...sentencePool()];
   for (let i = questions.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [questions[i], questions[j]] = [questions[j], questions[i]];
   }
-  return questions.slice(0, QUESTIONS_PER_FETCH);
+  return questions.slice(0, count);
 }
