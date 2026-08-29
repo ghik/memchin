@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildPool } from './sentence-pool.js';
-import type { Example, Word } from '../../shared/types.js';
+import type { Example, SentenceQuestion, Word } from '../../shared/types.js';
 
 function example(hanzi: string, english: string): Example {
   return { hanzi, pinyin: 'pinyin', english };
@@ -16,13 +16,12 @@ function examplesFor(hanzi: string): Example[] {
 }
 
 /** Only the fields buildPool reads; the rest of Word is irrelevant here */
-function word(hanzi: string, rank: number | undefined, examples = examplesFor(hanzi)): Word {
+function word(hanzi: string, examples = examplesFor(hanzi)): Word {
   return {
     hanzi,
     pinyin: '',
     english: [],
     hskLevel: 0,
-    wordFrequencyRank: rank,
     examples,
     translatable: true,
     categories: [],
@@ -32,54 +31,61 @@ function word(hanzi: string, rank: number | undefined, examples = examplesFor(ha
   };
 }
 
+/** The usual case: every word given has been learned */
+function pool(words: Word[]): SentenceQuestion[] {
+  return buildPool(words, new Set(words.map((w) => w.hanzi)));
+}
+
 describe('buildPool', () => {
   it('takes the middle example, not the phrase or the long one', () => {
-    const [question] = buildPool([word('看', 1)]);
+    const [question] = pool([word('看')]);
     expect(question.reference.hanzi).toBe('我看了');
     expect(question.english).toBe('sentence about 看');
   });
 
   it('carries the owning word, so the reference can be found again', () => {
-    expect(buildPool([word('看', 1)])[0].hanzi).toBe('看');
+    expect(pool([word('看')])[0].hanzi).toBe('看');
   });
 
   it('carries what the word means, for showing once the answer is in', () => {
-    const cat = word('猫', 7);
+    const cat = word('猫');
     cat.english = ['cat'];
     cat.aiEnglish = ['feline'];
-    expect(buildPool([cat])[0].word).toEqual({ english: ['cat'], aiEnglish: ['feline'] });
+    expect(pool([cat])[0].word).toEqual({ english: ['cat'], aiEnglish: ['feline'] });
   });
 
-  it('includes rank 1500 and excludes what lies beyond it', () => {
-    expect(buildPool([word('看', 1500)])).toHaveLength(1);
-    expect(buildPool([word('看', 1501)])).toHaveLength(0);
+  it('asks only about words that have been learned', () => {
+    const words = [word('看'), word('猫')];
+    expect(buildPool(words, new Set(['看'])).map((q) => q.hanzi)).toEqual(['看']);
+    expect(buildPool(words, new Set())).toHaveLength(0);
   });
 
-  it('excludes a word with no frequency rank at all', () => {
-    expect(buildPool([word('看', undefined)])).toHaveLength(0);
+  it('does not care how common the word is, only that it was learned', () => {
+    // Most of what gets learned sits outside any reasonable frequency cap
+    const rare = word('侃侃而谈');
+    rare.wordFrequencyRank = 40000;
+    expect(pool([rare])).toHaveLength(1);
   });
 
   it('skips a word whose middle example is missing or malformed', () => {
-    expect(buildPool([word('看', 1, [example('看啊', 'phrase')])])).toHaveLength(0);
-    expect(
-      buildPool([word('看', 1, [example('看啊', 'p'), example('', 'sentence')])])
-    ).toHaveLength(0);
-    expect(buildPool([word('看', 1, [example('看啊', 'p'), example('我看了', ' ')])])).toHaveLength(
-      0
-    );
+    expect(pool([word('看', [example('看啊', 'phrase')])])).toHaveLength(0);
+    expect(pool([word('看', [example('看啊', 'p'), example('', 'sentence')])])).toHaveLength(0);
+    expect(pool([word('看', [example('看啊', 'p'), example('我看了', ' ')])])).toHaveLength(0);
   });
 
   it('drops an example that never uses the word it was written for', () => {
     // 起来 illustrated by 他七点起床 — a fine sentence and a useless exercise
     const stray = [example('起来啊', 'phrase'), example('他七点起床', 'He gets up at seven')];
-    expect(buildPool([word('起来', 1, stray)])).toHaveLength(0);
+    expect(pool([word('起来', stray)])).toHaveLength(0);
   });
 
   it('keeps a sentence under every word it illustrates', () => {
     // Answering it twice is answering for a different word each time
     const shared = [example('有啊', 'p'), example('我有一个弟弟', 'I have a younger brother.')];
     const other = [example('弟弟啊', 'p'), example('我有一个弟弟', 'I have a younger brother')];
-    const pool = buildPool([word('有', 1, shared), word('弟弟', 2, other)]);
-    expect(pool.map((q) => q.hanzi)).toEqual(['有', '弟弟']);
+    expect(pool([word('有', shared), word('弟弟', other)]).map((q) => q.hanzi)).toEqual([
+      '有',
+      '弟弟',
+    ]);
   });
 });

@@ -1,17 +1,22 @@
 /**
  * Which example sentences are worth practising translation on, and how to find one again.
  *
- * The policy lives here rather than in db.ts because "the commonest words, middle example" is a
+ * The policy lives here rather than in db.ts because "words already learned, middle example" is a
  * judgement about what makes a good exercise, not a fact about storage — and because this mode
  * has no database model of its own yet, so keeping every DB touch out of it makes it a clean
  * revert if the shape changes.
  */
-import { getAllWords } from '../db.js';
+import { getAllWords, getLearnedCount, getLearnedHanzi } from '../db.js';
 import { usesWord } from '../../shared/sentence-match.js';
 import type { Example, SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
 
-/** Common enough that the vocabulary is rarely the obstacle; 1355 of the deck's words qualify */
-const MAX_RANK = 1500;
+/**
+ * How many questions one fetch hands over. The whole pool runs to a few thousand sentences and a
+ * session never comes near the end of even a fraction of it, so shipping all of it would be
+ * paying megabytes for sentences nobody reaches. A shuffled slice this size keeps the client's
+ * "no repeats until the end" true of the session, which is all it was ever true of.
+ */
+const QUESTIONS_PER_FETCH = 500;
 
 /**
  * The middle example. generate-examples.ts asks for a phrase, then a sentence of 5-12
@@ -25,13 +30,18 @@ function wordInfo(word: Word): SentenceWordInfo {
   return { english: word.english, aiEnglish: word.aiEnglish ?? [] };
 }
 
-/** Pure, so it can be tested against fixtures rather than a database */
-export function buildPool(words: Iterable<Word>): SentenceQuestion[] {
+/**
+ * Pure, so it can be tested against fixtures rather than a database.
+ *
+ * `learned` is what bounds the pool. Frequency used to, and it was the wrong measure: of the
+ * words actually learned, most sit outside any reasonable rank cap, so ranking by corpus
+ * frequency threw away the vocabulary the learner had gone to the trouble of learning.
+ */
+export function buildPool(words: Iterable<Word>, learned: Set<string>): SentenceQuestion[] {
   const questions: SentenceQuestion[] = [];
 
   for (const word of words) {
-    const rank = word.wordFrequencyRank;
-    if (rank === undefined || rank > MAX_RANK) {
+    if (!learned.has(word.hanzi)) {
       continue;
     }
     const example = word.examples[EXAMPLE_INDEX];
@@ -64,20 +74,25 @@ export function buildPool(words: Iterable<Word>): SentenceQuestion[] {
 }
 
 /**
- * The pool is derived from the whole word cache, so rebuild it only when that cache has been
- * replaced underneath us — `invalidateWordCache` nulls it, and a new Map object is the signal.
+ * The pool is derived from the word cache and from what has been learned, so it is rebuilt when
+ * either moves: `invalidateWordCache` nulls the cache and a new Map object is the signal, and a
+ * word learned or reset changes the count. Counting is cheap; fetching every learned hanzi to
+ * compare is not, which is why the count stands in for the set.
  */
 let cachedFor: Map<string, Word> | null = null;
+let cachedLearnedCount = -1;
 let cachedPool: SentenceQuestion[] = [];
 let cachedByHanzi = new Map<string, SentenceQuestion>();
 
 function ensurePool(): void {
   const words = getAllWords();
-  if (words === cachedFor) {
+  const learnedCount = getLearnedCount();
+  if (words === cachedFor && learnedCount === cachedLearnedCount) {
     return;
   }
   cachedFor = words;
-  cachedPool = buildPool(words.values());
+  cachedLearnedCount = learnedCount;
+  cachedPool = buildPool(words.values(), getLearnedHanzi());
   cachedByHanzi = new Map(cachedPool.map((question) => [question.hanzi, question]));
 }
 
@@ -92,12 +107,12 @@ export function referenceFor(hanzi: string): Example | null {
   return cachedByHanzi.get(hanzi)?.reference ?? null;
 }
 
-/** The whole pool in a random order, so a session sees everything before it sees a repeat */
+/** A session's worth, in a random order, so nothing repeats before the session runs out */
 export function shuffledPool(): SentenceQuestion[] {
   const questions = [...sentencePool()];
   for (let i = questions.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [questions[i], questions[j]] = [questions[j], questions[i]];
   }
-  return questions;
+  return questions.slice(0, QUESTIONS_PER_FETCH);
 }
