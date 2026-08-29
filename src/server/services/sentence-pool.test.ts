@@ -37,13 +37,20 @@ function pool(words: Word[]): SentenceQuestion[] {
 }
 
 describe('buildPool', () => {
-  it('takes the middle example, not the phrase or the long one', () => {
-    const [question] = pool([word('看')]);
-    expect(question.reference.hanzi).toBe('我看了');
-    expect(question.english).toBe('sentence about 看');
+  it('takes both sentences and not the phrase, telling them apart by id', () => {
+    const questions = pool([word('看')]);
+    expect(questions.map((q) => [q.id, q.reference.hanzi, q.long])).toEqual([
+      ['看#1', '我看了', false],
+      ['看#2', '我昨天看了很久', true],
+    ]);
   });
 
-  it('carries the owning word, so the reference can be found again', () => {
+  it('keeps the middle example when the long one is unusable', () => {
+    const half = [example('看啊', 'p'), example('我看了', 'sentence'), example('', 'long')];
+    expect(pool([word('看', half)]).map((q) => q.id)).toEqual(['看#1']);
+  });
+
+  it('carries the owning word, so the answer can be told what it was for', () => {
     expect(pool([word('看')])[0].hanzi).toBe('看');
   });
 
@@ -56,7 +63,7 @@ describe('buildPool', () => {
 
   it('asks only about words that have been learned', () => {
     const words = [word('看'), word('猫')];
-    expect(buildPool(words, new Set(['看'])).map((q) => q.hanzi)).toEqual(['看']);
+    expect(buildPool(words, new Set(['看'])).map((q) => q.hanzi)).toEqual(['看', '看']);
     expect(buildPool(words, new Set())).toHaveLength(0);
   });
 
@@ -64,7 +71,7 @@ describe('buildPool', () => {
     // Most of what gets learned sits outside any reasonable frequency cap
     const rare = word('侃侃而谈');
     rare.wordFrequencyRank = 40000;
-    expect(pool([rare])).toHaveLength(1);
+    expect(pool([rare])).toHaveLength(2);
   });
 
   it('skips a word whose middle example is missing or malformed', () => {

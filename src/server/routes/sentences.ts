@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { gradeSentence } from '../services/grade-sentence.js';
-import { referenceFor, sentencePool, shuffledPool } from '../services/sentence-pool.js';
+import { poolCounts, questionFor, shuffledPool } from '../services/sentence-pool.js';
 import { SENTENCE_ATTEMPT_OUTCOMES } from '../services/sentence-verdict.js';
 import { recordSentenceAttempt } from '../db.js';
 import { normalizeSentence } from '../../shared/sentence-match.js';
@@ -16,9 +16,9 @@ const DEFAULT_ROUND = 20;
 /** A round longer than this is not a round; the cap is what keeps one request bounded */
 const MAX_ROUND = 200;
 
-/** How much material there is, for the screen that asks how much of it to do */
+/** How much material each length offers, for the screen that asks what to practise */
 router.get('/pool-size', (_req, res) => {
-  res.json({ total: sentencePool().length });
+  res.json(poolCounts());
 });
 
 /**
@@ -33,29 +33,32 @@ router.get('/questions', (req, res) => {
       .status(400)
       .json({ error: `count must be a whole number between 1 and ${MAX_ROUND}` });
   }
-  const response: SentenceQuestionsResponse = { questions: shuffledPool(count) };
+  const response: SentenceQuestionsResponse = {
+    questions: shuffledPool(count, req.query.long === 'true'),
+  };
   res.json(response);
 });
 
 router.post('/grade', async (req, res) => {
-  const { hanzi, answer } = (req.body ?? {}) as SentenceGradeRequest;
+  const { id, answer } = (req.body ?? {}) as SentenceGradeRequest;
 
-  if (typeof hanzi !== 'string' || hanzi.trim() === '') {
-    return res.status(400).json({ error: 'hanzi is required' });
+  if (typeof id !== 'string' || id.trim() === '') {
+    return res.status(400).json({ error: 'id is required' });
   }
   if (typeof answer !== 'string' || answer.trim() === '') {
     return res.status(400).json({ error: 'answer is required' });
   }
 
-  const reference = referenceFor(hanzi);
-  if (!reference) {
-    return res.status(404).json({ error: `No practice sentence for "${hanzi}"` });
+  const question = questionFor(id);
+  if (!question) {
+    return res.status(404).json({ error: `No practice sentence "${id}"` });
   }
 
   try {
+    const { reference, hanzi } = question;
     res.json(await gradeSentence(reference.english, reference.hanzi, hanzi, answer.trim()));
   } catch (error) {
-    console.error(`Grading failed for "${hanzi}":`, error);
+    console.error(`Grading failed for "${id}":`, error);
     res.status(500).json({ error: 'Grading failed' });
   }
 });
@@ -70,11 +73,11 @@ router.post('/grade', async (req, res) => {
  * was really asked.
  */
 router.post('/attempt', (req, res) => {
-  const { hanzi, answer, outcome, explanation, suggestion } = (req.body ??
+  const { id, answer, outcome, explanation, suggestion } = (req.body ??
     {}) as SentenceAttemptRequest;
 
-  if (typeof hanzi !== 'string' || hanzi.trim() === '') {
-    return res.status(400).json({ error: 'hanzi is required' });
+  if (typeof id !== 'string' || id.trim() === '') {
+    return res.status(400).json({ error: 'id is required' });
   }
   if (typeof answer !== 'string') {
     return res.status(400).json({ error: 'answer is required' });
@@ -83,13 +86,14 @@ router.post('/attempt', (req, res) => {
     return res.status(400).json({ error: `Unknown outcome "${outcome}"` });
   }
 
-  const reference = referenceFor(hanzi);
-  if (!reference) {
-    return res.status(404).json({ error: `No practice sentence for "${hanzi}"` });
+  const question = questionFor(id);
+  if (!question) {
+    return res.status(404).json({ error: `No practice sentence "${id}"` });
   }
+  const { reference } = question;
 
   recordSentenceAttempt({
-    hanzi,
+    hanzi: question.hanzi,
     english: reference.english,
     // In the form answers are compared against, so a line can be read without normalising it
     // again. Nothing is lost: the reference as written is still a lookup away by hanzi.

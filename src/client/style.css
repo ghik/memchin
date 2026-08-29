@@ -948,10 +948,16 @@ body.dark .preview-queued {
   font-size: 24px;
 }
 
-/* Sentence practice asks how long a round should be before it starts one */
+/* Sentence practice asks what to practise, and how much of it, before it starts a round */
 .sentence-pool-info {
   color: var(--text-3);
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+}
+
+.sentence-long-toggle {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--text-2);
 }
 
 

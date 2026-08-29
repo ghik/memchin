@@ -1,21 +1,22 @@
 /**
  * Which example sentences are worth practising translation on, and how to find one again.
  *
- * The policy lives here rather than in db.ts because "words already learned, middle example" is a
- * judgement about what makes a good exercise, not a fact about storage — and because this mode
- * has no database model of its own yet, so keeping every DB touch out of it makes it a clean
- * revert if the shape changes.
+ * The policy lives here rather than in db.ts because "the example sentences of words already
+ * learned" is a judgement about what makes a good exercise, not a fact about storage — and
+ * because this mode has no database model of its own yet, so keeping every DB touch out of it
+ * makes it a clean revert if the shape changes.
  */
 import { getAllWords, getLearnedCount, getLearnedHanzi } from '../db.js';
 import { usesWord } from '../../shared/sentence-match.js';
-import type { Example, SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
+import type { SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
 
 /**
- * The middle example. generate-examples.ts asks for a phrase, then a sentence of 5-12
- * characters, then one of 12-30: the second is the only one that is reliably a whole sentence
- * and still short enough to type.
+ * generate-examples.ts asks for a phrase, then a sentence of 5-12 characters, then one of 12-30.
+ * The first is not a sentence; the other two are, and both are worth translating — the middle
+ * one always, the long one when the learner asks for the harder material.
  */
-const EXAMPLE_INDEX = 1;
+const MEDIUM_EXAMPLE = 1;
+const LONG_EXAMPLE = 2;
 
 /** Only what is shown with the answer, so the pool stays small */
 function wordInfo(word: Word): SentenceWordInfo {
@@ -40,30 +41,34 @@ export function buildPool(words: Iterable<Word>, learned: Set<string>): Sentence
     if (!learned.has(word.hanzi)) {
       continue;
     }
-    const example = word.examples[EXAMPLE_INDEX];
-    if (!example) {
-      continue;
+    for (const index of [MEDIUM_EXAMPLE, LONG_EXAMPLE]) {
+      const example = word.examples[index];
+      if (!example) {
+        continue;
+      }
+      const english = example.english?.trim() ?? '';
+      const hanzi = example.hanzi?.trim() ?? '';
+      // Examples can be regenerated at any time, so a malformed one must not reach the screen
+      if (english === '' || hanzi === '') {
+        continue;
+      }
+      // A handful of examples never use the word they were written for — 起来 illustrated by
+      // 他七点起床. They are fine sentences and useless exercises, and keeping them would make the
+      // answer unpassable once an answer is required to contain the word
+      if (!usesWord(hanzi, word.hanzi)) {
+        continue;
+      }
+      // A sentence shared by two words is kept under both: the same English asked twice is the
+      // same English practising a different word each time, which is worth answering twice
+      questions.push({
+        id: `${word.hanzi}#${index}`,
+        hanzi: word.hanzi,
+        english,
+        word: wordInfo(word),
+        reference: { ...example, hanzi },
+        long: index === LONG_EXAMPLE,
+      });
     }
-    const english = example.english?.trim() ?? '';
-    const hanzi = example.hanzi?.trim() ?? '';
-    // Examples can be regenerated at any time, so a malformed one must not reach the screen
-    if (english === '' || hanzi === '') {
-      continue;
-    }
-    // A handful of examples never use the word they were written for — 起来 illustrated by
-    // 他七点起床. They are fine sentences and useless exercises, and keeping them would make the
-    // answer unpassable once an answer is required to contain the word
-    if (!usesWord(hanzi, word.hanzi)) {
-      continue;
-    }
-    // A sentence shared by two words is kept under both: the same English asked twice is the
-    // same English practising a different word each time, which is worth answering twice
-    questions.push({
-      hanzi: word.hanzi,
-      english,
-      word: wordInfo(word),
-      reference: { ...example, hanzi },
-    });
   }
 
   return questions;
@@ -78,7 +83,7 @@ export function buildPool(words: Iterable<Word>, learned: Set<string>): Sentence
 let cachedFor: Map<string, Word> | null = null;
 let cachedLearnedCount = -1;
 let cachedPool: SentenceQuestion[] = [];
-let cachedByHanzi = new Map<string, SentenceQuestion>();
+let cachedById = new Map<string, SentenceQuestion>();
 
 function ensurePool(): void {
   const words = getAllWords();
@@ -89,23 +94,36 @@ function ensurePool(): void {
   cachedFor = words;
   cachedLearnedCount = learnedCount;
   cachedPool = buildPool(words.values(), getLearnedHanzi());
-  cachedByHanzi = new Map(cachedPool.map((question) => [question.hanzi, question]));
+  cachedById = new Map(cachedPool.map((question) => [question.id, question]));
 }
 
+/** Every question there is, both lengths. Which of them a round draws on is the round's choice. */
 export function sentencePool(): SentenceQuestion[] {
   ensurePool();
   return cachedPool;
 }
 
-/** The reference for a word, or null when it is not one of the words we practise */
-export function referenceFor(hanzi: string): Example | null {
+/**
+ * The question an answer is answering, or null if it is not one we set. By id rather than by
+ * word, since a word has a sentence of each length and they are different exercises.
+ */
+export function questionFor(id: string): SentenceQuestion | null {
   ensurePool();
-  return cachedByHanzi.get(hanzi)?.reference ?? null;
+  return cachedById.get(id) ?? null;
+}
+
+/** How much material each length offers, for the screen that asks what to practise */
+export function poolCounts(): { medium: number; long: number } {
+  const pool = sentencePool();
+  const long = pool.filter((question) => question.long).length;
+  return { medium: pool.length - long, long };
 }
 
 /** A round's worth, drawn at random, so nothing repeats inside the round */
-export function shuffledPool(count: number): SentenceQuestion[] {
-  const questions = [...sentencePool()];
+export function shuffledPool(count: number, includeLong: boolean): SentenceQuestion[] {
+  const questions = includeLong
+    ? [...sentencePool()]
+    : sentencePool().filter((question) => !question.long);
   for (let i = questions.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [questions[i], questions[j]] = [questions[j], questions[i]];

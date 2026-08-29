@@ -246,13 +246,17 @@ export interface SentenceWordInfo {
 
 /** One sentence to translate: the English is the prompt, the reference one right answer */
 export interface SentenceQuestion {
-  /** The deck word this example belongs to — how the server finds the reference again */
+  /** How the server finds this question again: the word, and which of its examples this is */
+  id: string;
+  /** The deck word this example belongs to */
   hanzi: string;
   english: string;
   /** The word the sentence was written to illustrate */
   word: SentenceWordInfo;
   /** Shown once the learner has committed to an answer of their own */
   reference: Example;
+  /** The word's long example rather than its middle one — the harder half of the pool */
+  long: boolean;
 }
 
 export interface SentenceQuestionsResponse {
@@ -260,7 +264,8 @@ export interface SentenceQuestionsResponse {
 }
 
 export interface SentenceGradeRequest {
-  hanzi: string;
+  /** The question's id, not the word's: a word has a sentence of each length */
+  id: string;
   answer: string;
 }
 
@@ -310,7 +315,7 @@ export interface SentenceAttempt {
 
 /** One attempt, as the client reports it for the history. The server fills in the question. */
 export interface SentenceAttemptRequest {
-  hanzi: string;
+  id: string;
   /** Empty when skipped */
   answer: string;
   outcome: SentenceAttemptOutcome;

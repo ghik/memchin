@@ -4566,6 +4566,7 @@ const sentenceSummary = document.getElementById('sentence-summary')!;
 const sentenceSummaryStats = document.getElementById('sentence-summary-stats')!;
 const sentencePoolInfo = document.getElementById('sentence-pool-info')!;
 const sentenceCountInput = document.getElementById('sentence-count') as HTMLInputElement;
+const sentenceLongToggle = document.getElementById('sentence-long') as HTMLInputElement;
 const sentenceCountRow = document.getElementById('sentence-count-row')!;
 const sentenceStartBtn = document.getElementById('sentence-start-btn') as HTMLButtonElement;
 const sentenceQuitBtn = document.getElementById('sentence-quit-btn')!;
@@ -4601,7 +4602,7 @@ type SentenceOutcome =
  * passed: told they had missed the word *and* got it wrong, a learner would fix the wrong thing.
  */
 function askForTheWord(question: SentenceQuestion, answer: string): void {
-  recordSentenceAttempt({ hanzi: question.hanzi, answer, outcome: 'missing-word' });
+  recordSentenceAttempt({ id: question.id, answer, outcome: 'missing-word' });
   sentenceFeedback.className = 'feedback synonym';
   sentenceFeedback.innerHTML =
     `<span class="verdict">Good, but not this word</span>` +
@@ -4665,20 +4666,35 @@ function openSentenceView(): void {
 function showSentenceSetup(): void {
   showSentencePart('setup');
   sentenceCountInput.value = String(savedSentenceCount());
+  sentenceLongToggle.checked = localStorage.getItem('sentenceLong') === 'true';
   sentenceCountInput.focus();
   sentenceCountInput.select();
   void refreshSentencePoolInfo();
 }
 
-/** Said on the setup screen because the pool grows as words are learned, and that is worth seeing */
+/**
+ * Said on the setup screen because the pool grows as words are learned, and because how much the
+ * longer sentences add to it is exactly what the toggle beneath is asking about.
+ */
+let sentencePoolCounts: { medium: number; long: number } | null = null;
+
+function showSentencePoolInfo(): void {
+  if (!sentencePoolCounts) {
+    return;
+  }
+  const { medium, long } = sentencePoolCounts;
+  const total = medium + (sentenceLongToggle.checked ? long : 0);
+  sentencePoolInfo.textContent =
+    total === 0
+      ? 'No sentences yet — they come from the example sentences of words you have learned.'
+      : `${total} sentences available, from the words you have learned. ` +
+        `How many would you like to do?`;
+}
+
 async function refreshSentencePoolInfo(): Promise<void> {
   try {
-    const { total } = await getSentencePoolSize();
-    sentencePoolInfo.textContent =
-      total === 0
-        ? 'No sentences yet — they come from the example sentences of words you have learned.'
-        : `${total} sentences available, from the words you have learned. ` +
-          `How many would you like to do?`;
+    sentencePoolCounts = await getSentencePoolSize();
+    showSentencePoolInfo();
   } catch {
     sentencePoolInfo.textContent = '';
   }
@@ -4689,9 +4705,13 @@ async function startSentenceRound(): Promise<void> {
     Math.max(parseInt(sentenceCountInput.value, 10) || 0, 1),
     MAX_SENTENCE_ROUND
   );
+  const includeLong = sentenceLongToggle.checked;
   localStorage.setItem('sentenceCount', String(count));
+  localStorage.setItem('sentenceLong', String(includeLong));
   try {
-    const result = await withButtonBusy(sentenceStartBtn, '…', () => getSentenceQuestions(count));
+    const result = await withButtonBusy(sentenceStartBtn, '…', () =>
+      getSentenceQuestions(count, includeLong)
+    );
     if (!result) {
       return;
     }
@@ -4801,14 +4821,14 @@ function revealSentence(outcome: SentenceOutcome, answer: string): void {
   // about the learner, and would only show up in the history as an answer of unknown standing
   if (outcome.kind === 'graded') {
     recordSentenceAttempt({
-      hanzi: question.hanzi,
+      id: question.id,
       answer,
       outcome: outcome.grading.verdict,
       explanation: outcome.grading.explanation,
       suggestion: outcome.grading.suggestion,
     });
   } else if (outcome.kind === 'skipped') {
-    recordSentenceAttempt({ hanzi: question.hanzi, answer: '', outcome: 'skipped' });
+    recordSentenceAttempt({ id: question.id, answer: '', outcome: 'skipped' });
   }
 
   let cssClass: string;
@@ -4890,7 +4910,7 @@ async function handleSentenceSubmit(): Promise<void> {
   sentenceFeedback.textContent = 'Grading your answer…';
   try {
     const grading = await withButtonBusy(sentenceSubmitBtn, 'Grading…', () =>
-      gradeSentence(question.hanzi, answer)
+      gradeSentence(question.id, answer)
     );
     if (!grading) {
       return;
@@ -4975,6 +4995,7 @@ sentenceCountRow.querySelectorAll('.count-preset').forEach((btn) => {
 
 // Start is fused to the box, as Review is on a mode card, so the typed number has something to
 // act on; the presets beside it are the shortcuts
+sentenceLongToggle.addEventListener('change', showSentencePoolInfo);
 sentenceStartBtn.addEventListener('click', () => void startSentenceRound());
 sentenceCountInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
