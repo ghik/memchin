@@ -346,6 +346,28 @@ audioVolumeInput.addEventListener('input', () => {
 categorySearch.addEventListener('input', filterCategoryList);
 const ALL_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2pinyin', 'english2hanzi'];
 
+/**
+ * Which mode and scope pairs the UI offers. Not every combination is worth practising: English →
+ * Hanzi is not practised at all, and English → Pinyin only over whole words.
+ *
+ * A display rule, not a data one — the progress rows for the rest stay in the deck untouched, so
+ * putting a pair back here brings its history back with it.
+ */
+const PRACTISED_SCOPES: Record<PracticeMode, { words: boolean; characters: boolean }> = {
+  hanzi2pinyin: { words: true, characters: true },
+  english2pinyin: { words: true, characters: false },
+  english2hanzi: { words: false, characters: false },
+};
+
+function isPractised(mode: PracticeMode, characterMode: boolean): boolean {
+  return PRACTISED_SCOPES[mode][characterMode ? 'characters' : 'words'];
+}
+
+/** The modes practised in either scope, for the places that show a mode without one */
+const PRACTISED_MODES: PracticeMode[] = ALL_MODES.filter(
+  (mode) => PRACTISED_SCOPES[mode].words || PRACTISED_SCOPES[mode].characters
+);
+
 const savedWordCounts: Record<string, number> = JSON.parse(
   localStorage.getItem('wordCounts') ?? '{}'
 );
@@ -385,7 +407,12 @@ function setModeWordCount(
 
 // State
 let latestStats: Stats[] = [];
-let currentMode: PracticeMode = (localStorage.getItem('mode') as PracticeMode) || 'hanzi2pinyin';
+// A mode saved before it was dropped from the UI would otherwise stay current with no card to
+// show it, and the first practice started would run in it
+let currentMode: PracticeMode = (() => {
+  const saved = localStorage.getItem('mode') as PracticeMode | null;
+  return saved && isPractised(saved, false) ? saved : 'hanzi2pinyin';
+})();
 let questions: PracticeQuestion[] = [];
 let currentIndex = 0;
 let results: Map<string, number> = new Map(); // hanzi -> round answered correctly (1 = first try)
@@ -687,11 +714,12 @@ function sortCategoryList() {
 // Load stats on start
 async function loadStats() {
   try {
-    const [stats, totalWords, categories] = await Promise.all([
+    const [allStats, totalWords, categories] = await Promise.all([
       getStats(getSelectedCategories(), getExcludedCategories()),
       getWordCount(),
       getCategories(),
     ]);
+    const stats = allStats.filter((s) => isPractised(s.mode, s.characterMode));
     allCategoriesList = categories;
 
     // Populate category checkboxes
@@ -1072,7 +1100,8 @@ async function renderStats(stats: Stats[]) {
 
 async function reloadStats() {
   try {
-    const stats = await getStats(getSelectedCategories(), getExcludedCategories());
+    const all = await getStats(getSelectedCategories(), getExcludedCategories());
+    const stats = all.filter((s) => isPractised(s.mode, s.characterMode));
     const sorted = [...stats].sort((a, b) => {
       const mi = ALL_MODES.indexOf(a.mode) - ALL_MODES.indexOf(b.mode);
       if (mi !== 0) return mi;
@@ -4178,16 +4207,14 @@ function formatWordDetail(word: Word, progress: Progress[]): string {
   }
 
   const progressByMode = new Map(progress.map((p) => [p.mode, p]));
-  const progressParts = (['hanzi2pinyin', 'english2pinyin', 'english2hanzi'] as const).map(
-    (mode) => {
-      const p = progressByMode.get(mode);
-      const label = MODE_SHORT[mode];
-      if (!p || p.bucket === null) {
-        return `<span class="search-progress-item search-progress-none">${label}: —</span>`;
-      }
-      return `<span class="search-progress-item">${label}: bucket ${p.bucket} <span class="search-due-time">${formatDue(p.nextEligible)}</span></span>`;
+  const progressParts = PRACTISED_MODES.map((mode) => {
+    const p = progressByMode.get(mode);
+    const label = MODE_SHORT[mode];
+    if (!p || p.bucket === null) {
+      return `<span class="search-progress-item search-progress-none">${label}: —</span>`;
     }
-  );
+    return `<span class="search-progress-item">${label}: bucket ${p.bucket} <span class="search-due-time">${formatDue(p.nextEligible)}</span></span>`;
+  });
   html += `<div class="search-progress">${progressParts.join('')}</div>`;
 
   if (word.examples.length > 0) {
