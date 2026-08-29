@@ -383,6 +383,27 @@ body.dark input[type="checkbox"] {
   white-space: nowrap;
 }
 
+/* What the AI chose, spelled out because most of the picks are on some other page */
+.preview-picked {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.preview-picked-label {
+  display: block;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+
+.preview-picked-word {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  padding: 2px 0;
+}
+
 .preview-pinyin {
   color: var(--accent);
   white-space: nowrap;

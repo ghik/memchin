@@ -47,6 +47,7 @@ import {
   lookupHanzi,
   makeProgressCharOnly,
   makeProgressWordMode,
+  pickNewWords,
   previewNewWords,
   queueWords,
   recordSentenceAttempt,
@@ -2492,6 +2493,70 @@ function updatePracticeSelectedBtn() {
   }
 }
 
+/** How many the AI is asked for — "about ten" in the sense of a sitting's worth */
+const AI_PICK_COUNT = 10;
+
+/**
+ * Hands the queue to the AI and takes its answer as the selection.
+ *
+ * It picks from the whole queue, not from the page on screen, since the page order is when things
+ * were added and says nothing about what is worth knowing — so the picks are listed out here as
+ * well as ticked, because most of them will be on some other page.
+ */
+async function handleAiPick(btn: HTMLButtonElement): Promise<void> {
+  const section = getPreviewSection();
+  if (!section) {
+    return;
+  }
+  const picked = section.querySelector('.preview-picked') as HTMLElement;
+  picked.classList.remove('hidden');
+  picked.textContent = 'Asking the AI which of these to learn…';
+  try {
+    const result = await withButtonBusy(btn, 'Picking…', () =>
+      pickNewWords(
+        currentMode,
+        getSelectedCategories(),
+        getExcludedCategories(),
+        characterMode,
+        AI_PICK_COUNT,
+        previewReverse
+      )
+    );
+    if (!result) {
+      return;
+    }
+
+    previewSelected = new Set(result.words.map((w) => w.hanzi));
+    section.querySelectorAll('.preview-checkbox').forEach((cb) => {
+      const input = cb as HTMLInputElement;
+      input.checked = previewSelected.has(input.dataset.hanzi!);
+    });
+    const selectAllCb = section.querySelector('.preview-select-all-cb') as HTMLInputElement | null;
+    if (selectAllCb) {
+      selectAllCb.checked = false;
+    }
+    updatePracticeSelectedBtn();
+
+    // Said only when it bites, since below the cap it considered everything waiting
+    const cappedNote =
+      result.considered < result.total
+        ? ` from the first ${result.considered} of ${result.total}`
+        : ` from all ${result.total}`;
+    picked.innerHTML =
+      `<span class="preview-picked-label">Picked${cappedNote}</span>` +
+      result.words
+        .map(
+          (w) =>
+            `<span class="preview-picked-word">${clickableHanzi(w.hanzi, 'preview-hanzi')} ` +
+            `<span class="preview-pinyin">${w.pinyin}</span> ` +
+            `<span class="preview-english">${w.english.join('; ')}</span></span>`
+        )
+        .join('');
+  } catch (error) {
+    picked.textContent = error instanceof Error ? error.message : 'Could not pick words';
+  }
+}
+
 function getPreviewSection(): HTMLElement | null {
   if (!previewMode) return null;
   return statsDiv.querySelector(`.preview-section[data-key="${previewMode}"]`);
@@ -2551,7 +2616,8 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       <button class="preview-sort-opt${previewReverse ? ' active' : ''}" data-order="newest">Newest first</button>
     </div>`;
     section.innerHTML =
-      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label>${selectLearnedHtml}${reverseHtml}<button class="preview-learn-now-btn primary-btn" disabled>Mark as known</button><button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
+      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label>${selectLearnedHtml}${reverseHtml}<button class="preview-ai-pick-btn aux-btn">✨ Pick ${AI_PICK_COUNT} to learn</button><button class="preview-learn-now-btn primary-btn" disabled>Mark as known</button><button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
+      `<div class="preview-picked hidden"></div>` +
       pagerHtml +
       words
         .map((w) => {
@@ -2621,6 +2687,10 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       }
       updatePracticeSelectedBtn();
     });
+
+    section
+      .querySelector('.preview-ai-pick-btn')!
+      .addEventListener('click', (e) => void handleAiPick(e.currentTarget as HTMLButtonElement));
 
     // Practice selected handler
     section.querySelector('.practice-selected-btn')!.addEventListener('click', () => {

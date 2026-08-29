@@ -176,6 +176,25 @@ export function clearWordQueued(hanzi: string, characterMode: boolean): Promise<
   return apiPost(`/words/${encodeURIComponent(hanzi)}/clear-queued`, { characterMode });
 }
 
+/** Asks the AI which of the queued words are worth learning next, from the same queue as above */
+export function pickNewWords(
+  mode: PracticeMode,
+  categories: string[],
+  excludedCategories: string[],
+  characterMode: boolean,
+  count: number,
+  reverse: boolean
+): Promise<{ words: Word[]; considered: number; total: number }> {
+  return apiPost('/practice/pick-new', {
+    mode,
+    categories,
+    excludedCategories,
+    characterMode,
+    count,
+    reverse,
+  });
+}
+
 export function browseUnqueuedWords(
   mode: PracticeMode,
   categories: string[],

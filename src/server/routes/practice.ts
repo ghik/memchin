@@ -35,6 +35,7 @@ import {
 } from '../db.js';
 import { getLearnedElsewhere, setQueuedAt, setCharQueuedAt, upsertProgress } from '../db.js';
 import { calculateNextEligible, updateProgress } from '../services/srs.js';
+import { pickWords } from '../services/pick-words.js';
 import { toStamp } from '../../shared/time.js';
 import {
   hanziMatches,
@@ -344,6 +345,67 @@ router.get('/preview', (req, res) => {
   const total = getNewWordsCount(mode, categories, excludedCategories, characterMode);
   const learnedElsewhere = getLearnedElsewhere(mode, categories, excludedCategories, characterMode);
   res.json({ words, total, learnedElsewhere });
+});
+
+/**
+ * Which of the queued words to learn next, chosen by the AI from the same queue the preview
+ * shows. The candidates are read here rather than posted up, so this cannot be asked about words
+ * that are not really waiting, and the reply comes back as whole words the caller can display.
+ *
+ * Capped: one mode's queue runs past a thousand entries, and a list that long costs more to send
+ * than the choice is worth. The cap bites in queue order, which is the order on screen.
+ */
+const PICK_CANDIDATE_CAP = 400;
+
+const PRACTICE_MODES: PracticeMode[] = ['hanzi2pinyin', 'english2hanzi', 'english2pinyin'];
+
+router.post('/pick-new', async (req, res) => {
+  const { mode, categories, excludedCategories, characterMode, count, reverse } = req.body as {
+    mode: PracticeMode;
+    categories?: string[];
+    excludedCategories?: string[];
+    characterMode?: boolean;
+    count?: number;
+    reverse?: boolean;
+  };
+
+  if (!mode || !PRACTICE_MODES.includes(mode)) {
+    return res.status(400).json({ error: 'Valid mode is required' });
+  }
+  const wanted = Number(count);
+  if (!Number.isInteger(wanted) || wanted < 1 || wanted > 50) {
+    return res.status(400).json({ error: 'count must be a whole number between 1 and 50' });
+  }
+
+  const candidates = getNewWords(
+    mode,
+    PICK_CANDIDATE_CAP,
+    categories ?? [],
+    excludedCategories ?? [],
+    characterMode ?? false,
+    0,
+    reverse ?? false
+  );
+  const total = getNewWordsCount(
+    mode,
+    categories ?? [],
+    excludedCategories ?? [],
+    characterMode ?? false
+  );
+
+  try {
+    const byHanzi = new Map(candidates.map((word) => [word.hanzi, word]));
+    const picked = await pickWords(candidates, wanted);
+    res.json({
+      // In the order they were picked, which is best first
+      words: picked.map((hanzi) => enrichWord(byHanzi.get(hanzi)!)),
+      considered: candidates.length,
+      total,
+    });
+  } catch (error) {
+    console.error('Picking words failed:', error);
+    res.status(500).json({ error: 'Could not pick words' });
+  }
 });
 
 router.get('/due-count', (req, res) => {
