@@ -2645,7 +2645,7 @@ async function loadPreviewPage(offset: number, triggerBtn?: HTMLButtonElement) {
       <button class="preview-sort-opt${previewReverse ? ' active' : ''}" data-order="newest">Newest first</button>
     </div>`;
     section.innerHTML =
-      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label>${selectLearnedHtml}${reverseHtml}<button class="preview-ai-pick-btn primary-btn">✨ Pick ${AI_PICK_COUNT} to learn</button><button class="preview-learn-now-btn primary-btn" disabled>Mark as known</button><button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
+      `<div class="preview-header"><label class="preview-select-all"><input type="checkbox" class="preview-select-all-cb"> Select all</label>${selectLearnedHtml}${reverseHtml}<button class="preview-ai-pick-btn primary-btn">✨ Pick ${AI_PICK_COUNT}</button><button class="preview-learn-now-btn primary-btn" disabled>Mark as known</button><button class="practice-selected-btn primary-btn" disabled>Practice selected</button></div>` +
       `<div class="preview-picked hidden"></div>` +
       pagerHtml +
       words
