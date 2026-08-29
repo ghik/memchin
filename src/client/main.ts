@@ -17,7 +17,7 @@ import type {
 } from './services.js';
 import type { Example, Stats } from '../shared/types.js';
 import { takesExamples } from '../shared/labels.js';
-import { sentenceMatches, usesWord } from '../shared/sentence-match.js';
+import { usesWord } from '../shared/sentence-match.js';
 import { fromStamp } from '../shared/time.js';
 import {
   toNumberedPinyin,
@@ -4425,10 +4425,10 @@ for (const input of [searchHanziInput, searchPinyinInput, searchEnglishInput]) {
 // ---------------------------------------------------------------------------------------------
 // Sentence practice: translate an English sentence into Chinese, and have the AI mark it.
 //
-// Deliberately apart from the SRS flow above — nothing here is stored, so there is no bucket, no
-// schedule and no result screen. The server hands over the whole pool in a random order, which
-// is what lets a session see every sentence before it sees one twice without anything having to
-// remember what was asked.
+// Deliberately apart from the SRS flow above — nothing is scheduled here, so there is no bucket
+// and no result screen, only a record of what was answered. The server hands over the whole pool
+// in a random order, which is what lets a session see every sentence before it sees one twice
+// without anything having to remember what was asked.
 // ---------------------------------------------------------------------------------------------
 
 const sentencePrompt = document.getElementById('sentence-prompt')!;
@@ -4438,6 +4438,7 @@ const sentenceSubmitBtn = document.getElementById('sentence-submit-btn') as HTML
 const sentenceSkipBtn = document.getElementById('sentence-skip-btn') as HTMLButtonElement;
 const sentenceActions = document.getElementById('sentence-actions')!;
 const sentenceNextBtn = document.getElementById('sentence-next-btn')!;
+const sentenceRetryBtn = document.getElementById('sentence-retry-btn')!;
 const sentenceProgressText = document.getElementById('sentence-progress-text')!;
 
 let sentenceQuestions: SentenceQuestion[] = [];
@@ -4549,6 +4550,23 @@ function sentenceWordHtml(question: SentenceQuestion): string {
   );
 }
 
+/**
+ * The other ways the model offered to say it. Worth as much as the reference and sometimes more:
+ * the reference is built around one word, which is not the same as being how anyone would say it.
+ */
+function alternativesHtml(alternatives: string[] | undefined): string {
+  if (!alternatives || alternatives.length === 0) {
+    return '';
+  }
+  return (
+    `<span class="sentence-alternatives"><span class="sentence-label">Also</span>` +
+    alternatives
+      .map((alternative) => `<span class="ex-hanzi">${escapeHtml(alternative)}</span>`)
+      .join('') +
+    `</span>`
+  );
+}
+
 function referenceHtml(question: SentenceQuestion): string {
   // Not clickableHanzi: audio is generated per word, and these sentences have no file, so a
   // clickable reference would be a dead click on every card
@@ -4597,6 +4615,7 @@ function revealSentence(outcome: SentenceOutcome, answer: string): void {
     // Shown even when they typed it themselves: the point of answering is to see the sentence
     // whole, with the reading, and to be told which word it was for
     parts += referenceHtml(question);
+    parts += alternativesHtml(outcome.grading.alternatives);
     parts += sentenceWordHtml(question);
     if (verdict !== 'wrong') {
       sentencePassed++;
@@ -4620,6 +4639,9 @@ function revealSentence(outcome: SentenceOutcome, answer: string): void {
   sentenceSubmitBtn.classList.add('hidden');
   sentenceSkipBtn.classList.add('hidden');
   sentenceActions.classList.remove('hidden');
+  // A grader that fell over is the one outcome worth another go: the answer is still there and
+  // nothing about it has been decided
+  sentenceRetryBtn.classList.toggle('hidden', outcome.kind !== 'ungraded');
   sentenceProgressText.textContent = `Sentence ${sentenceIndex + 1} of ${sentenceQuestions.length} · ${sentencePassed} right`;
 
   // Deliberately not focusing Next: a focused button takes Enter as a click of its own, which
@@ -4645,13 +4667,6 @@ async function handleSentenceSubmit(): Promise<void> {
   const answer = sentenceInput.value.trim();
   if (answer === '') {
     handleSentenceSkip();
-    return;
-  }
-
-  // The server checks this too, but doing it here means an exact answer costs neither a round
-  // trip nor an AI call
-  if (sentenceMatches(answer, question.reference.hanzi)) {
-    revealSentence({ kind: 'graded', grading: { verdict: 'correct', explanation: '' } }, answer);
     return;
   }
 
@@ -4717,7 +4732,22 @@ function handleSentenceNext(): void {
   showSentenceQuestion();
 }
 
+/** Puts the card back the way it was before the failed grading, answer and all, and tries again */
+function handleSentenceRetry(): void {
+  if (sentenceGrading || !currentSentence()) {
+    return;
+  }
+  sentenceAnswered = false;
+  sentenceInput.disabled = false;
+  sentenceSubmitBtn.classList.remove('hidden');
+  sentenceSkipBtn.classList.remove('hidden');
+  sentenceActions.classList.add('hidden');
+  sentenceRetryBtn.classList.add('hidden');
+  void handleSentenceSubmit();
+}
+
 sentenceSubmitBtn.addEventListener('click', () => void handleSentenceSubmit());
+sentenceRetryBtn.addEventListener('click', handleSentenceRetry);
 sentenceSkipBtn.addEventListener('click', handleSentenceSkip);
 sentenceNextBtn.addEventListener('click', handleSentenceNext);
 

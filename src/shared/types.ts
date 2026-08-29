@@ -271,6 +271,12 @@ export interface SentenceGradeResponse {
   /** The learner's own sentence corrected — never merely the reference */
   suggestion?: string;
   /**
+   * Other natural ways to say the same English, none of them the reference. The reference is
+   * written to show off one particular word, which is not the same as being the way a native
+   * would put it, so these are what the sentence is actually worth learning from.
+   */
+  alternatives?: string[];
+  /**
    * Whether the answer used the word the sentence is for, in any form. Asked of the model
    * because containment cannot see a separable verb split around its object — 吃了饭 uses 吃饭
    * without containing it. Absent when the model did not say, in which case containment stands.

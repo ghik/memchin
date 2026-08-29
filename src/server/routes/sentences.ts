@@ -3,7 +3,7 @@ import { gradeSentence } from '../services/grade-sentence.js';
 import { referenceFor, shuffledPool } from '../services/sentence-pool.js';
 import { SENTENCE_ATTEMPT_OUTCOMES } from '../services/sentence-verdict.js';
 import { recordSentenceAttempt } from '../db.js';
-import { normalizeSentence, sentenceMatches } from '../../shared/sentence-match.js';
+import { normalizeSentence } from '../../shared/sentence-match.js';
 import type {
   SentenceAttemptRequest,
   SentenceGradeRequest,
@@ -34,12 +34,6 @@ router.post('/grade', async (req, res) => {
   const reference = referenceFor(hanzi);
   if (!reference) {
     return res.status(404).json({ error: `No practice sentence for "${hanzi}"` });
-  }
-
-  // The client checks this too, so an exact answer never waits on the network; checking again
-  // here keeps the endpoint honest on its own and means nobody is billed for typing the answer
-  if (sentenceMatches(answer, reference.hanzi)) {
-    return res.json({ verdict: 'correct', explanation: '' });
   }
 
   try {

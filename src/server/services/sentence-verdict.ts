@@ -33,7 +33,11 @@ export const SENTENCE_ATTEMPT_OUTCOMES: SentenceAttemptOutcome[] = [
  * entire product of the call, so a reply missing either is worth another attempt rather than
  * being shown as it stands.
  */
-export function parseSentenceGrading(raw: string, answer: string): SentenceGradeResponse | null {
+export function parseSentenceGrading(
+  raw: string,
+  answer: string,
+  reference: string
+): SentenceGradeResponse | null {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -64,10 +68,26 @@ export function parseSentenceGrading(raw: string, answer: string): SentenceGrade
   // guessing, since a wrong answer here nags the learner about a word they did use
   const usesWord = typeof obj.usesWord === 'boolean' ? obj.usesWord : undefined;
 
+  // Offered as *other* ways to say it, so anything that only repeats the reference, the
+  // learner's own sentence or a sibling is not one. Unusable entries are dropped rather than
+  // failing the reply: these are a bonus on top of the marking, not the marking itself.
+  const seen = new Set([normalizeSentence(answer), normalizeSentence(reference)]);
+  const alternatives: string[] = [];
+  for (const raw of Array.isArray(obj.alternatives) ? obj.alternatives : []) {
+    const alternative = typeof raw === 'string' ? raw.trim() : '';
+    const normalized = normalizeSentence(alternative);
+    if (normalized === '' || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    alternatives.push(alternative);
+  }
+
   return {
     verdict: verdict as SentenceVerdict,
     explanation,
     ...(worthSuggesting ? { suggestion } : {}),
     ...(usesWord === undefined ? {} : { usesWord }),
+    ...(alternatives.length > 0 ? { alternatives } : {}),
   };
 }

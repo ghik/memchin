@@ -2835,10 +2835,21 @@ mark.search-match {
 .feedback .explanation,
 .feedback .sentence-suggestion,
 .feedback .sentence-word,
+.feedback .sentence-alternatives,
 .feedback .sentence-reference {
   display: block;
   margin-top: 8px;
   text-align: left;
+}
+
+/* More than one sentence under the same label, so they need to sit one per line under it */
+.feedback .sentence-alternatives .ex-hanzi {
+  display: block;
+  margin-left: 3.2em;
+}
+
+.feedback .sentence-alternatives .sentence-label {
+  float: left;
 }
 
 .feedback .sentence-label {
