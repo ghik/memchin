@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { gradeSentence } from '../services/grade-sentence.js';
 import { referenceFor, shuffledPool } from '../services/sentence-pool.js';
-import { recordAttempt, SENTENCE_ATTEMPT_OUTCOMES } from '../services/sentence-history.js';
+import { SENTENCE_ATTEMPT_OUTCOMES } from '../services/sentence-verdict.js';
+import { recordSentenceAttempt } from '../db.js';
 import { normalizeSentence, sentenceMatches } from '../../shared/sentence-match.js';
 import type {
   SentenceAttemptRequest,
@@ -55,7 +56,7 @@ router.post('/grade', async (req, res) => {
  * Reported by the client rather than written where the grading happens, because only the client
  * knows how an attempt actually ended: an exact answer never reaches the server at all, nor does
  * a skip, and an answer the grader passed can still be handed back for leaving the word out. The
- * question itself is looked up here rather than trusted from the request, so the log says what
+ * question itself is looked up here rather than trusted from the request, so the record says what
  * was really asked.
  */
 router.post('/attempt', (req, res) => {
@@ -77,7 +78,7 @@ router.post('/attempt', (req, res) => {
     return res.status(404).json({ error: `No practice sentence for "${hanzi}"` });
   }
 
-  recordAttempt({
+  recordSentenceAttempt({
     hanzi,
     english: reference.english,
     // In the form answers are compared against, so a line can be read without normalising it

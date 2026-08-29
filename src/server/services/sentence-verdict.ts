@@ -4,10 +4,26 @@
  * the same reason homophones.ts sits outside infer-word.ts.
  */
 import { normalizeSentence } from '../../shared/sentence-match.js';
-import type { SentenceGradeResponse, SentenceVerdict } from '../../shared/types.js';
+import type {
+  SentenceAttemptOutcome,
+  SentenceGradeResponse,
+  SentenceVerdict,
+} from '../../shared/types.js';
 
 /** The closed set, interpolated into the prompt so it and this validator cannot drift apart */
 export const SENTENCE_VERDICTS: SentenceVerdict[] = ['correct', 'acceptable', 'wrong'];
+
+/**
+ * What the history can record, built from the verdict set so the two cannot drift apart. The
+ * two extra outcomes are settled without the grader: `missing-word` is good Chinese that left
+ * out the word being practised and so was handed back rather than marked, and `skipped` is an
+ * answer never attempted.
+ */
+export const SENTENCE_ATTEMPT_OUTCOMES: SentenceAttemptOutcome[] = [
+  ...SENTENCE_VERDICTS,
+  'missing-word',
+  'skipped',
+];
 
 /**
  * Never throws: an unusable reply is `null`, which the caller retries.

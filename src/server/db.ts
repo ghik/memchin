@@ -1,7 +1,17 @@
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import fs from 'fs';
 import path from 'path';
-import type { ContainingWord, Example, MatchMode, PracticeMode, Progress, Word } from '../shared/types.js';
+import type {
+  ContainingWord,
+  Example,
+  MatchMode,
+  PracticeMode,
+  Progress,
+  SentenceAttempt,
+  SentenceAttemptOutcome,
+  Word,
+} from '../shared/types.js';
+import { toStamp } from '../shared/time.js';
 import { MAX_BUCKET } from './services/srs.js';
 import {
   splitPinyin,
@@ -71,6 +81,26 @@ export async function initDb(): Promise<void> {
       UNIQUE(hanzi1, hanzi2)
     );
   `);
+
+  // Migration: create sentence_attempts table
+  //
+  // No foreign key on hanzi: this is a record of what happened, and it should outlive a word
+  // being taken out of the deck. Nor does it reference the example it was set from — examples
+  // are rewritten in place by regenerate-examples, so the question is stored as it was asked.
+  db.run(`
+    CREATE TABLE IF NOT EXISTS sentence_attempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      at TEXT NOT NULL,
+      hanzi TEXT NOT NULL,
+      english TEXT NOT NULL,
+      reference TEXT NOT NULL,
+      answer TEXT NOT NULL,
+      outcome TEXT NOT NULL,
+      explanation TEXT,
+      suggestion TEXT
+    );
+  `);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_sentence_attempts_hanzi ON sentence_attempts(hanzi)`);
 
   // Indexes for character mode queries
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_hanzi_rank ON words(hanzi_rank)`);
@@ -1122,6 +1152,46 @@ export function getHanziSynonymHanzis(hanzi: string): string[] {
      SELECT hanzi1 AS synonym FROM hanzi_synonyms WHERE hanzi2 = ?`,
     [hanzi, hanzi],
     (row) => row.synonym as string
+  );
+}
+
+/**
+ * Files one attempt at a sentence. Everything is kept, passes included: a record of practice
+ * with the right answers missing cannot say whether a sentence is hard or merely rare.
+ */
+export function recordSentenceAttempt(attempt: Omit<SentenceAttempt, 'at'>): void {
+  db.run(
+    `INSERT INTO sentence_attempts (at, hanzi, english, reference, answer, outcome, explanation, suggestion)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      toStamp(new Date()),
+      attempt.hanzi,
+      attempt.english,
+      attempt.reference,
+      attempt.answer,
+      attempt.outcome,
+      attempt.explanation ?? null,
+      attempt.suggestion ?? null,
+    ]
+  );
+  saveDb();
+}
+
+/** Every attempt logged so far, oldest first. Nothing reads this yet; it is how it gets read. */
+export function getSentenceAttempts(hanzi?: string): SentenceAttempt[] {
+  return queryRows(
+    `SELECT * FROM sentence_attempts ${hanzi ? 'WHERE hanzi = ?' : ''} ORDER BY at ASC, id ASC`,
+    hanzi ? [hanzi] : [],
+    (row) => ({
+      at: row.at,
+      hanzi: row.hanzi,
+      english: row.english,
+      reference: row.reference,
+      answer: row.answer,
+      outcome: row.outcome as SentenceAttemptOutcome,
+      ...(row.explanation ? { explanation: row.explanation as string } : {}),
+      ...(row.suggestion ? { suggestion: row.suggestion as string } : {}),
+    })
   );
 }
 

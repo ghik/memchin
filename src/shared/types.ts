@@ -253,6 +253,23 @@ export interface SentenceGradeResponse {
  */
 export type SentenceAttemptOutcome = SentenceVerdict | 'missing-word' | 'skipped';
 
+/** One attempt at a sentence, as it is kept */
+export interface SentenceAttempt {
+  /** UTC, as everything else in the deck is stored */
+  at: string;
+  /** The word the sentence was set for */
+  hanzi: string;
+  english: string;
+  /** Normalised, as answers are for comparison — punctuation and case are not the exercise */
+  reference: string;
+  /** What the learner wrote; empty when they skipped */
+  answer: string;
+  outcome: SentenceAttemptOutcome;
+  /** Absent when nothing graded it: an exact answer, or one handed back or skipped */
+  explanation?: string;
+  suggestion?: string;
+}
+
 /** One attempt, as the client reports it for the history. The server fills in the question. */
 export interface SentenceAttemptRequest {
   hanzi: string;
