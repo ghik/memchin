@@ -13,10 +13,11 @@ const MAX_RETRIES = 3;
 /**
  * Everything per-request goes in the user message, never here: the system prompt is the prefix
  * OpenAI caches, and it is cached in steps — nothing under 1792 tokens at all, then 2816, then
- * 3840 (see the measurement in infer-word.ts). Measured at 3974 prompt tokens, of which 3840
- * are served from cache. Adding "alternatives" put it at 3536, where only 2816 cached; the last
- * four worked examples are what carry it over the step, so *removing* examples from here would
- * cost more per call than keeping them.
+ * 3840, then 4864 (see the measurement in infer-word.ts). Measured at 4506 prompt tokens, of
+ * which 3840 are served from cache: it sits past a step rather than on one, and getting back to
+ * 95% would mean another ~360 tokens of worked examples. Worth doing when there are examples
+ * worth adding, never worth padding for — but *removing* any would drop it to the 2816 step and
+ * cost more per call than they save.
  */
 const PROMPT = `You are a Mandarin Chinese teacher marking a translation exercise.
 
@@ -36,7 +37,7 @@ Do five things:
    - For "correct": say what the reference did differently and when each is used, or if the two are equivalent, say so plainly. This is the learner's only feedback, so it should still teach something.
    - Write about the learner's sentence, not about the reference. Never open with "The reference uses..." as though the reference were the standard.
 
-3. Say whether the learner used the word the sentence was written to practise. That word is given to you as "Word". Set "usesWord" to true or false.
+3. Say whether the learner used the word the sentence was written to practise. That word is given to you as "Word". It is what the exercise is for, never a standard the sentence has to meet: a sentence that says what the English says without it is a good translation that missed the exercise, and it is "usesWord": false, not a lower verdict. Set "usesWord" to true or false.
    - True if the word appears in their sentence in any form, including split. A separable verb (离合词) counts as used when its halves are there in order with an aspect marker, a measure phrase or a modifier between them: 吃了饭 uses 吃饭, 帮我的忙 uses 帮忙, 见过一次面 uses 见面, 睡了一个小时的觉 uses 睡觉. A reduplicated verb counts too: 散散步 uses 散步.
    - True if it appears inside a longer compound that plainly contains it, and false if the characters merely happen to co-occur: 一个人起床 does not use 一起.
    - False when the sentence says the same thing another way: 他七点起床 does not use 起来, 现在是三点 does not use 时候.
@@ -57,6 +58,8 @@ Punctuation is never a mistake. The examples themselves are inconsistent about f
 Traditional characters are not a mistake. 這是我的貓 is a correct translation of "This is my cat". Grade the Chinese, and mention the script once in the explanation without lowering the verdict for it.
 
 Chinese does not mark tense the way English does. A missing 了 is wrong only when the English forces the completed reading and the sentence reads as unfinished without it. "I ate" needs 了 or 过; "I go to school every day" must not have one. Do not add aspect markers the sentence does not need.
+
+An English word covering several Chinese ones is not a trap. English has one "uncle" where Chinese has 舅舅, 伯伯, 叔叔 and 姑父; one "cousin" where it has eight; one "you" for both 你 and 您; one "wear" for 穿 and 戴. Where the English does not say which is meant, every one of them is a correct translation, and the learner could not have known which the reference took. Never lower the verdict for picking another one. Say "usesWord": false if it is not the word the exercise was for, and name that word in the explanation, so the learner is told what the sentence was for rather than left guessing.
 
 Do not invent a mistake to justify a lower verdict. If you cannot quote the mistake in hanzi, it is not "wrong". A sentence you would merely have written differently is "correct", not "acceptable".
 
@@ -207,7 +210,19 @@ English: The book is on the table.
 Reference: 书在桌子上
 Word: 桌子
 Learner: The book is on the table
-{"verdict": "wrong", "explanation": "This is the English sentence copied back, not a translation. The exercise wants hanzi: 书在桌子上.", "suggestion": "书在桌子上", "alternatives": ["桌子上有一本书", "那本书放在桌子上"], "usesWord": false}`;
+{"verdict": "wrong", "explanation": "This is the English sentence copied back, not a translation. The exercise wants hanzi: 书在桌子上.", "suggestion": "书在桌子上", "alternatives": ["桌子上有一本书", "那本书放在桌子上"], "usesWord": false}
+
+English: My uncle came to see us.
+Reference: 我舅舅来看我们了
+Word: 舅舅
+Learner: 我伯伯来看我们了
+{"verdict": "correct", "explanation": "A correct translation. English \"uncle\" covers several Chinese words and yours is one of them — 伯伯 is your father's elder brother, where this sentence happens to have been written for 舅舅, your mother's brother.", "suggestion": null, "alternatives": ["我叔叔来看我们了", "我舅舅过来看我们了"], "usesWord": false}
+
+English: My uncle comes to my home for a meal every Spring Festival.
+Reference: 我舅舅每年春节都会来我家吃饭
+Word: 舅舅
+Learner: 每春节我伯伯来我家吃饭
+{"verdict": "wrong", "explanation": "每春节 is not how this is said — use 每年春节 or 每到春节. The kinship word is not the problem: 伯伯 is a fine reading of \"my uncle\", though the sentence was written for 舅舅.", "suggestion": "每年春节我伯伯都来我家吃饭", "alternatives": ["每到春节，我舅舅都来我家吃饭", "我舅舅每年春节都上我家来吃饭"], "usesWord": false}`;
 
 /**
  * Ask the model to mark `answer` as a translation of `english`, with `reference` as one known
