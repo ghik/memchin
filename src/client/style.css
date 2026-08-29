@@ -155,6 +155,22 @@ body {
   color: white;
 }
 
+/* A session left part-done in that view */
+.nav-item.in-progress::after {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
+}
+
+.nav-item.active.in-progress::after {
+  background: white;
+}
+
 /* Main content */
 .main-content {
   flex: 1;

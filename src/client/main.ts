@@ -199,6 +199,26 @@ function viewFromPath(): View {
   return VIEW_PATHS[location.pathname] ?? 'practice';
 }
 
+/**
+ * A dot beside the view of a session left part-done, so going off to look a word up in Explore
+ * does not lose track of one. Practice is asked of sessionStorage, which is where its session
+ * actually lives and what survives a reload; a sentence round is held in memory only, so that
+ * one is asked of the round itself.
+ */
+function updateNavProgress(): void {
+  navItems.forEach((item) => {
+    const view = (item as HTMLElement).dataset.view;
+    if (view !== 'practice' && view !== 'sentences') {
+      return;
+    }
+    const busy =
+      view === 'practice'
+        ? sessionStorage.getItem('practiceSession') !== null
+        : sentenceQuestions.length > 0;
+    item.classList.toggle('in-progress', busy);
+  });
+}
+
 function showView(view: View, push = true) {
   currentView = view;
 
@@ -520,10 +540,12 @@ function saveSession() {
       practiceAttempts,
     })
   );
+  updateNavProgress();
 }
 
 function clearSession() {
   sessionStorage.removeItem('practiceSession');
+  updateNavProgress();
 }
 
 function restoreSession(): boolean {
@@ -4683,6 +4705,7 @@ async function startSentenceRound(): Promise<void> {
     sentenceAnswered = false;
     showSentencePart('round');
     showSentenceQuestion();
+    updateNavProgress();
   } catch (error) {
     sentencePoolInfo.textContent =
       error instanceof Error ? error.message : 'Could not load sentences';
@@ -4706,6 +4729,7 @@ function endSentenceRound(): void {
   // whether it is showing — left visible, one Enter on the summary would end the round again
   sentenceActions.classList.add('hidden');
   showSentencePart('summary');
+  updateNavProgress();
 }
 
 function showSentenceProgress(): void {
@@ -4983,6 +5007,8 @@ document.addEventListener('keydown', (e) => {
     handleSentenceNext();
   }
 });
+
+updateNavProgress();
 
 // Initialize. A saved session only speaks for the practice view, so the path wins elsewhere.
 const initialView = viewFromPath();
