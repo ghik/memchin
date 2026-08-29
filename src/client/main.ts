@@ -4567,6 +4567,7 @@ const sentenceSummaryStats = document.getElementById('sentence-summary-stats')!;
 const sentencePoolInfo = document.getElementById('sentence-pool-info')!;
 const sentenceCountInput = document.getElementById('sentence-count') as HTMLInputElement;
 const sentenceLongToggle = document.getElementById('sentence-long') as HTMLInputElement;
+const sentenceReviewToggle = document.getElementById('sentence-review') as HTMLInputElement;
 const sentenceCountRow = document.getElementById('sentence-count-row')!;
 const sentenceStartBtn = document.getElementById('sentence-start-btn') as HTMLButtonElement;
 const sentenceQuitBtn = document.getElementById('sentence-quit-btn')!;
@@ -4667,6 +4668,7 @@ function showSentenceSetup(): void {
   showSentencePart('setup');
   sentenceCountInput.value = String(savedSentenceCount());
   sentenceLongToggle.checked = localStorage.getItem('sentenceLong') === 'true';
+  sentenceReviewToggle.checked = localStorage.getItem('sentenceReview') === 'true';
   sentenceCountInput.focus();
   sentenceCountInput.select();
   void refreshSentencePoolInfo();
@@ -4676,19 +4678,31 @@ function showSentenceSetup(): void {
  * Said on the setup screen because the pool grows as words are learned, and because how much the
  * longer sentences add to it is exactly what the toggle beneath is asking about.
  */
-let sentencePoolCounts: { medium: number; long: number } | null = null;
+let sentencePoolCounts: { medium: number; long: number; review: number } | null = null;
 
 function showSentencePoolInfo(): void {
   if (!sentencePoolCounts) {
     return;
   }
-  const { medium, long } = sentencePoolCounts;
-  const total = medium + (sentenceLongToggle.checked ? long : 0);
-  sentencePoolInfo.textContent =
-    total === 0
-      ? 'No sentences yet — they come from the example sentences of words you have learned.'
-      : `${total} sentences available, from the words you have learned. ` +
-        `How many would you like to do?`;
+  const { medium, long, review } = sentencePoolCounts;
+  const reviewing = sentenceReviewToggle.checked;
+  // Length is not why a sentence went wrong, so a review round takes them whatever tier they
+  // came from and the checkbox above has nothing to say about it
+  sentenceLongToggle.disabled = reviewing;
+  sentenceLongToggle.closest('.sentence-option')?.classList.toggle('disabled', reviewing);
+
+  const total = reviewing ? review : medium + (sentenceLongToggle.checked ? long : 0);
+  if (total > 0) {
+    sentencePoolInfo.textContent =
+      (reviewing
+        ? `${total} prior mistakes, skipped or answered wrong.`
+        : `${total} sentences available, from the words you have learned.`) +
+      ' How many would you like to do?';
+  } else {
+    sentencePoolInfo.textContent = reviewing
+      ? 'No prior mistakes — everything you have answered, you got right.'
+      : 'No sentences yet — they come from the example sentences of words you have learned.';
+  }
 }
 
 async function refreshSentencePoolInfo(): Promise<void> {
@@ -4706,11 +4720,13 @@ async function startSentenceRound(): Promise<void> {
     MAX_SENTENCE_ROUND
   );
   const includeLong = sentenceLongToggle.checked;
+  const onlyReview = sentenceReviewToggle.checked;
   localStorage.setItem('sentenceCount', String(count));
   localStorage.setItem('sentenceLong', String(includeLong));
+  localStorage.setItem('sentenceReview', String(onlyReview));
   try {
     const result = await withButtonBusy(sentenceStartBtn, '…', () =>
-      getSentenceQuestions(count, includeLong)
+      getSentenceQuestions(count, includeLong, onlyReview)
     );
     if (!result) {
       return;
@@ -4996,6 +5012,7 @@ sentenceCountRow.querySelectorAll('.count-preset').forEach((btn) => {
 // Start is fused to the box, as Review is on a mode card, so the typed number has something to
 // act on; the presets beside it are the shortcuts
 sentenceLongToggle.addEventListener('change', showSentencePoolInfo);
+sentenceReviewToggle.addEventListener('change', showSentencePoolInfo);
 sentenceStartBtn.addEventListener('click', () => void startSentenceRound());
 sentenceCountInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {

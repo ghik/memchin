@@ -984,6 +984,28 @@ export function getLearnedCount(): number {
   return queryCount(`SELECT COUNT(DISTINCT hanzi) as cnt ${LEARNED_AS_A_WORD}`, []);
 }
 
+/**
+ * The sentences whose last word on the matter was a failure: answered wrong, or skipped.
+ *
+ * Identified by word and reference rather than by a stored question id, so the rows written
+ * before questions had ids count too — and so that a regenerated example, which is a different
+ * exercise wearing the same name, drops out of the list rather than standing in for the old one.
+ *
+ * "Last word" ignores a `missing-word` turn-back: that is the exercise handing the answer back
+ * to be written again, not a verdict on it, and the attempt that follows is the one that counts.
+ */
+export function getSentencesNeedingReview(): { hanzi: string; reference: string }[] {
+  return queryRows(
+    `SELECT hanzi, reference FROM sentence_attempts a
+     WHERE a.outcome IN ('wrong', 'skipped')
+       AND a.id = (SELECT MAX(b.id) FROM sentence_attempts b
+                   WHERE b.hanzi = a.hanzi AND b.reference = a.reference
+                     AND b.outcome <> 'missing-word')`,
+    [],
+    (row) => ({ hanzi: row.hanzi as string, reference: row.reference as string })
+  );
+}
+
 // Containing words (for character mode)
 export function getLearnedWordsContaining(hanzi: string): ContainingWord[] {
   return queryRows(

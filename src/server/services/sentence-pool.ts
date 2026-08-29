@@ -6,8 +6,8 @@
  * because this mode has no database model of its own yet, so keeping every DB touch out of it
  * makes it a clean revert if the shape changes.
  */
-import { getAllWords, getLearnedCount, getLearnedHanzi } from '../db.js';
-import { usesWord } from '../../shared/sentence-match.js';
+import { getAllWords, getLearnedCount, getLearnedHanzi, getSentencesNeedingReview } from '../db.js';
+import { normalizeSentence, usesWord } from '../../shared/sentence-match.js';
 import type { SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
 
 /**
@@ -112,21 +112,50 @@ export function questionFor(id: string): SentenceQuestion | null {
   return cachedById.get(id) ?? null;
 }
 
-/** How much material each length offers, for the screen that asks what to practise */
-export function poolCounts(): { medium: number; long: number } {
-  const pool = sentencePool();
-  const long = pool.filter((question) => question.long).length;
-  return { medium: pool.length - long, long };
+/** How the history names a question: the word it was set for and the sentence it asked for */
+function reviewKey(hanzi: string, reference: string): string {
+  return `${hanzi}\u0000${normalizeSentence(reference)}`;
 }
 
-/** A round's worth, drawn at random, so nothing repeats inside the round */
-export function shuffledPool(count: number, includeLong: boolean): SentenceQuestion[] {
-  const questions = includeLong
-    ? [...sentencePool()]
-    : sentencePool().filter((question) => !question.long);
-  for (let i = questions.length - 1; i > 0; i--) {
+/**
+ * The questions last answered wrong or skipped. Not cached with the pool: the pool changes when
+ * words are learned, this changes with every answer, and filtering a few thousand questions
+ * against a set costs nothing next to the query that built it.
+ */
+export function reviewPool(): SentenceQuestion[] {
+  const failed = new Set(
+    getSentencesNeedingReview().map(({ hanzi, reference }) => reviewKey(hanzi, reference))
+  );
+  return sentencePool().filter((question) =>
+    failed.has(reviewKey(question.hanzi, question.reference.hanzi))
+  );
+}
+
+/** How much material each choice offers, for the screen that asks what to practise */
+export function poolCounts(): { medium: number; long: number; review: number } {
+  const pool = sentencePool();
+  const long = pool.filter((question) => question.long).length;
+  return { medium: pool.length - long, long, review: reviewPool().length };
+}
+
+/**
+ * A round's worth, drawn at random, so nothing repeats inside the round.
+ *
+ * Reviewing ignores the length: what is being asked for is the sentences that went wrong, and
+ * which tier one of them came from is not why it went wrong.
+ */
+export function shuffledPool(
+  count: number,
+  includeLong: boolean,
+  onlyReview: boolean
+): SentenceQuestion[] {
+  const questions = onlyReview
+    ? reviewPool()
+    : sentencePool().filter((question) => includeLong || !question.long);
+  const shuffled = [...questions];
+  for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [questions[i], questions[j]] = [questions[j], questions[i]];
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return questions.slice(0, count);
+  return shuffled.slice(0, count);
 }

@@ -360,15 +360,20 @@ export async function assessSpeech(audio: ArrayBuffer, hanzi: string): Promise<S
 
 export function getSentenceQuestions(
   count: number,
-  includeLong: boolean
+  includeLong: boolean,
+  onlyReview: boolean
 ): Promise<SentenceQuestionsResponse> {
   return apiGet<SentenceQuestionsResponse>(
-    `/sentences/questions?count=${count}&long=${includeLong}`
+    `/sentences/questions?count=${count}&long=${includeLong}&review=${onlyReview}`
   );
 }
 
-/** How many sentences of each length there are to draw a round from */
-export function getSentencePoolSize(): Promise<{ medium: number; long: number }> {
+/** How many sentences each choice on the setup screen would draw a round from */
+export function getSentencePoolSize(): Promise<{
+  medium: number;
+  long: number;
+  review: number;
+}> {
   return apiGet('/sentences/pool-size');
 }
 

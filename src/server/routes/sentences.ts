@@ -34,7 +34,7 @@ router.get('/questions', (req, res) => {
       .json({ error: `count must be a whole number between 1 and ${MAX_ROUND}` });
   }
   const response: SentenceQuestionsResponse = {
-    questions: shuffledPool(count, req.query.long === 'true'),
+    questions: shuffledPool(count, req.query.long === 'true', req.query.review === 'true'),
   };
   res.json(response);
 });
