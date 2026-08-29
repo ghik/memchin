@@ -964,25 +964,24 @@ export function getDueCount(
 }
 
 /**
- * Every word that has been started in any mode. A null bucket is a row that exists without the
- * word having been learned, which is why the count and the set have to agree on the condition.
+ * Every word learned as a word, in any mode. A null bucket is a row that exists without the word
+ * having been learned; a character-mode-only row is a character learned as a piece of other
+ * words rather than as a word in its own right, and a word may hold both kinds of row, so it is
+ * the presence of a word-mode one that counts. The count and the set have to agree on all this,
+ * which is why the condition is written once.
  */
+const LEARNED_AS_A_WORD =
+  'FROM progress WHERE bucket IS NOT NULL AND COALESCE(character_mode_only, 0) = 0';
+
 export function getLearnedHanzi(): Set<string> {
   return new Set(
-    queryRows(
-      'SELECT DISTINCT hanzi FROM progress WHERE bucket IS NOT NULL',
-      [],
-      (row) => row.hanzi as string
-    )
+    queryRows(`SELECT DISTINCT hanzi ${LEARNED_AS_A_WORD}`, [], (row) => row.hanzi as string)
   );
 }
 
 /** How many there are, cheaply — enough to notice that the set has changed */
 export function getLearnedCount(): number {
-  return queryCount(
-    'SELECT COUNT(DISTINCT hanzi) as cnt FROM progress WHERE bucket IS NOT NULL',
-    []
-  );
+  return queryCount(`SELECT COUNT(DISTINCT hanzi) as cnt ${LEARNED_AS_A_WORD}`, []);
 }
 
 // Containing words (for character mode)

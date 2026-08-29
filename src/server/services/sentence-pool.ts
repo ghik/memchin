@@ -28,6 +28,10 @@ function wordInfo(word: Word): SentenceWordInfo {
  * `learned` is what bounds the pool. Frequency used to, and it was the wrong measure: of the
  * words actually learned, most sit outside any reasonable rank cap, so ranking by corpus
  * frequency threw away the vocabulary the learner had gone to the trouble of learning.
+ *
+ * It holds words learned as words. A character learned only in character mode was learned as a
+ * piece of other words, and asking for a sentence built around it asks for a word that was never
+ * studied as one.
  */
 export function buildPool(words: Iterable<Word>, learned: Set<string>): SentenceQuestion[] {
   const questions: SentenceQuestion[] = [];
