@@ -4426,9 +4426,13 @@ let sentenceGrading = false;
 /** This sentence has been answered and the reference is on screen */
 let sentenceAnswered = false;
 /**
- * Enter submits, and an exact answer is settled without waiting for anything, so the keypress
- * that submits would otherwise still be down when Next goes live and would carry straight past
- * the answer unseen. Word practice guards its own Next the same way.
+ * Enter submits, and an answer is sometimes settled without waiting for anything, so the
+ * keypress that submits would otherwise still be down when Next goes live and would carry
+ * straight past the answer unseen. Word practice guards its own Next the same way.
+ *
+ * Not applied when the sentence was simply right: there is nothing on that card to read but the
+ * reference, and holding the guard would only make Enter feel stuck on the answers that deserve
+ * the least attention.
  */
 let sentenceNextBlocked = false;
 let sentenceNextBlockedTimer: number | null = null;
@@ -4598,14 +4602,17 @@ function revealSentence(outcome: SentenceOutcome, answer: string): void {
 
   // Deliberately not focusing Next: a focused button takes Enter as a click of its own, which
   // would slip past the guard below
-  sentenceNextBlocked = true;
   if (sentenceNextBlockedTimer !== null) {
     clearTimeout(sentenceNextBlockedTimer);
-  }
-  sentenceNextBlockedTimer = window.setTimeout(() => {
-    sentenceNextBlocked = false;
     sentenceNextBlockedTimer = null;
-  }, 1000);
+  }
+  sentenceNextBlocked = !(outcome.kind === 'graded' && outcome.grading.verdict === 'correct');
+  if (sentenceNextBlocked) {
+    sentenceNextBlockedTimer = window.setTimeout(() => {
+      sentenceNextBlocked = false;
+      sentenceNextBlockedTimer = null;
+    }, 1000);
+  }
 }
 
 async function handleSentenceSubmit(): Promise<void> {
