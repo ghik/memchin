@@ -4424,9 +4424,16 @@ let sentencePassed = 0;
 let sentenceGrading = false;
 /** This sentence has been answered and the reference is on screen */
 let sentenceAnswered = false;
+/**
+ * Enter submits, and an exact answer is settled without waiting for anything, so the keypress
+ * that submits would otherwise still be down when Next goes live and would carry straight past
+ * the answer unseen. Word practice guards its own Next the same way.
+ */
+let sentenceNextBlocked = false;
+let sentenceNextBlockedTimer: number | null = null;
 
 type SentenceOutcome =
-  | { kind: 'graded'; grading: SentenceGradeResponse; exact: boolean }
+  | { kind: 'graded'; grading: SentenceGradeResponse }
   | { kind: 'skipped' }
   | { kind: 'ungraded'; message: string };
 
@@ -4545,10 +4552,9 @@ function revealSentence(outcome: SentenceOutcome): void {
         `<span class="sentence-suggestion"><span class="sentence-label">Try</span>` +
         `<span class="ex-hanzi">${escapeHtml(suggestion)}</span></span>`;
     }
-    // Typing the reference itself needs no reference shown back
-    if (!outcome.exact) {
-      parts += referenceHtml(question);
-    }
+    // Shown even when they typed it themselves: the point of answering is to see the sentence
+    // whole, with the reading, and to be told which word it was for
+    parts += referenceHtml(question);
     parts += sentenceWordHtml(question);
     if (verdict !== 'wrong') {
       sentencePassed++;
@@ -4573,7 +4579,17 @@ function revealSentence(outcome: SentenceOutcome): void {
   sentenceSkipBtn.classList.add('hidden');
   sentenceActions.classList.remove('hidden');
   sentenceProgressText.textContent = `Sentence ${sentenceIndex + 1} of ${sentenceQuestions.length} · ${sentencePassed} right`;
-  sentenceNextBtn.focus();
+
+  // Deliberately not focusing Next: a focused button takes Enter as a click of its own, which
+  // would slip past the guard below
+  sentenceNextBlocked = true;
+  if (sentenceNextBlockedTimer !== null) {
+    clearTimeout(sentenceNextBlockedTimer);
+  }
+  sentenceNextBlockedTimer = window.setTimeout(() => {
+    sentenceNextBlocked = false;
+    sentenceNextBlockedTimer = null;
+  }, 1000);
 }
 
 async function handleSentenceSubmit(): Promise<void> {
@@ -4590,11 +4606,7 @@ async function handleSentenceSubmit(): Promise<void> {
   // The server checks this too, but doing it here means an exact answer costs neither a round
   // trip nor an AI call
   if (sentenceMatches(answer, question.reference.hanzi)) {
-    revealSentence({
-      kind: 'graded',
-      exact: true,
-      grading: { verdict: 'correct', explanation: '' },
-    });
+    revealSentence({ kind: 'graded', grading: { verdict: 'correct', explanation: '' } });
     return;
   }
 
@@ -4618,7 +4630,7 @@ async function handleSentenceSubmit(): Promise<void> {
       askForTheWord(question);
       return;
     }
-    revealSentence({ kind: 'graded', grading, exact: false });
+    revealSentence({ kind: 'graded', grading });
   } catch (error) {
     // The reference is already here, so a grader that is down costs the marking, not the lesson
     revealSentence({
@@ -4642,6 +4654,11 @@ function handleSentenceNext(): void {
   if (sentenceGrading) {
     return;
   }
+  if (sentenceNextBlockedTimer !== null) {
+    clearTimeout(sentenceNextBlockedTimer);
+    sentenceNextBlockedTimer = null;
+  }
+  sentenceNextBlocked = false;
   sentenceIndex++;
   if (sentenceIndex >= sentenceQuestions.length) {
     // Round the pool again, in a fresh order
@@ -4670,7 +4687,7 @@ document.addEventListener('keydown', (e) => {
   if (e.isComposing || currentView !== 'sentences' || e.key !== 'Enter') {
     return;
   }
-  if (!sentenceActions.classList.contains('hidden')) {
+  if (!sentenceActions.classList.contains('hidden') && !sentenceNextBlocked) {
     handleSentenceNext();
   }
 });
