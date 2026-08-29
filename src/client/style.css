@@ -887,6 +887,14 @@ body.dark .preview-queued {
   }
 
   /*
+   * A sentence is not a word. A long example runs to thirty characters, which at this size is
+   * most of the card's width, so the box is given as much of it as the padding leaves.
+   */
+  .answer-flow#sentence-screen .answer-section input {
+    max-width: 580px;
+  }
+
+  /*
    * One size for every button under the box, before answering and after: Submit and I don't
    * know give way to Next, Edit word and Reset word in the same place, at the same weight.
    */
