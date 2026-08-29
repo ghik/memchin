@@ -7,7 +7,7 @@
  * revert if the shape changes.
  */
 import { getAllWords } from '../db.js';
-import { normalizeSentence, usesWord } from '../../shared/sentence-match.js';
+import { usesWord } from '../../shared/sentence-match.js';
 import type { Example, SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
 
 /** Common enough that the vocabulary is rarely the obstacle; 1355 of the deck's words qualify */
@@ -28,7 +28,6 @@ function wordInfo(word: Word): SentenceWordInfo {
 /** Pure, so it can be tested against fixtures rather than a database */
 export function buildPool(words: Iterable<Word>): SentenceQuestion[] {
   const questions: SentenceQuestion[] = [];
-  const seenEnglish = new Set<string>();
 
   for (const word of words) {
     const rank = word.wordFrequencyRank;
@@ -51,13 +50,8 @@ export function buildPool(words: Iterable<Word>): SentenceQuestion[] {
     if (!usesWord(hanzi, word.hanzi)) {
       continue;
     }
-    // A handful of words illustrate themselves with the same sentence; asking it twice in one
-    // pass would look like the shuffle had failed
-    const key = normalizeSentence(english);
-    if (seenEnglish.has(key)) {
-      continue;
-    }
-    seenEnglish.add(key);
+    // A sentence shared by two words is kept under both: the same English asked twice is the
+    // same English practising a different word each time, which is worth answering twice
     questions.push({
       hanzi: word.hanzi,
       english,

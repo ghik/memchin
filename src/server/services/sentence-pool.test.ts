@@ -75,9 +75,11 @@ describe('buildPool', () => {
     expect(buildPool([word('起来', 1, stray)])).toHaveLength(0);
   });
 
-  it('asks the same English only once, however many words illustrate it', () => {
+  it('keeps a sentence under every word it illustrates', () => {
+    // Answering it twice is answering for a different word each time
     const shared = [example('有啊', 'p'), example('我有一个弟弟', 'I have a younger brother.')];
     const other = [example('弟弟啊', 'p'), example('我有一个弟弟', 'I have a younger brother')];
-    expect(buildPool([word('有', 1, shared), word('弟弟', 2, other)])).toHaveLength(1);
+    const pool = buildPool([word('有', 1, shared), word('弟弟', 2, other)]);
+    expect(pool.map((q) => q.hanzi)).toEqual(['有', '弟弟']);
   });
 });
