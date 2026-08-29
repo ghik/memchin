@@ -50,9 +50,9 @@ describe('buildPool', () => {
     expect(buildPool([cat])[0].word).toEqual({ english: ['cat'], aiEnglish: ['feline'] });
   });
 
-  it('includes rank 500 and excludes what lies beyond it', () => {
-    expect(buildPool([word('看', 500)])).toHaveLength(1);
-    expect(buildPool([word('看', 501)])).toHaveLength(0);
+  it('includes rank 1500 and excludes what lies beyond it', () => {
+    expect(buildPool([word('看', 1500)])).toHaveLength(1);
+    expect(buildPool([word('看', 1501)])).toHaveLength(0);
   });
 
   it('excludes a word with no frequency rank at all', () => {

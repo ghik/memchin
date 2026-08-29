@@ -10,8 +10,8 @@ import { getAllWords } from '../db.js';
 import { normalizeSentence, usesWord } from '../../shared/sentence-match.js';
 import type { Example, SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
 
-/** Only words a learner meets constantly, so the vocabulary is never the obstacle */
-const MAX_RANK = 500;
+/** Common enough that the vocabulary is rarely the obstacle; 1355 of the deck's words qualify */
+const MAX_RANK = 1500;
 
 /**
  * The middle example. generate-examples.ts asks for a phrase, then a sentence of 5-12
