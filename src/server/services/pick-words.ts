@@ -6,12 +6,10 @@
  * corpora and are not trusted here, and offering a number as evidence would only anchor the model
  * to it. What is wanted is a judgement about spoken usefulness, so that is all that is asked for.
  */
-import OpenAI from 'openai';
+import { openai } from './openai.js';
 import { recordUsage } from './ai-usage.js';
 import { parseWordPicks } from './word-picks.js';
 import type { Word } from '../../shared/types.js';
-
-const openai = new OpenAI();
 
 const MODEL = 'gpt-5.4';
 const MAX_RETRIES = 3;

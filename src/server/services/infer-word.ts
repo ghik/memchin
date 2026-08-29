@@ -1,9 +1,7 @@
-import OpenAI from 'openai';
+import { openai } from './openai.js';
 import { notesAreAboutAHomophone } from './homophones.js';
 import { recordUsage } from './ai-usage.js';
 import type { InferResponse, InferVerdict } from '../../shared/types.js';
-
-const openai = new OpenAI();
 
 const MODEL = 'gpt-5.4';
 const MAX_RETRIES = 3;

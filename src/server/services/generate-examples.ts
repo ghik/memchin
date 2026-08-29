@@ -1,8 +1,6 @@
-import OpenAI from 'openai';
+import { openai } from './openai.js';
 import { recordUsage } from './ai-usage.js';
 import type { Example, WordCore } from '../../shared/types.js';
-
-const openai = new OpenAI();
 
 export interface ExampleResponse {
   hanzi: string;

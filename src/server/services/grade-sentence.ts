@@ -2,12 +2,10 @@
  * Marking a translation the learner typed: is it what the English says, is it grammatical, and
  * is it how a native would put it — and if not, what exactly is wrong with it.
  */
-import OpenAI from 'openai';
+import { openai } from './openai.js';
 import { recordUsage } from './ai-usage.js';
 import { parseSentenceGrading, SENTENCE_VERDICTS } from './sentence-verdict.js';
 import type { SentenceGradeResponse } from '../../shared/types.js';
-
-const openai = new OpenAI();
 
 const MODEL = 'gpt-5.4';
 const MAX_RETRIES = 3;
