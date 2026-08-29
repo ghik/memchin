@@ -37,7 +37,7 @@ router.post('/grade', async (req, res) => {
   }
 
   try {
-    res.json(await gradeSentence(reference.english, reference.hanzi, answer.trim()));
+    res.json(await gradeSentence(reference.english, reference.hanzi, hanzi, answer.trim()));
   } catch (error) {
     console.error(`Grading failed for "${hanzi}":`, error);
     res.status(500).json({ error: 'Grading failed' });

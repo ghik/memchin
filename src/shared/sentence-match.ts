@@ -21,6 +21,18 @@ export function normalizeSentence(text: string): string {
 }
 
 /**
+ * Did the learner actually use the word the sentence is for? A translation can be perfectly good
+ * Chinese and still miss the point of the exercise — 他七点起床 says what 他七点起来 says without
+ * practising 起来. Plain containment, on the normalised forms: nearly every word in the pool is
+ * inseparable, and being told to include a word you did use is a smaller cost than never being
+ * told you skipped it.
+ */
+export function usesWord(answer: string, word: string): boolean {
+  const normalizedWord = normalizeSentence(word);
+  return normalizedWord !== '' && normalizeSentence(answer).includes(normalizedWord);
+}
+
+/**
  * Did the learner write the reference sentence? Traditional characters, 的 for 得 and the like
  * are deliberately *not* folded away: those are real differences, and saying so is the grader's
  * job. An empty answer matches nothing, including an empty reference.

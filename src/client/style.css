@@ -2820,18 +2820,6 @@ mark.search-match {
   color: var(--text-4);
 }
 
-/* The sentence carries the question; what is known about its word sits under it, quieter */
-.sentence-english {
-  font-size: 24px;
-  line-height: 1.4;
-}
-
-.sentence-word {
-  margin-top: 18px;
-  font-size: 15px;
-  color: var(--text-3);
-}
-
 /* Grading a sentence takes a few seconds; the wait sits where the verdict will land */
 .feedback.pending {
   background: var(--surface-3);
@@ -2846,6 +2834,7 @@ mark.search-match {
 
 .feedback .explanation,
 .feedback .sentence-suggestion,
+.feedback .sentence-word,
 .feedback .sentence-reference {
   display: block;
   margin-top: 8px;

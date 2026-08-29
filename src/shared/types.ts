@@ -206,18 +206,10 @@ export type MatchMode = 'prefix' | 'contains' | 'suffix' | 'exact';
  */
 export type SentenceVerdict = 'correct' | 'acceptable' | 'wrong';
 
-/**
- * What is known about the word the sentence illustrates — the same things the english→hanzi and
- * english→pinyin prompts show, so the sentence is asked with the same context behind it. The
- * word's own hanzi and pinyin are left out for the same reason those modes leave them out.
- */
+/** What the word the sentence was written for means, shown once the answer is in */
 export interface SentenceWordInfo {
   english: string[];
   aiEnglish: string[];
-  polish?: string[];
-  categories: string[];
-  aiCategories: string[];
-  rank?: number;
 }
 
 /** One sentence to translate: the English is the prompt, the reference one right answer */
@@ -246,4 +238,10 @@ export interface SentenceGradeResponse {
   explanation: string;
   /** The learner's own sentence corrected — never merely the reference */
   suggestion?: string;
+  /**
+   * Whether the answer used the word the sentence is for, in any form. Asked of the model
+   * because containment cannot see a separable verb split around its object — 吃了饭 uses 吃饭
+   * without containing it. Absent when the model did not say, in which case containment stands.
+   */
+  usesWord?: boolean;
 }

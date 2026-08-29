@@ -44,9 +44,14 @@ export function parseSentenceGrading(raw: string, answer: string): SentenceGrade
   const worthSuggesting =
     suggestion !== '' && normalizeSentence(suggestion) !== normalizeSentence(answer);
 
+  // Anything other than a plain boolean leaves the question to containment rather than
+  // guessing, since a wrong answer here nags the learner about a word they did use
+  const usesWord = typeof obj.usesWord === 'boolean' ? obj.usesWord : undefined;
+
   return {
     verdict: verdict as SentenceVerdict,
     explanation,
     ...(worthSuggesting ? { suggestion } : {}),
+    ...(usesWord === undefined ? {} : { usesWord }),
   };
 }

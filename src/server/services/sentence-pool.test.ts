@@ -6,8 +6,17 @@ function example(hanzi: string, english: string): Example {
   return { hanzi, pinyin: 'pinyin', english };
 }
 
+/** Three examples in the shape the generator produces, each one using `hanzi` */
+function examplesFor(hanzi: string): Example[] {
+  return [
+    example(`${hanzi}啊`, 'phrase'),
+    example(`我${hanzi}了`, `sentence about ${hanzi}`),
+    example(`我昨天${hanzi}了很久`, `long sentence about ${hanzi}`),
+  ];
+}
+
 /** Only the fields buildPool reads; the rest of Word is irrelevant here */
-function word(hanzi: string, rank: number | undefined, examples: Example[]): Word {
+function word(hanzi: string, rank: number | undefined, examples = examplesFor(hanzi)): Word {
   return {
     hanzi,
     pinyin: '',
@@ -23,55 +32,52 @@ function word(hanzi: string, rank: number | undefined, examples: Example[]): Wor
   };
 }
 
-const three = [example('一', 'phrase'), example('二', 'sentence'), example('三', 'long sentence')];
-
 describe('buildPool', () => {
   it('takes the middle example, not the phrase or the long one', () => {
-    const [question] = buildPool([word('猫', 1, three)]);
-    expect(question.reference.hanzi).toBe('二');
-    expect(question.english).toBe('sentence');
+    const [question] = buildPool([word('看', 1)]);
+    expect(question.reference.hanzi).toBe('我看了');
+    expect(question.english).toBe('sentence about 看');
   });
 
   it('carries the owning word, so the reference can be found again', () => {
-    const [question] = buildPool([word('猫', 1, three)]);
-    expect(question.hanzi).toBe('猫');
+    expect(buildPool([word('看', 1)])[0].hanzi).toBe('看');
   });
 
-  it('carries what the prompt shows about the word, and nothing more', () => {
-    const cat = word('猫', 7, three);
+  it('carries what the word means, for showing once the answer is in', () => {
+    const cat = word('猫', 7);
     cat.english = ['cat'];
     cat.aiEnglish = ['feline'];
-    cat.categories = ['noun'];
-    const [question] = buildPool([cat]);
-    expect(question.word).toEqual({
-      english: ['cat'],
-      aiEnglish: ['feline'],
-      categories: ['noun'],
-      aiCategories: [],
-      rank: 7,
-    });
-    // The word's own hanzi is not part of the prompt, as it is not in the english→X modes
-    expect(question.word).not.toHaveProperty('hanzi');
+    expect(buildPool([cat])[0].word).toEqual({ english: ['cat'], aiEnglish: ['feline'] });
   });
 
   it('includes rank 500 and excludes what lies beyond it', () => {
-    expect(buildPool([word('a', 500, three)])).toHaveLength(1);
-    expect(buildPool([word('b', 501, three)])).toHaveLength(0);
+    expect(buildPool([word('看', 500)])).toHaveLength(1);
+    expect(buildPool([word('看', 501)])).toHaveLength(0);
   });
 
   it('excludes a word with no frequency rank at all', () => {
-    expect(buildPool([word('c', undefined, three)])).toHaveLength(0);
+    expect(buildPool([word('看', undefined)])).toHaveLength(0);
   });
 
   it('skips a word whose middle example is missing or malformed', () => {
-    expect(buildPool([word('d', 1, [example('一', 'phrase')])])).toHaveLength(0);
-    expect(buildPool([word('e', 1, [three[0], example('', 'sentence')])])).toHaveLength(0);
-    expect(buildPool([word('f', 1, [three[0], example('二', '  ')])])).toHaveLength(0);
+    expect(buildPool([word('看', 1, [example('看啊', 'phrase')])])).toHaveLength(0);
+    expect(
+      buildPool([word('看', 1, [example('看啊', 'p'), example('', 'sentence')])])
+    ).toHaveLength(0);
+    expect(buildPool([word('看', 1, [example('看啊', 'p'), example('我看了', ' ')])])).toHaveLength(
+      0
+    );
+  });
+
+  it('drops an example that never uses the word it was written for', () => {
+    // 起来 illustrated by 他七点起床 — a fine sentence and a useless exercise
+    const stray = [example('起来啊', 'phrase'), example('他七点起床', 'He gets up at seven')];
+    expect(buildPool([word('起来', 1, stray)])).toHaveLength(0);
   });
 
   it('asks the same English only once, however many words illustrate it', () => {
-    const shared = [three[0], example('我有一个弟弟', 'I have a younger brother.')];
-    const other = [three[0], example('我有一个弟弟', 'I have a younger brother')];
+    const shared = [example('有啊', 'p'), example('我有一个弟弟', 'I have a younger brother.')];
+    const other = [example('弟弟啊', 'p'), example('我有一个弟弟', 'I have a younger brother')];
     expect(buildPool([word('有', 1, shared), word('弟弟', 2, other)])).toHaveLength(1);
   });
 });

@@ -53,3 +53,29 @@ describe('parseSentenceGrading', () => {
     });
   });
 });
+
+describe('parseSentenceGrading, on whether the word was used', () => {
+  it('keeps a plain boolean either way', () => {
+    const yes = parseSentenceGrading(
+      '{"verdict":"correct","explanation":"x","usesWord":true}',
+      answer
+    );
+    const no = parseSentenceGrading(
+      '{"verdict":"correct","explanation":"x","usesWord":false}',
+      answer
+    );
+    expect(yes?.usesWord).toBe(true);
+    expect(no?.usesWord).toBe(false);
+  });
+
+  it('leaves it unsaid rather than guessing, so containment decides', () => {
+    // Nagging a learner about a word they did use is worse than missing one they skipped
+    for (const raw of [
+      '{"verdict":"correct","explanation":"x"}',
+      '{"verdict":"correct","explanation":"x","usesWord":"yes"}',
+      '{"verdict":"correct","explanation":"x","usesWord":null}',
+    ]) {
+      expect(parseSentenceGrading(raw, answer)).not.toHaveProperty('usesWord');
+    }
+  });
+});

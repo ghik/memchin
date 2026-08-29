@@ -15,7 +15,7 @@ import type {
 } from './services.js';
 import type { Example, Stats } from '../shared/types.js';
 import { takesExamples } from '../shared/labels.js';
-import { sentenceMatches } from '../shared/sentence-match.js';
+import { sentenceMatches, usesWord } from '../shared/sentence-match.js';
 import { fromStamp } from '../shared/time.js';
 import {
   toNumberedPinyin,
@@ -4430,6 +4430,22 @@ type SentenceOutcome =
   | { kind: 'skipped' }
   | { kind: 'ungraded'; message: string };
 
+/**
+ * Good Chinese that leaves the word out answers the English but not the exercise, so it is
+ * turned back rather than marked. Only worth saying when the sentence would otherwise have
+ * passed: told they had missed the word *and* got it wrong, a learner would fix the wrong thing.
+ */
+function askForTheWord(question: SentenceQuestion): void {
+  sentenceFeedback.className = 'feedback synonym';
+  sentenceFeedback.innerHTML =
+    `<span class="verdict">Good, but not this word</span>` +
+    `<span class="explanation">That says the same thing, but this sentence is for practising ` +
+    `<span class="ex-hanzi">${escapeHtml(question.hanzi)}</span>. Try again using it.</span>`;
+  sentenceInput.disabled = false;
+  sentenceInput.focus();
+  sentenceInput.select();
+}
+
 const SENTENCE_VERDICT_LABEL: Record<SentenceGradeResponse['verdict'], string> = {
   correct: '✓ Correct',
   acceptable: '✓ Acceptable',
@@ -4470,37 +4486,13 @@ async function ensureSentenceSession(): Promise<void> {
   }
 }
 
-/**
- * The sentence to translate, and under it what the english→hanzi and english→pinyin prompts
- * show about the word it was written for: its glosses, its labels and how common it is. The
- * word's own hanzi stays hidden, as it does in those modes — and so do the example hints, since
- * one of that word's examples is the very sentence being asked.
- */
-function sentencePromptHtml(question: SentenceQuestion): string {
-  const word = question.word;
-  let html = `<div class="sentence-english">${escapeHtml(question.english)}</div>`;
-  html += `<div class="sentence-word">${formatTranslationsWithInferred(word)}`;
-
-  const polishHtml = formatPolish(word.polish);
-  if (polishHtml) {
-    html += `<div class="prompt-polish">${polishHtml}</div>`;
-  }
-  if (hasCategoryTags(word)) {
-    html += `<div class="prompt-categories">${categoryTagsHtml(word)}</div>`;
-  }
-  if (word.rank != null) {
-    html += `<div class="prompt-rank">rank #${word.rank}</div>`;
-  }
-  return `${html}</div>`;
-}
-
 function showSentenceQuestion(): void {
   const question = currentSentence();
   if (!question) {
     return;
   }
   sentenceAnswered = false;
-  sentencePrompt.innerHTML = sentencePromptHtml(question);
+  sentencePrompt.textContent = question.english;
   sentencePrompt.classList.remove('hidden');
   sentenceFeedback.className = 'feedback hidden';
   sentenceFeedback.innerHTML = '';
@@ -4511,6 +4503,15 @@ function showSentenceQuestion(): void {
   sentenceActions.classList.add('hidden');
   sentenceProgressText.textContent = `Sentence ${sentenceIndex + 1} of ${sentenceQuestions.length} · ${sentencePassed} right`;
   sentenceInput.focus();
+}
+
+/** The word the sentence was written for — the point of the exercise, said only afterwards */
+function sentenceWordHtml(question: SentenceQuestion): string {
+  return (
+    `<span class="sentence-word"><span class="sentence-label">Word</span>` +
+    `<span class="ex-hanzi">${escapeHtml(question.hanzi)}</span> ` +
+    `${formatTranslationsWithInferred(question.word)}</span>`
+  );
 }
 
 function referenceHtml(question: SentenceQuestion): string {
@@ -4548,18 +4549,20 @@ function revealSentence(outcome: SentenceOutcome): void {
     if (!outcome.exact) {
       parts += referenceHtml(question);
     }
+    parts += sentenceWordHtml(question);
     if (verdict !== 'wrong') {
       sentencePassed++;
     }
   } else if (outcome.kind === 'skipped') {
     cssClass = 'synonym';
-    parts = `<span class="verdict">Skipped</span>${referenceHtml(question)}`;
+    parts = `<span class="verdict">Skipped</span>${referenceHtml(question)}${sentenceWordHtml(question)}`;
   } else {
     cssClass = 'synonym';
     parts =
       `<span class="verdict">Couldn't grade that</span>` +
       `<span class="explanation">${escapeHtml(outcome.message)}</span>` +
-      referenceHtml(question);
+      referenceHtml(question) +
+      sentenceWordHtml(question);
   }
 
   sentenceFeedback.className = `feedback ${cssClass}`;
@@ -4603,9 +4606,19 @@ async function handleSentenceSubmit(): Promise<void> {
     const grading = await withButtonBusy(sentenceSubmitBtn, 'Grading…', () =>
       gradeSentence(question.hanzi, answer)
     );
-    if (grading) {
-      revealSentence({ kind: 'graded', grading, exact: false });
+    if (!grading) {
+      return;
     }
+    // Containment settles it whenever it finds the word; only when it does not is the model's
+    // reading worth having, since it can see a separable verb split around its object
+    const used = usesWord(answer, question.hanzi) || grading.usesWord === true;
+    // Being told the word is missing *and* that the sentence is wrong would have the learner
+    // fixing the wrong thing, so an answer that fails on both counts is simply marked wrong
+    if (!used && grading.verdict !== 'wrong') {
+      askForTheWord(question);
+      return;
+    }
+    revealSentence({ kind: 'graded', grading, exact: false });
   } catch (error) {
     // The reference is already here, so a grader that is down costs the marking, not the lesson
     revealSentence({

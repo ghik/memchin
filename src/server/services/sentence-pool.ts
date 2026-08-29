@@ -7,7 +7,7 @@
  * revert if the shape changes.
  */
 import { getAllWords } from '../db.js';
-import { normalizeSentence } from '../../shared/sentence-match.js';
+import { normalizeSentence, usesWord } from '../../shared/sentence-match.js';
 import type { Example, SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
 
 /** Only words a learner meets constantly, so the vocabulary is never the obstacle */
@@ -20,16 +20,9 @@ const MAX_RANK = 500;
  */
 const EXAMPLE_INDEX = 1;
 
-/** Only what the prompt shows, so the pool stays a fraction of the size of the words behind it */
+/** Only what is shown with the answer, so the pool stays small */
 function wordInfo(word: Word): SentenceWordInfo {
-  return {
-    english: word.english,
-    aiEnglish: word.aiEnglish ?? [],
-    ...(word.polish?.length ? { polish: word.polish } : {}),
-    categories: word.categories,
-    aiCategories: word.aiCategories ?? [],
-    ...(word.wordFrequencyRank !== undefined ? { rank: word.wordFrequencyRank } : {}),
-  };
+  return { english: word.english, aiEnglish: word.aiEnglish ?? [] };
 }
 
 /** Pure, so it can be tested against fixtures rather than a database */
@@ -50,6 +43,12 @@ export function buildPool(words: Iterable<Word>): SentenceQuestion[] {
     const hanzi = example.hanzi?.trim() ?? '';
     // Examples can be regenerated at any time, so a malformed one must not reach the screen
     if (english === '' || hanzi === '') {
+      continue;
+    }
+    // A handful of examples never use the word they were written for — 起来 illustrated by
+    // 他七点起床. They are fine sentences and useless exercises, and keeping them would make the
+    // answer unpassable once an answer is required to contain the word
+    if (!usesWord(hanzi, word.hanzi)) {
       continue;
     }
     // A handful of words illustrate themselves with the same sentence; asking it twice in one
