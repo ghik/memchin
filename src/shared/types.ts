@@ -206,11 +206,27 @@ export type MatchMode = 'prefix' | 'contains' | 'suffix' | 'exact';
  */
 export type SentenceVerdict = 'correct' | 'acceptable' | 'wrong';
 
+/**
+ * What is known about the word the sentence illustrates — the same things the english→hanzi and
+ * english→pinyin prompts show, so the sentence is asked with the same context behind it. The
+ * word's own hanzi and pinyin are left out for the same reason those modes leave them out.
+ */
+export interface SentenceWordInfo {
+  english: string[];
+  aiEnglish: string[];
+  polish?: string[];
+  categories: string[];
+  aiCategories: string[];
+  rank?: number;
+}
+
 /** One sentence to translate: the English is the prompt, the reference one right answer */
 export interface SentenceQuestion {
   /** The deck word this example belongs to — how the server finds the reference again */
   hanzi: string;
   english: string;
+  /** The word the sentence was written to illustrate */
+  word: SentenceWordInfo;
   /** Shown once the learner has committed to an answer of their own */
   reference: Example;
 }

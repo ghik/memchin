@@ -37,6 +37,23 @@ describe('buildPool', () => {
     expect(question.hanzi).toBe('猫');
   });
 
+  it('carries what the prompt shows about the word, and nothing more', () => {
+    const cat = word('猫', 7, three);
+    cat.english = ['cat'];
+    cat.aiEnglish = ['feline'];
+    cat.categories = ['noun'];
+    const [question] = buildPool([cat]);
+    expect(question.word).toEqual({
+      english: ['cat'],
+      aiEnglish: ['feline'],
+      categories: ['noun'],
+      aiCategories: [],
+      rank: 7,
+    });
+    // The word's own hanzi is not part of the prompt, as it is not in the english→X modes
+    expect(question.word).not.toHaveProperty('hanzi');
+  });
+
   it('includes rank 500 and excludes what lies beyond it', () => {
     expect(buildPool([word('a', 500, three)])).toHaveLength(1);
     expect(buildPool([word('b', 501, three)])).toHaveLength(0);

@@ -8,7 +8,7 @@
  */
 import { getAllWords } from '../db.js';
 import { normalizeSentence } from '../../shared/sentence-match.js';
-import type { Example, SentenceQuestion, Word } from '../../shared/types.js';
+import type { Example, SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
 
 /** Only words a learner meets constantly, so the vocabulary is never the obstacle */
 const MAX_RANK = 500;
@@ -19,6 +19,18 @@ const MAX_RANK = 500;
  * and still short enough to type.
  */
 const EXAMPLE_INDEX = 1;
+
+/** Only what the prompt shows, so the pool stays a fraction of the size of the words behind it */
+function wordInfo(word: Word): SentenceWordInfo {
+  return {
+    english: word.english,
+    aiEnglish: word.aiEnglish ?? [],
+    ...(word.polish?.length ? { polish: word.polish } : {}),
+    categories: word.categories,
+    aiCategories: word.aiCategories ?? [],
+    ...(word.wordFrequencyRank !== undefined ? { rank: word.wordFrequencyRank } : {}),
+  };
+}
 
 /** Pure, so it can be tested against fixtures rather than a database */
 export function buildPool(words: Iterable<Word>): SentenceQuestion[] {
@@ -50,6 +62,7 @@ export function buildPool(words: Iterable<Word>): SentenceQuestion[] {
     questions.push({
       hanzi: word.hanzi,
       english,
+      word: wordInfo(word),
       reference: { ...example, hanzi },
     });
   }

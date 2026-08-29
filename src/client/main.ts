@@ -1153,7 +1153,7 @@ function formatTranslations(english: string[]): string {
  * one line. The inferred ones are only ever what the curated list does not already say, and
  * they carry a colour rather than a heading of their own.
  */
-function formatTranslationsWithInferred(word: Word): string {
+function formatTranslationsWithInferred(word: { english: string[]; aiEnglish?: string[] }): string {
   const sep = '<span class="english-sep"> • </span>';
   const items = [
     ...word.english.map((t) => renderFullTranslationItem(t)),
@@ -4015,7 +4015,7 @@ addWordBtn.addEventListener('click', async () => {
 });
 
 /** Category tags for a word — the user's own first, then the AI-inferred ones, badged */
-function categoryTagsHtml(word: Word): string {
+function categoryTagsHtml(word: { categories: string[]; aiCategories?: string[] }): string {
   const tags = word.categories.map((c) => `<span class="answer-category">${c}</span>`);
   for (const cat of word.aiCategories ?? []) {
     tags.push(
@@ -4033,7 +4033,7 @@ function aiNotesHtml(word: Word): string {
   return `<div class="ai-note"><span class="ai-mark" aria-hidden="true">✨</span><span class="ai-note-text">${word.aiNotes}</span></div>`;
 }
 
-function hasCategoryTags(word: Word): boolean {
+function hasCategoryTags(word: { categories: string[]; aiCategories?: string[] }): boolean {
   return word.categories.length > 0 || (word.aiCategories ?? []).length > 0;
 }
 
@@ -4457,6 +4457,7 @@ async function ensureSentenceSession(): Promise<void> {
     return;
   }
   sentencePrompt.textContent = 'Loading sentences…';
+  sentencePrompt.classList.remove('hidden');
   try {
     const { questions } = await getSentenceQuestions();
     sentenceQuestions = questions;
@@ -4469,13 +4470,37 @@ async function ensureSentenceSession(): Promise<void> {
   }
 }
 
+/**
+ * The sentence to translate, and under it what the english→hanzi and english→pinyin prompts
+ * show about the word it was written for: its glosses, its labels and how common it is. The
+ * word's own hanzi stays hidden, as it does in those modes — and so do the example hints, since
+ * one of that word's examples is the very sentence being asked.
+ */
+function sentencePromptHtml(question: SentenceQuestion): string {
+  const word = question.word;
+  let html = `<div class="sentence-english">${escapeHtml(question.english)}</div>`;
+  html += `<div class="sentence-word">${formatTranslationsWithInferred(word)}`;
+
+  const polishHtml = formatPolish(word.polish);
+  if (polishHtml) {
+    html += `<div class="prompt-polish">${polishHtml}</div>`;
+  }
+  if (hasCategoryTags(word)) {
+    html += `<div class="prompt-categories">${categoryTagsHtml(word)}</div>`;
+  }
+  if (word.rank != null) {
+    html += `<div class="prompt-rank">rank #${word.rank}</div>`;
+  }
+  return `${html}</div>`;
+}
+
 function showSentenceQuestion(): void {
   const question = currentSentence();
   if (!question) {
     return;
   }
   sentenceAnswered = false;
-  sentencePrompt.textContent = question.english;
+  sentencePrompt.innerHTML = sentencePromptHtml(question);
   sentencePrompt.classList.remove('hidden');
   sentenceFeedback.className = 'feedback hidden';
   sentenceFeedback.innerHTML = '';
