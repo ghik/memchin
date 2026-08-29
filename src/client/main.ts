@@ -4545,6 +4545,7 @@ const sentenceSummaryStats = document.getElementById('sentence-summary-stats')!;
 const sentencePoolInfo = document.getElementById('sentence-pool-info')!;
 const sentenceCountInput = document.getElementById('sentence-count') as HTMLInputElement;
 const sentenceCountRow = document.getElementById('sentence-count-row')!;
+const sentenceStartBtn = document.getElementById('sentence-start-btn') as HTMLButtonElement;
 const sentenceQuitBtn = document.getElementById('sentence-quit-btn')!;
 const sentenceAgainBtn = document.getElementById('sentence-again-btn')!;
 
@@ -4667,9 +4668,11 @@ async function startSentenceRound(): Promise<void> {
     MAX_SENTENCE_ROUND
   );
   localStorage.setItem('sentenceCount', String(count));
-  sentencePoolInfo.textContent = 'Loading sentences…';
   try {
-    const result = await getSentenceQuestions(count);
+    const result = await withButtonBusy(sentenceStartBtn, '…', () => getSentenceQuestions(count));
+    if (!result) {
+      return;
+    }
     if (result.questions.length === 0) {
       sentencePoolInfo.textContent = 'No sentences to practise yet.';
       return;
@@ -4946,7 +4949,9 @@ sentenceCountRow.querySelectorAll('.count-preset').forEach((btn) => {
   });
 });
 
-// No Start of its own: a preset starts a round, and so does Enter in the box
+// Start is fused to the box, as Review is on a mode card, so the typed number has something to
+// act on; the presets beside it are the shortcuts
+sentenceStartBtn.addEventListener('click', () => void startSentenceRound());
 sentenceCountInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     void startSentenceRound();

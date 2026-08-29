@@ -938,18 +938,6 @@ body.dark .preview-queued {
   margin-bottom: 20px;
 }
 
-/* Sized and coloured as the presets beside it, which are what start a round */
-#sentence-count-row .count-input {
-  width: 46px;
-  padding: 4px 6px 4px 0;
-  font-size: 13px;
-  font-weight: 500;
-  text-align: right;
-  background: var(--btn-review-bg);
-  color: var(--btn-review-color);
-  border: 1px solid var(--btn-review-border);
-  border-radius: 4px;
-}
 
 .sentence-summary-of {
   color: var(--text-3);
