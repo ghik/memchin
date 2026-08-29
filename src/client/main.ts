@@ -2,6 +2,8 @@ import type {
   CharacterInfo,
   InferResponse,
   MatchMode,
+  PracticeAttemptOutcome,
+  PracticeAttemptReport,
   PracticeMode,
   PracticeQuestion,
   Progress,
@@ -389,6 +391,11 @@ let results: Map<string, number> = new Map(); // hanzi -> round answered correct
 let allQuestions: PracticeQuestion[] = []; // original question list for results display
 let incorrectThisRound: PracticeQuestion[] = [];
 let roundNumber = 1;
+/**
+ * Every answer given this round, kept until the round is marked: a word's next date only exists
+ * once the whole round has been sent, so that is when the history can be written.
+ */
+let practiceAttempts: PracticeAttemptReport[] = [];
 let submitBlocked = false;
 let nextBlocked = false;
 let nextBlockedTimer: ReturnType<typeof setTimeout> | null = null;
@@ -481,6 +488,7 @@ function saveSession() {
       newWords: [...newWords],
       incorrectThisRound,
       roundNumber,
+      practiceAttempts,
     })
   );
 }
@@ -503,6 +511,7 @@ function restoreSession(): boolean {
     newWords = new Set(data.newWords);
     incorrectThisRound = data.incorrectThisRound;
     roundNumber = data.roundNumber;
+    practiceAttempts = data.practiceAttempts ?? [];
     showScreen(practiceScreen);
     showQuestion();
     return true;
@@ -1113,6 +1122,7 @@ async function handleStart(
     incorrectThisRound = [];
     roundNumber = 1;
     newWords.clear();
+    practiceAttempts = [];
 
     closePreview();
     closeBrowse();
@@ -1845,6 +1855,7 @@ async function handleSubmit() {
     const response = await submitAnswer(currentMode, question.word.hanzi, answer);
 
     if (response.synonym) {
+      recordPracticeAttempt(question.word.hanzi, answer, 'synonym');
       showTryAgain(`✓ "${answer}" is correct, but not the word I'm looking for. Try again!`);
       answerInput.focus();
       submitBtn.disabled = false;
@@ -1865,6 +1876,7 @@ async function handleSubmit() {
       return;
     }
 
+    recordPracticeAttempt(question.word.hanzi, answer, response.correct ? 'correct' : 'incorrect');
     if (response.correct && !results.has(question.word.hanzi)) {
       results.set(question.word.hanzi, roundNumber);
     }
@@ -1880,9 +1892,14 @@ async function handleSubmit() {
   }
 }
 
+function recordPracticeAttempt(hanzi: string, answer: string, outcome: PracticeAttemptOutcome) {
+  practiceAttempts.push({ hanzi, answer, outcome, at: new Date().toISOString() });
+}
+
 // Handle "I don't know" button
 function handleSkip() {
   const question = questions[currentIndex];
+  recordPracticeAttempt(question.word.hanzi, '', 'skipped');
   incorrectThisRound.push(question);
   showFinalFeedback(question, 'skip');
 }
@@ -1924,7 +1941,12 @@ async function finishPractice() {
       };
     });
 
-    const response = await completePractice(currentMode, resultArray, characterMode);
+    const response = await completePractice(
+      currentMode,
+      resultArray,
+      characterMode,
+      practiceAttempts
+    );
     const progressMap = new Map(response.progress.map((p) => [p.hanzi, p]));
 
     // Show results

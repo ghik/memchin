@@ -4,6 +4,9 @@ import type {
   AnswerResponse,
   CompleteRequest,
   CompleteResponse,
+  PracticeAttempt,
+  PracticeAttemptOutcome,
+  PracticeAttemptReport,
   PracticeMode,
   PracticeQuestion,
   StartRequest,
@@ -24,6 +27,7 @@ import {
   getWordByHanzi,
   getWordsForReview,
   incrementAnswerCounts,
+  recordPracticeAttempts,
   getWordsWithSameEnglish,
   isAmbiguousTranslation,
   isHanziSynonym,
@@ -31,6 +35,7 @@ import {
 } from '../db.js';
 import { getLearnedElsewhere, setQueuedAt, setCharQueuedAt, upsertProgress } from '../db.js';
 import { calculateNextEligible, updateProgress } from '../services/srs.js';
+import { toStamp } from '../../shared/time.js';
 import {
   hanziMatches,
   lastNeutralToneMismatch,
@@ -229,8 +234,25 @@ router.post('/hanzi-synonym', (req, res) => {
   res.json({ ok: true });
 });
 
+/** The closed set, so a client sending nonsense cannot put nonsense in the history */
+const PRACTICE_ATTEMPT_OUTCOMES: PracticeAttemptOutcome[] = [
+  'correct',
+  'incorrect',
+  'synonym',
+  'skipped',
+];
+
 router.post('/complete', (req, res) => {
-  const { mode, results, characterMode } = req.body as CompleteRequest;
+  const { mode, results, characterMode, attempts } = req.body as CompleteRequest;
+
+  // Read before anything is written: the history says what state each word was answered in,
+  // and updateProgress below is about to move it on
+  const bucketBefore = new Map<string, number | null>();
+  for (const attempt of attempts ?? []) {
+    if (!bucketBefore.has(attempt.hanzi)) {
+      bucketBefore.set(attempt.hanzi, getProgress(attempt.hanzi, mode)?.bucket ?? null);
+    }
+  }
 
   let newWordsLearned = 0;
 
@@ -241,12 +263,14 @@ router.post('/complete', (req, res) => {
       newWordsLearned++;
     }
   }
-  saveDb();
 
   const progress = results.map((r) => {
     const p = getProgress(r.hanzi, mode);
     return { hanzi: r.hanzi, bucket: p?.bucket ?? 0, nextEligible: p?.nextEligible ?? '' };
   });
+
+  recordPracticeAttempts(practiceAttemptsToStore(mode, attempts, bucketBefore));
+  saveDb();
 
   const response: CompleteResponse = {
     wordsReviewed: results.length,
@@ -255,6 +279,46 @@ router.post('/complete', (req, res) => {
   };
   res.json(response);
 });
+
+/**
+ * Turns the round's answers into rows, once the marking has been applied so the scheduling each
+ * one led to is known.
+ *
+ * The answers arrive together at the end of the round rather than one by one, because that is
+ * when a word's next date exists: practice marks a whole round at once, and until it does an
+ * answer has not yet moved anything. A round abandoned halfway is therefore not recorded — it
+ * never reached the server, and it never changed the schedule either.
+ */
+function practiceAttemptsToStore(
+  mode: PracticeMode,
+  attempts: PracticeAttemptReport[] | undefined,
+  bucketBefore: Map<string, number | null>
+): PracticeAttempt[] {
+  const stored: PracticeAttempt[] = [];
+  for (const attempt of attempts ?? []) {
+    if (
+      typeof attempt?.hanzi !== 'string' ||
+      typeof attempt.answer !== 'string' ||
+      !PRACTICE_ATTEMPT_OUTCOMES.includes(attempt.outcome)
+    ) {
+      continue;
+    }
+    // A word taken out of the round by a reset has no result of its own, so its answers keep
+    // whatever the reset left it with
+    const nextEligible = getProgress(attempt.hanzi, mode)?.nextEligible ?? '';
+    const at = new Date(attempt.at);
+    stored.push({
+      at: toStamp(Number.isNaN(at.getTime()) ? new Date() : at),
+      mode,
+      hanzi: attempt.hanzi,
+      bucket: bucketBefore.get(attempt.hanzi) ?? null,
+      answer: attempt.answer,
+      outcome: attempt.outcome,
+      nextEligible,
+    });
+  }
+  return stored;
+}
 
 function parseCategoryList(value: unknown): string[] {
   return typeof value === 'string' && value.length > 0 ? value.split(',') : [];

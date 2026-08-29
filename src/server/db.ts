@@ -5,6 +5,8 @@ import type {
   ContainingWord,
   Example,
   MatchMode,
+  PracticeAttempt,
+  PracticeAttemptOutcome,
   PracticeMode,
   Progress,
   SentenceAttempt,
@@ -101,6 +103,26 @@ export async function initDb(): Promise<void> {
     );
   `);
   db.run(`CREATE INDEX IF NOT EXISTS idx_sentence_attempts_hanzi ON sentence_attempts(hanzi)`);
+
+  // Migration: create practice_attempts table
+  //
+  // Every answer, retries and all, alongside the scheduling it fed into: the bucket the word was
+  // in when it was answered, and when it came due once the round had been marked.
+  db.run(`
+    CREATE TABLE IF NOT EXISTS practice_attempts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      at TEXT NOT NULL,
+      mode TEXT NOT NULL,
+      hanzi TEXT NOT NULL,
+      bucket INTEGER,
+      answer TEXT NOT NULL,
+      outcome TEXT NOT NULL,
+      next_eligible TEXT NOT NULL
+    );
+  `);
+  db.run(
+    `CREATE INDEX IF NOT EXISTS idx_practice_attempts_hanzi ON practice_attempts(hanzi, mode)`
+  );
 
   // Indexes for character mode queries
   db.run(`CREATE INDEX IF NOT EXISTS idx_words_hanzi_rank ON words(hanzi_rank)`);
@@ -1175,6 +1197,45 @@ export function recordSentenceAttempt(attempt: Omit<SentenceAttempt, 'at'>): voi
     ]
   );
   saveDb();
+}
+
+/**
+ * Files a round's worth of answers. Deliberately does not save: the caller is writing the
+ * progress these attempts produced in the same request, and one rewrite of the file covers both.
+ */
+export function recordPracticeAttempts(attempts: PracticeAttempt[]): void {
+  for (const attempt of attempts) {
+    db.run(
+      `INSERT INTO practice_attempts (at, mode, hanzi, bucket, answer, outcome, next_eligible)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        attempt.at,
+        attempt.mode,
+        attempt.hanzi,
+        attempt.bucket,
+        attempt.answer,
+        attempt.outcome,
+        attempt.nextEligible,
+      ]
+    );
+  }
+}
+
+/** Every answer logged so far, oldest first. Nothing reads this yet; it is how it gets read. */
+export function getPracticeAttempts(hanzi?: string): PracticeAttempt[] {
+  return queryRows(
+    `SELECT * FROM practice_attempts ${hanzi ? 'WHERE hanzi = ?' : ''} ORDER BY at ASC, id ASC`,
+    hanzi ? [hanzi] : [],
+    (row) => ({
+      at: row.at,
+      mode: row.mode as PracticeMode,
+      hanzi: row.hanzi,
+      bucket: row.bucket === null ? null : (row.bucket as number),
+      answer: row.answer,
+      outcome: row.outcome as PracticeAttemptOutcome,
+      nextEligible: row.next_eligible,
+    })
+  );
 }
 
 /** Every attempt logged so far, oldest first. Nothing reads this yet; it is how it gets read. */

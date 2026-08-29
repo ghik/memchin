@@ -6,6 +6,7 @@ import type {
   InferResponse,
   LookupResponse,
   MatchMode,
+  PracticeAttemptReport,
   PracticeMode,
   PracticeQuestion,
   PracticeResult,
@@ -28,6 +29,8 @@ export type {
   InferResponse,
   InferVerdict,
   MatchMode,
+  PracticeAttemptOutcome,
+  PracticeAttemptReport,
   PracticeMode,
   PracticeQuestion,
   Progress,
@@ -118,9 +121,10 @@ export function submitAnswer(
 export function completePractice(
   mode: PracticeMode,
   results: PracticeResult[],
-  characterMode: boolean
+  characterMode: boolean,
+  attempts: PracticeAttemptReport[]
 ): Promise<CompleteResponse> {
-  return apiPost('/practice/complete', { mode, results, characterMode });
+  return apiPost('/practice/complete', { mode, results, characterMode, attempts });
 }
 
 export function getStats(categories: string[], excludedCategories: string[]): Promise<Stats[]> {

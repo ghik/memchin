@@ -97,6 +97,36 @@ export interface AnswerResponse {
   synonym: boolean; // True if answer is a valid synonym but not the target word
 }
 
+/**
+ * How one answer in a practice round ended. `synonym` is an answer that was right about
+ * something else — right meaning, wrong word — and was handed back rather than marked.
+ */
+export type PracticeAttemptOutcome = 'correct' | 'incorrect' | 'synonym' | 'skipped';
+
+/** One answer, as the client reports it when the round it belongs to is finished */
+export interface PracticeAttemptReport {
+  hanzi: string;
+  /** Empty when the question was skipped */
+  answer: string;
+  outcome: PracticeAttemptOutcome;
+  /** When it was answered, ISO 8601 — the round it is reported with can end much later */
+  at: string;
+}
+
+/** One answer, as it is kept */
+export interface PracticeAttempt {
+  /** UTC, as everything else in the deck is stored */
+  at: string;
+  mode: PracticeMode;
+  hanzi: string;
+  /** The bucket the word was in when the answer was given; null if it was not yet learned */
+  bucket: number | null;
+  answer: string;
+  outcome: PracticeAttemptOutcome;
+  /** When the word came due once the round had been marked */
+  nextEligible: string;
+}
+
 export interface PracticeResult {
   hanzi: string;
   correctFirstTry: boolean;
@@ -107,6 +137,8 @@ export interface CompleteRequest {
   mode: PracticeMode;
   results: PracticeResult[];
   characterMode: boolean;
+  /** Every answer given during the round, in the order they were given */
+  attempts?: PracticeAttemptReport[];
 }
 
 export interface WordProgress {
