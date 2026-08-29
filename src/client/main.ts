@@ -47,6 +47,7 @@ import {
   makeProgressWordMode,
   previewNewWords,
   queueWords,
+  recordSentenceAttempt,
   regenerateAudio,
   regenerateExamples,
   resetWordBucket,
@@ -4442,7 +4443,8 @@ type SentenceOutcome =
  * turned back rather than marked. Only worth saying when the sentence would otherwise have
  * passed: told they had missed the word *and* got it wrong, a learner would fix the wrong thing.
  */
-function askForTheWord(question: SentenceQuestion): void {
+function askForTheWord(question: SentenceQuestion, answer: string): void {
+  recordSentenceAttempt({ hanzi: question.hanzi, answer, outcome: 'missing-word' });
   sentenceFeedback.className = 'feedback synonym';
   sentenceFeedback.innerHTML =
     `<span class="verdict">Good, but not this word</span>` +
@@ -4531,10 +4533,24 @@ function referenceHtml(question: SentenceQuestion): string {
   );
 }
 
-function revealSentence(outcome: SentenceOutcome): void {
+function revealSentence(outcome: SentenceOutcome, answer: string): void {
   const question = currentSentence();
   if (!question) {
     return;
+  }
+
+  // Everything but a grader that fell over: an attempt nobody managed to mark says nothing
+  // about the learner, and would only show up in the history as an answer of unknown standing
+  if (outcome.kind === 'graded') {
+    recordSentenceAttempt({
+      hanzi: question.hanzi,
+      answer,
+      outcome: outcome.grading.verdict,
+      explanation: outcome.grading.explanation,
+      suggestion: outcome.grading.suggestion,
+    });
+  } else if (outcome.kind === 'skipped') {
+    recordSentenceAttempt({ hanzi: question.hanzi, answer: '', outcome: 'skipped' });
   }
 
   let cssClass: string;
@@ -4606,7 +4622,7 @@ async function handleSentenceSubmit(): Promise<void> {
   // The server checks this too, but doing it here means an exact answer costs neither a round
   // trip nor an AI call
   if (sentenceMatches(answer, question.reference.hanzi)) {
-    revealSentence({ kind: 'graded', grading: { verdict: 'correct', explanation: '' } });
+    revealSentence({ kind: 'graded', grading: { verdict: 'correct', explanation: '' } }, answer);
     return;
   }
 
@@ -4627,16 +4643,19 @@ async function handleSentenceSubmit(): Promise<void> {
     // Being told the word is missing *and* that the sentence is wrong would have the learner
     // fixing the wrong thing, so an answer that fails on both counts is simply marked wrong
     if (!used && grading.verdict !== 'wrong') {
-      askForTheWord(question);
+      askForTheWord(question, answer);
       return;
     }
-    revealSentence({ kind: 'graded', grading });
+    revealSentence({ kind: 'graded', grading }, answer);
   } catch (error) {
     // The reference is already here, so a grader that is down costs the marking, not the lesson
-    revealSentence({
-      kind: 'ungraded',
-      message: error instanceof Error ? error.message : 'Grading failed',
-    });
+    revealSentence(
+      {
+        kind: 'ungraded',
+        message: error instanceof Error ? error.message : 'Grading failed',
+      },
+      answer
+    );
   } finally {
     sentenceGrading = false;
   }
@@ -4647,7 +4666,7 @@ function handleSentenceSkip(): void {
   if (sentenceGrading || sentenceAnswered || !currentSentence()) {
     return;
   }
-  revealSentence({ kind: 'skipped' });
+  revealSentence({ kind: 'skipped' }, '');
 }
 
 function handleSentenceNext(): void {

@@ -11,6 +11,7 @@ import type {
   PracticeResult,
   Progress,
   SearchResult,
+  SentenceAttemptRequest,
   SentenceGradeResponse,
   SentenceQuestionsResponse,
   SpeechAssessResponse,
@@ -31,6 +32,7 @@ export type {
   PracticeQuestion,
   Progress,
   SearchResult,
+  SentenceAttemptOutcome,
   SentenceGradeResponse,
   SentenceQuestion,
   SentenceVerdict,
@@ -339,4 +341,14 @@ export function getSentenceQuestions(): Promise<SentenceQuestionsResponse> {
 
 export function gradeSentence(hanzi: string, answer: string): Promise<SentenceGradeResponse> {
   return apiPost<SentenceGradeResponse>('/sentences/grade', { hanzi, answer });
+}
+
+/**
+ * Files an attempt in the history. Nothing waits on it and nothing depends on it: a history
+ * that missed a line is worth less than a practice session interrupted to say so.
+ */
+export function recordSentenceAttempt(attempt: SentenceAttemptRequest): void {
+  void apiPost<void>('/sentences/attempt', attempt).catch((error) => {
+    console.warn('Could not record the attempt:', error);
+  });
 }

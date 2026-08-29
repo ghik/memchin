@@ -245,3 +245,20 @@ export interface SentenceGradeResponse {
    */
   usesWord?: boolean;
 }
+
+/**
+ * How an attempt at a sentence ended. The three verdicts are the grader's; the other two are
+ * settled without it — `missing-word` is good Chinese that left out the word being practised,
+ * and so was handed back rather than marked, and `skipped` is an answer never attempted.
+ */
+export type SentenceAttemptOutcome = SentenceVerdict | 'missing-word' | 'skipped';
+
+/** One attempt, as the client reports it for the history. The server fills in the question. */
+export interface SentenceAttemptRequest {
+  hanzi: string;
+  /** Empty when skipped */
+  answer: string;
+  outcome: SentenceAttemptOutcome;
+  explanation?: string;
+  suggestion?: string;
+}
