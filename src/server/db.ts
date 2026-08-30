@@ -14,6 +14,7 @@ import type {
   Word,
 } from '../shared/types.js';
 import { toStamp } from '../shared/time.js';
+import { normalizeSentence } from '../shared/sentence-match.js';
 import { MAX_BUCKET } from './services/srs.js';
 import {
   splitPinyin,
@@ -122,6 +123,29 @@ export async function initDb(): Promise<void> {
   `);
   db.run(
     `CREATE INDEX IF NOT EXISTS idx_practice_attempts_hanzi ON practice_attempts(hanzi, mode)`
+  );
+
+  // Migration: create generated_sentences table
+  //
+  // Sentences written to order are kept so that a mistake on one can be practised again: the
+  // history names a question by what was asked, and without the sentence on record there is
+  // nothing left to ask. `normalized` is the form the history stores its reference in, so the
+  // two can be joined without normalising in SQL, and it is unique — the same sentence written
+  // twice is the same exercise, and should inherit rather than duplicate its history.
+  db.run(`
+    CREATE TABLE IF NOT EXISTS generated_sentences (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      at TEXT NOT NULL,
+      levels TEXT NOT NULL,
+      hanzi TEXT NOT NULL,
+      pinyin TEXT NOT NULL,
+      english TEXT NOT NULL,
+      normalized TEXT NOT NULL
+    );
+  `);
+  db.run(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_generated_sentences_normalized
+     ON generated_sentences(normalized)`
   );
 
   // Indexes for character mode queries
@@ -987,22 +1011,97 @@ export function getLearnedCount(): number {
 /**
  * The sentences whose last word on the matter was a failure: answered wrong, or skipped.
  *
- * Identified by word and reference rather than by a stored question id, so the rows written
- * before questions had ids count too — and so that a regenerated example, which is a different
- * exercise wearing the same name, drops out of the list rather than standing in for the old one.
+ * A sentence is identified by itself — the normalised form the history stores — and not by any
+ * word. Most came from a word's examples and some were written to order, and one that two words
+ * both illustrate is still one sentence: what was failed was producing it, which has nothing to
+ * do with what it was filed under. Identifying it this way is also what lets the rows written
+ * before questions had ids count, and what drops a regenerated example off the list, since that
+ * is a different sentence wearing the same name.
  *
  * "Last word" ignores a `missing-word` turn-back: that is the exercise handing the answer back
  * to be written again, not a verdict on it, and the attempt that follows is the one that counts.
  */
-export function getSentencesNeedingReview(): { hanzi: string; reference: string }[] {
+export function getSentencesNeedingReview(): string[] {
   return queryRows(
-    `SELECT hanzi, reference FROM sentence_attempts a
+    `SELECT DISTINCT a.reference FROM sentence_attempts a
      WHERE a.outcome IN ('wrong', 'skipped')
        AND a.id = (SELECT MAX(b.id) FROM sentence_attempts b
-                   WHERE b.hanzi = a.hanzi AND b.reference = a.reference
-                     AND b.outcome <> 'missing-word')`,
+                   WHERE b.reference = a.reference AND b.outcome <> 'missing-word')`,
     [],
-    (row) => ({ hanzi: row.hanzi as string, reference: row.reference as string })
+    (row) => row.reference as string
+  );
+}
+
+/**
+ * Files a round of written sentences and hands back what they are known by afterwards.
+ *
+ * A sentence already on record keeps its row rather than gaining a second one: it is the same
+ * exercise, and sharing the row is what lets it carry the history of having been failed before.
+ */
+export function saveGeneratedSentences(
+  sentences: Example[],
+  levels: number[]
+): { id: number; sentence: Example }[] {
+  const at = toStamp(new Date());
+  const levelList = levels.join(',');
+  const saved: { id: number; sentence: Example }[] = [];
+  for (const sentence of sentences) {
+    const normalized = normalizeSentence(sentence.hanzi);
+    if (normalized === '') {
+      continue;
+    }
+    db.run(
+      `INSERT OR IGNORE INTO generated_sentences (at, levels, hanzi, pinyin, english, normalized)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [at, levelList, sentence.hanzi, sentence.pinyin, sentence.english, normalized]
+    );
+    // Read back rather than taking the insert's rowid: the row may be one that was already
+    // there, which is the point of INSERT OR IGNORE here
+    const [id] = queryRows(
+      'SELECT id FROM generated_sentences WHERE normalized = ?',
+      [normalized],
+      (row) => row.id as number
+    );
+    if (id !== undefined) {
+      saved.push({ id, sentence });
+    }
+  }
+  saveDb();
+  return saved;
+}
+
+export function getGeneratedSentence(id: number): Example | null {
+  const rows = queryRows(
+    'SELECT hanzi, pinyin, english FROM generated_sentences WHERE id = ?',
+    [id],
+    (row) => ({
+      hanzi: row.hanzi as string,
+      pinyin: row.pinyin as string,
+      english: row.english as string,
+    })
+  );
+  return rows[0] ?? null;
+}
+
+/** The written sentences last answered wrong or skipped, joined on the same normalised form */
+export function getGeneratedSentencesNeedingReview(): { id: number; sentence: Example }[] {
+  return queryRows(
+    `SELECT g.id, g.hanzi, g.pinyin, g.english FROM generated_sentences g
+     WHERE EXISTS (
+       SELECT 1 FROM sentence_attempts a
+       WHERE a.reference = g.normalized
+         AND a.outcome IN ('wrong', 'skipped')
+         AND a.id = (SELECT MAX(b.id) FROM sentence_attempts b
+                     WHERE b.reference = a.reference AND b.outcome <> 'missing-word'))`,
+    [],
+    (row) => ({
+      id: row.id as number,
+      sentence: {
+        hanzi: row.hanzi as string,
+        pinyin: row.pinyin as string,
+        english: row.english as string,
+      },
+    })
   );
 }
 

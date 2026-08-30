@@ -6,9 +6,16 @@
  * because this mode has no database model of its own yet, so keeping every DB touch out of it
  * makes it a clean revert if the shape changes.
  */
-import { getAllWords, getLearnedCount, getLearnedHanzi, getSentencesNeedingReview } from '../db.js';
+import {
+  getAllWords,
+  getGeneratedSentence,
+  getGeneratedSentencesNeedingReview,
+  getLearnedCount,
+  getLearnedHanzi,
+  getSentencesNeedingReview,
+} from '../db.js';
 import { normalizeSentence, usesWord } from '../../shared/sentence-match.js';
-import type { SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
+import type { Example, SentenceQuestion, SentenceWordInfo, Word } from '../../shared/types.js';
 
 /**
  * generate-examples.ts asks for a phrase, then a sentence of 5-12 characters, then one of 12-30.
@@ -112,25 +119,53 @@ export function questionFor(id: string): SentenceQuestion | null {
   return cachedById.get(id) ?? null;
 }
 
-/** How the history names a question: the word it was set for and the sentence it asked for */
-function reviewKey(hanzi: string, reference: string): string {
-  return `${hanzi}\u0000${normalizeSentence(reference)}`;
-}
-
 /**
- * The questions last answered wrong or skipped. Not cached with the pool: the pool changes when
- * words are learned, this changes with every answer, and filtering a few thousand questions
- * against a set costs nothing next to the query that built it.
+ * The questions last answered wrong or skipped, from wherever they came: the deck's examples and
+ * the sentences written to order are the same kind of exercise once they have been failed, and
+ * a round of them is one list.
+ *
+ * Not cached with the pool: the pool changes when words are learned, this changes with every
+ * answer, and filtering a few thousand questions against a set costs nothing next to the query
+ * that built it.
  */
 export function reviewPool(): SentenceQuestion[] {
-  const failed = new Set(
-    getSentencesNeedingReview().map(({ hanzi, reference }) => reviewKey(hanzi, reference))
+  const failed = new Set(getSentencesNeedingReview());
+  const fromWords = sentencePool().filter((question) =>
+    failed.has(normalizeSentence(question.reference.hanzi))
   );
-  // Every question in the pool belongs to a word; only generated ones do not, and those are
-  // never in it
-  return sentencePool().filter((question) =>
-    failed.has(reviewKey(question.hanzi ?? '', question.reference.hanzi))
-  );
+  return [...fromWords, ...getGeneratedSentencesNeedingReview().map(writtenQuestion)];
+}
+
+/** A sentence written to order, as a question: it belongs to no word and has no length to pick */
+export function writtenQuestion({
+  id,
+  sentence,
+}: {
+  id: number;
+  sentence: Example;
+}): SentenceQuestion {
+  return {
+    id: `${WRITTEN_ID_PREFIX}${id}`,
+    english: sentence.english,
+    reference: sentence,
+    long: false,
+  };
+}
+
+/** Written sentences live in their own table, so their ids have to say so */
+const WRITTEN_ID_PREFIX = 'hsk#';
+
+/** The question an id names, whichever kind it is */
+export function anyQuestionFor(id: string): SentenceQuestion | null {
+  if (id.startsWith(WRITTEN_ID_PREFIX)) {
+    const rowId = Number(id.slice(WRITTEN_ID_PREFIX.length));
+    if (!Number.isInteger(rowId)) {
+      return null;
+    }
+    const sentence = getGeneratedSentence(rowId);
+    return sentence ? writtenQuestion({ id: rowId, sentence }) : null;
+  }
+  return questionFor(id);
 }
 
 /** How much material each choice offers, for the screen that asks what to practise */

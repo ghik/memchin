@@ -2,16 +2,21 @@ import { Router } from 'express';
 import { generateSentences } from '../services/generate-sentences.js';
 import { HSK_LEVELS } from '../services/generated-sentences.js';
 import { gradeSentence } from '../services/grade-sentence.js';
-import { poolCounts, questionFor, shuffledPool } from '../services/sentence-pool.js';
-import { generatedQuestion, rememberGenerated } from '../services/sentence-rounds.js';
+import {
+  anyQuestionFor,
+  poolCounts,
+  shuffledPool,
+  writtenQuestion,
+} from '../services/sentence-pool.js';
+import { saveGeneratedSentences } from '../db.js';
 import { SENTENCE_ATTEMPT_OUTCOMES } from '../services/sentence-verdict.js';
 import { recordSentenceAttempt } from '../db.js';
+
 import { normalizeSentence } from '../../shared/sentence-match.js';
 import type {
   GenerateSentencesRequest,
   SentenceAttemptRequest,
   SentenceGradeRequest,
-  SentenceQuestion,
   SentenceQuestionsResponse,
 } from '../../shared/types.js';
 
@@ -22,11 +27,6 @@ const DEFAULT_ROUND = 20;
 const MAX_ROUND = 200;
 /** Generated rounds are written in one call, and the wait grows with the number asked for */
 const MAX_GENERATED_ROUND = 30;
-
-/** A question is either one of the deck's or one written for this round; ids tell them apart */
-function findQuestion(id: string): SentenceQuestion | null {
-  return questionFor(id) ?? generatedQuestion(id);
-}
 
 /** How much material each length offers, for the screen that asks what to practise */
 router.get('/pool-size', (_req, res) => {
@@ -53,7 +53,8 @@ router.get('/questions', (req, res) => {
 
 /**
  * A round of sentences written to order, at chosen HSK levels, with nothing to do with the deck.
- * They are kept in memory so that grading and the history can resolve their ids later.
+ * They are kept, not thrown away after the round: one answered wrong is a sentence to come back
+ * to like any other, and there would be nothing to come back to if it were not on record.
  */
 router.post('/generate', async (req, res) => {
   const { count, levels } = (req.body ?? {}) as GenerateSentencesRequest;
@@ -72,8 +73,11 @@ router.post('/generate', async (req, res) => {
   }
 
   try {
-    const sentences = await generateSentences(count, [...new Set(levels)].sort());
-    const response: SentenceQuestionsResponse = { questions: rememberGenerated(sentences) };
+    const chosen = [...new Set(levels)].sort();
+    const sentences = await generateSentences(count, chosen);
+    const response: SentenceQuestionsResponse = {
+      questions: saveGeneratedSentences(sentences, chosen).map(writtenQuestion),
+    };
     res.json(response);
   } catch (error) {
     console.error('Generating sentences failed:', error);
@@ -91,7 +95,7 @@ router.post('/grade', async (req, res) => {
     return res.status(400).json({ error: 'answer is required' });
   }
 
-  const question = findQuestion(id);
+  const question = anyQuestionFor(id);
   if (!question) {
     return res.status(404).json({ error: `No practice sentence "${id}"` });
   }
@@ -128,7 +132,7 @@ router.post('/attempt', (req, res) => {
     return res.status(400).json({ error: `Unknown outcome "${outcome}"` });
   }
 
-  const question = findQuestion(id);
+  const question = anyQuestionFor(id);
   if (!question) {
     return res.status(404).json({ error: `No practice sentence "${id}"` });
   }
