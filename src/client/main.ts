@@ -4636,7 +4636,7 @@ function currentSentence(): SentenceQuestion | undefined {
 }
 
 /** Fetches a shuffled pool the first time the view is opened, and reshuffles when it runs out */
-const SENTENCE_COUNT_PRESETS = [10, 20, 30, 50];
+const SENTENCE_COUNT_PRESETS = [5, 10, 20, 30];
 const MAX_SENTENCE_ROUND = 200;
 /** Written sentences come one call at a time, and the wait grows with the number asked for */
 const MAX_WRITTEN_ROUND = 30;
