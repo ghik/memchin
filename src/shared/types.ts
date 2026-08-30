@@ -246,17 +246,24 @@ export interface SentenceWordInfo {
 
 /** One sentence to translate: the English is the prompt, the reference one right answer */
 export interface SentenceQuestion {
-  /** How the server finds this question again: the word, and which of its examples this is */
+  /** How the server finds this question again */
   id: string;
-  /** The deck word this example belongs to */
-  hanzi: string;
+  /** The deck word this example belongs to; absent when the sentence was written to order */
+  hanzi?: string;
   english: string;
-  /** The word the sentence was written to illustrate */
-  word: SentenceWordInfo;
+  /** What the word the sentence illustrates means; absent along with the word itself */
+  word?: SentenceWordInfo;
   /** Shown once the learner has committed to an answer of their own */
   reference: Example;
   /** The word's long example rather than its middle one — the harder half of the pool */
   long: boolean;
+}
+
+/** What a round of written-to-order sentences asks for */
+export interface GenerateSentencesRequest {
+  count: number;
+  /** HSK levels, 1 to 6 */
+  levels: number[];
 }
 
 export interface SentenceQuestionsResponse {

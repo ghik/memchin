@@ -1,12 +1,17 @@
 import { Router } from 'express';
+import { generateSentences } from '../services/generate-sentences.js';
+import { HSK_LEVELS } from '../services/generated-sentences.js';
 import { gradeSentence } from '../services/grade-sentence.js';
 import { poolCounts, questionFor, shuffledPool } from '../services/sentence-pool.js';
+import { generatedQuestion, rememberGenerated } from '../services/sentence-rounds.js';
 import { SENTENCE_ATTEMPT_OUTCOMES } from '../services/sentence-verdict.js';
 import { recordSentenceAttempt } from '../db.js';
 import { normalizeSentence } from '../../shared/sentence-match.js';
 import type {
+  GenerateSentencesRequest,
   SentenceAttemptRequest,
   SentenceGradeRequest,
+  SentenceQuestion,
   SentenceQuestionsResponse,
 } from '../../shared/types.js';
 
@@ -15,6 +20,13 @@ const router = Router();
 const DEFAULT_ROUND = 20;
 /** A round longer than this is not a round; the cap is what keeps one request bounded */
 const MAX_ROUND = 200;
+/** Generated rounds are written in one call, and the wait grows with the number asked for */
+const MAX_GENERATED_ROUND = 30;
+
+/** A question is either one of the deck's or one written for this round; ids tell them apart */
+function findQuestion(id: string): SentenceQuestion | null {
+  return questionFor(id) ?? generatedQuestion(id);
+}
 
 /** How much material each length offers, for the screen that asks what to practise */
 router.get('/pool-size', (_req, res) => {
@@ -39,6 +51,36 @@ router.get('/questions', (req, res) => {
   res.json(response);
 });
 
+/**
+ * A round of sentences written to order, at chosen HSK levels, with nothing to do with the deck.
+ * They are kept in memory so that grading and the history can resolve their ids later.
+ */
+router.post('/generate', async (req, res) => {
+  const { count, levels } = (req.body ?? {}) as GenerateSentencesRequest;
+
+  if (!Number.isInteger(count) || count < 1 || count > MAX_GENERATED_ROUND) {
+    return res
+      .status(400)
+      .json({ error: `count must be a whole number between 1 and ${MAX_GENERATED_ROUND}` });
+  }
+  if (
+    !Array.isArray(levels) ||
+    levels.length === 0 ||
+    !levels.every((level) => HSK_LEVELS.includes(level))
+  ) {
+    return res.status(400).json({ error: `levels must be some of ${HSK_LEVELS.join(', ')}` });
+  }
+
+  try {
+    const sentences = await generateSentences(count, [...new Set(levels)].sort());
+    const response: SentenceQuestionsResponse = { questions: rememberGenerated(sentences) };
+    res.json(response);
+  } catch (error) {
+    console.error('Generating sentences failed:', error);
+    res.status(500).json({ error: 'Could not write the sentences' });
+  }
+});
+
 router.post('/grade', async (req, res) => {
   const { id, answer } = (req.body ?? {}) as SentenceGradeRequest;
 
@@ -49,14 +91,14 @@ router.post('/grade', async (req, res) => {
     return res.status(400).json({ error: 'answer is required' });
   }
 
-  const question = questionFor(id);
+  const question = findQuestion(id);
   if (!question) {
     return res.status(404).json({ error: `No practice sentence "${id}"` });
   }
 
   try {
     const { reference, hanzi } = question;
-    res.json(await gradeSentence(reference.english, reference.hanzi, hanzi, answer.trim()));
+    res.json(await gradeSentence(reference.english, reference.hanzi, hanzi ?? '', answer.trim()));
   } catch (error) {
     console.error(`Grading failed for "${id}":`, error);
     res.status(500).json({ error: 'Grading failed' });
@@ -86,14 +128,15 @@ router.post('/attempt', (req, res) => {
     return res.status(400).json({ error: `Unknown outcome "${outcome}"` });
   }
 
-  const question = questionFor(id);
+  const question = findQuestion(id);
   if (!question) {
     return res.status(404).json({ error: `No practice sentence "${id}"` });
   }
   const { reference } = question;
 
   recordSentenceAttempt({
-    hanzi: question.hanzi,
+    // Empty for a sentence written to order: there is no word it was set for
+    hanzi: question.hanzi ?? '',
     english: reference.english,
     // In the form answers are compared against, so a line can be read without normalising it
     // again. Nothing is lost: the reference as written is still a lookup away by hanzi.

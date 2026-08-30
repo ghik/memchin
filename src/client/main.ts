@@ -38,6 +38,7 @@ import {
   clearWordQueued,
   completePractice,
   getCategories,
+  generateSentenceRound,
   getSentencePoolSize,
   getSentenceQuestions,
   getStats,
@@ -4567,7 +4568,10 @@ const sentenceSummaryStats = document.getElementById('sentence-summary-stats')!;
 const sentencePoolInfo = document.getElementById('sentence-pool-info')!;
 const sentenceCountInput = document.getElementById('sentence-count') as HTMLInputElement;
 const sentenceLongToggle = document.getElementById('sentence-long') as HTMLInputElement;
-const sentenceReviewToggle = document.getElementById('sentence-review') as HTMLInputElement;
+const sentenceLevelsRow = document.getElementById('sentence-levels')!;
+const sentenceSourceInputs = document.querySelectorAll<HTMLInputElement>(
+  'input[name="sentence-source"]'
+);
 const sentenceCountRow = document.getElementById('sentence-count-row')!;
 const sentenceStartBtn = document.getElementById('sentence-start-btn') as HTMLButtonElement;
 const sentenceQuitBtn = document.getElementById('sentence-quit-btn')!;
@@ -4602,13 +4606,13 @@ type SentenceOutcome =
  * turned back rather than marked. Only worth saying when the sentence would otherwise have
  * passed: told they had missed the word *and* got it wrong, a learner would fix the wrong thing.
  */
-function askForTheWord(question: SentenceQuestion, answer: string): void {
+function askForTheWord(question: SentenceQuestion, word: string, answer: string): void {
   recordSentenceAttempt({ id: question.id, answer, outcome: 'missing-word' });
   sentenceFeedback.className = 'feedback synonym';
   sentenceFeedback.innerHTML =
     `<span class="verdict">Good, but not this word</span>` +
     `<span class="explanation">That says the same thing, but this sentence is for practising ` +
-    `<span class="ex-hanzi">${escapeHtml(question.hanzi)}</span>. Try again using it.</span>`;
+    `<span class="ex-hanzi">${escapeHtml(word)}</span>. Try again using it.</span>`;
   sentenceInput.disabled = false;
   sentenceInput.focus();
   sentenceInput.select();
@@ -4634,6 +4638,38 @@ function currentSentence(): SentenceQuestion | undefined {
 /** Fetches a shuffled pool the first time the view is opened, and reshuffles when it runs out */
 const SENTENCE_COUNT_PRESETS = [10, 20, 30, 50];
 const MAX_SENTENCE_ROUND = 200;
+/** Written sentences come one call at a time, and the wait grows with the number asked for */
+const MAX_WRITTEN_ROUND = 30;
+const HSK_LEVELS = [1, 2, 3, 4, 5, 6];
+
+type SentenceSource = 'words' | 'review' | 'hsk';
+
+function sentenceSource(): SentenceSource {
+  for (const input of sentenceSourceInputs) {
+    if (input.checked) {
+      return input.value as SentenceSource;
+    }
+  }
+  return 'words';
+}
+
+/** Which HSK levels are ticked, always at least one so a round can always be asked for */
+let sentenceLevels = new Set<number>(
+  (localStorage.getItem('sentenceLevels') ?? '')
+    .split(',')
+    .map(Number)
+    .filter((level) => HSK_LEVELS.includes(level))
+);
+if (sentenceLevels.size === 0) {
+  sentenceLevels = new Set([1]);
+}
+
+function renderSentenceLevels(): void {
+  sentenceLevelsRow.querySelectorAll('.count-preset').forEach((btn) => {
+    const level = Number((btn as HTMLElement).dataset.level);
+    btn.classList.toggle('active', sentenceLevels.has(level));
+  });
+}
 
 function savedSentenceCount(): number {
   const stored = parseInt(localStorage.getItem('sentenceCount') ?? '', 10);
@@ -4668,7 +4704,14 @@ function showSentenceSetup(): void {
   showSentencePart('setup');
   sentenceCountInput.value = String(savedSentenceCount());
   sentenceLongToggle.checked = localStorage.getItem('sentenceLong') === 'true';
-  sentenceReviewToggle.checked = localStorage.getItem('sentenceReview') === 'true';
+  const saved = localStorage.getItem('sentenceSource');
+  sentenceSourceInputs.forEach((input) => {
+    input.checked = input.value === (saved ?? 'words');
+  });
+  if (!saved) {
+    sentenceSourceInputs[0].checked = true;
+  }
+  renderSentenceLevels();
   sentenceCountInput.focus();
   sentenceCountInput.select();
   void refreshSentencePoolInfo();
@@ -4685,12 +4728,23 @@ function showSentencePoolInfo(): void {
     return;
   }
   const { medium, long, review } = sentencePoolCounts;
-  const reviewing = sentenceReviewToggle.checked;
-  // Length is not why a sentence went wrong, so a review round takes them whatever tier they
-  // came from and the checkbox above has nothing to say about it
-  sentenceLongToggle.disabled = reviewing;
-  sentenceLongToggle.closest('.sentence-option')?.classList.toggle('disabled', reviewing);
+  const source = sentenceSource();
 
+  // Each sub-option belongs to one source and says nothing about the others. Length is not why
+  // a sentence went wrong, and a written round has no tiers to choose between.
+  sentenceLongToggle.disabled = source !== 'words';
+  sentenceLongToggle.closest('.sentence-option')?.classList.toggle('disabled', source !== 'words');
+  sentenceLevelsRow.classList.toggle('disabled', source !== 'hsk');
+
+  if (source === 'hsk') {
+    const levels = [...sentenceLevels].sort().join(', ');
+    sentencePoolInfo.textContent =
+      `Sentences written for you at HSK ${levels}, new every round and nothing to do with ` +
+      `your words. How many would you like? (${MAX_WRITTEN_ROUND} at most.)`;
+    return;
+  }
+
+  const reviewing = source === 'review';
   const total = reviewing ? review : medium + (sentenceLongToggle.checked ? long : 0);
   if (total > 0) {
     sentencePoolInfo.textContent =
@@ -4720,13 +4774,18 @@ async function startSentenceRound(): Promise<void> {
     MAX_SENTENCE_ROUND
   );
   const includeLong = sentenceLongToggle.checked;
-  const onlyReview = sentenceReviewToggle.checked;
+  const source = sentenceSource();
   localStorage.setItem('sentenceCount', String(count));
   localStorage.setItem('sentenceLong', String(includeLong));
-  localStorage.setItem('sentenceReview', String(onlyReview));
+  localStorage.setItem('sentenceSource', source);
+  localStorage.setItem('sentenceLevels', [...sentenceLevels].join(','));
   try {
+    // Writing them takes long enough that the wait needs saying, where drawing from the pool is
+    // a query and a shuffle
     const result = await withButtonBusy(sentenceStartBtn, '…', () =>
-      getSentenceQuestions(count, includeLong, onlyReview)
+      source === 'hsk'
+        ? generateSentenceRound(Math.min(count, MAX_WRITTEN_ROUND), [...sentenceLevels])
+        : getSentenceQuestions(count, includeLong, source === 'review')
     );
     if (!result) {
       return;
@@ -4791,8 +4850,14 @@ function showSentenceQuestion(): void {
   sentenceInput.focus();
 }
 
-/** The word the sentence was written for — the point of the exercise, said only afterwards */
+/**
+ * The word the sentence was written for — the point of the exercise, said only afterwards. A
+ * sentence written to order was not set for a word, so there is nothing to say.
+ */
 function sentenceWordHtml(question: SentenceQuestion): string {
+  if (!question.hanzi || !question.word) {
+    return '';
+  }
   return (
     `<span class="sentence-word"><span class="sentence-label">Word</span>` +
     `<span class="ex-hanzi">${escapeHtml(question.hanzi)}</span> ` +
@@ -4932,12 +4997,14 @@ async function handleSentenceSubmit(): Promise<void> {
       return;
     }
     // Containment settles it whenever it finds the word; only when it does not is the model's
-    // reading worth having, since it can see a separable verb split around its object
-    const used = usesWord(answer, question.hanzi) || grading.usesWord === true;
+    // reading worth having, since it can see a separable verb split around its object. A
+    // sentence written to order was set for no word, so there is nothing to hand it back for.
+    const word = question.hanzi;
+    const used = !word || usesWord(answer, word) || grading.usesWord === true;
     // Being told the word is missing *and* that the sentence is wrong would have the learner
     // fixing the wrong thing, so an answer that fails on both counts is simply marked wrong
     if (!used && grading.verdict !== 'wrong') {
-      askForTheWord(question, answer);
+      askForTheWord(question, word, answer);
       return;
     }
     revealSentence({ kind: 'graded', grading }, answer);
@@ -5011,8 +5078,27 @@ sentenceCountRow.querySelectorAll('.count-preset').forEach((btn) => {
 
 // Start is fused to the box, as Review is on a mode card, so the typed number has something to
 // act on; the presets beside it are the shortcuts
+sentenceLevelsRow.innerHTML = HSK_LEVELS.map(
+  (level) => `<button class="count-preset" data-level="${level}">${level}</button>`
+).join('');
+sentenceLevelsRow.querySelectorAll('.count-preset').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const level = Number((btn as HTMLElement).dataset.level);
+    if (sentenceLevels.has(level)) {
+      // Never all of them off: a round has to be at some level
+      if (sentenceLevels.size > 1) {
+        sentenceLevels.delete(level);
+      }
+    } else {
+      sentenceLevels.add(level);
+    }
+    renderSentenceLevels();
+    showSentencePoolInfo();
+  });
+});
+
 sentenceLongToggle.addEventListener('change', showSentencePoolInfo);
-sentenceReviewToggle.addEventListener('change', showSentencePoolInfo);
+sentenceSourceInputs.forEach((input) => input.addEventListener('change', showSentencePoolInfo));
 sentenceStartBtn.addEventListener('click', () => void startSentenceRound());
 sentenceCountInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {

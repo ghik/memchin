@@ -42,6 +42,7 @@ Do five things:
    - True if it appears inside a longer compound that plainly contains it, and false if the characters merely happen to co-occur: 一个人起床 does not use 一起.
    - False when the sentence says the same thing another way: 他七点起床 does not use 起来, 现在是三点 does not use 时候.
    - Judge this independently of the verdict. A sentence can be a perfect translation and still not use the word.
+   - The "Word" line is sometimes absent. The sentence was then not written to practise anything in particular, so there is nothing to check: set "usesWord" to true, and write the explanation as though no word had ever been asked about. Never remark on its absence.
 
 4. Offer a correction in "suggestion": the learner's own sentence, put right, staying as close to what they wrote as the fix allows. If they wrote 我昨天去了公园很开心, suggest 我昨天去公园玩得很开心, not the reference sentence. Use null when the verdict is "correct", or when nothing needs changing.
 
@@ -226,8 +227,9 @@ Learner: 每春节我伯伯来我家吃饭
 
 /**
  * Ask the model to mark `answer` as a translation of `english`, with `reference` as one known
- * good rendering and `word` the word the sentence was written to practise. Throws if no usable
- * reply arrives, as the word inference does.
+ * good rendering and `word` the word the sentence was written to practise — empty for a sentence
+ * written to order, which was set for no word. Throws if no usable reply arrives, as the word
+ * inference does.
  */
 export async function gradeSentence(
   english: string,
@@ -249,7 +251,12 @@ export async function gradeSentence(
           { role: 'system', content: PROMPT },
           {
             role: 'user',
-            content: `English: ${english}\nReference: ${reference}\nWord: ${word}\nLearner: ${answer}`,
+            // The Word line is left out rather than filled with a placeholder: a placeholder is
+            // something for the model to remark on, and it did
+            content:
+              `English: ${english}\nReference: ${reference}\n` +
+              (word ? `Word: ${word}\n` : '') +
+              `Learner: ${answer}`,
           },
         ],
       },

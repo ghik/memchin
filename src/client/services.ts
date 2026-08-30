@@ -368,6 +368,14 @@ export function getSentenceQuestions(
   );
 }
 
+/** A round of sentences written to order, which takes a while: one AI call for the lot */
+export function generateSentenceRound(
+  count: number,
+  levels: number[]
+): Promise<SentenceQuestionsResponse> {
+  return apiPost<SentenceQuestionsResponse>('/sentences/generate', { count, levels });
+}
+
 /** How many sentences each choice on the setup screen would draw a round from */
 export function getSentencePoolSize(): Promise<{
   medium: number;

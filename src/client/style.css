@@ -973,8 +973,29 @@ body.dark .preview-queued {
   opacity: 0.45;
 }
 
-.checkbox-label.sentence-option:last-of-type {
+/* The options that only apply to the source above them */
+.sentence-suboption {
+  margin-left: 28px;
+}
+
+.sentence-levels {
+  display: flex;
+  gap: 4px;
   margin-bottom: 20px;
+}
+
+.sentence-levels.disabled {
+  opacity: 0.45;
+}
+
+.sentence-levels .count-preset {
+  width: 34px;
+}
+
+.sentence-levels .count-preset.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 
 

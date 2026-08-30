@@ -126,8 +126,10 @@ export function reviewPool(): SentenceQuestion[] {
   const failed = new Set(
     getSentencesNeedingReview().map(({ hanzi, reference }) => reviewKey(hanzi, reference))
   );
+  // Every question in the pool belongs to a word; only generated ones do not, and those are
+  // never in it
   return sentencePool().filter((question) =>
-    failed.has(reviewKey(question.hanzi, question.reference.hanzi))
+    failed.has(reviewKey(question.hanzi ?? '', question.reference.hanzi))
   );
 }
 

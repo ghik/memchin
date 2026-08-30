@@ -82,11 +82,18 @@
           <h1>Sentence Practice</h1>
           <p id="sentence-pool-info" class="sentence-pool-info"></p>
           <label class="checkbox-label sentence-option">
-            <input type="checkbox" id="sentence-long"> Include the longer sentences
+            <input type="radio" name="sentence-source" value="words" checked> Sentences from words I have learned
+          </label>
+          <label class="checkbox-label sentence-option sentence-suboption">
+            <input type="checkbox" id="sentence-long"> Include the longer ones
           </label>
           <label class="checkbox-label sentence-option">
-            <input type="checkbox" id="sentence-review"> Practice prior mistakes
+            <input type="radio" name="sentence-source" value="review"> Practice prior mistakes
           </label>
+          <label class="checkbox-label sentence-option">
+            <input type="radio" name="sentence-source" value="hsk"> Written for me at HSK level
+          </label>
+          <div class="sentence-levels sentence-suboption" id="sentence-levels"></div>
           <div class="mode-card-actions action-row-review" id="sentence-count-row">
             <span class="action-btn-combo mode-review-btn">
               <button id="sentence-start-btn" class="mode-review-btn action-btn-label">Start</button>
