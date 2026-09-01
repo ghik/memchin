@@ -4791,7 +4791,10 @@ async function startSentenceRound(): Promise<void> {
       return;
     }
     if (result.questions.length === 0) {
-      sentencePoolInfo.textContent = 'No sentences to practise yet.';
+      sentencePoolInfo.textContent =
+        source === 'hsk'
+          ? 'Nothing new came back — every sentence written this time had been written before.'
+          : 'No sentences to practise yet.';
       return;
     }
     sentenceQuestions = result.questions;

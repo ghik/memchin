@@ -1070,6 +1070,22 @@ export function saveGeneratedSentences(
   return saved;
 }
 
+/** Every written sentence there has ever been, in the form a new one is compared against */
+export function getGeneratedNormalized(): Set<string> {
+  return new Set(
+    queryRows('SELECT normalized FROM generated_sentences', [], (row) => row.normalized as string)
+  );
+}
+
+/** The latest few, to show the model what it has already written */
+export function getRecentGeneratedEnglish(limit: number): string[] {
+  return queryRows(
+    'SELECT english FROM generated_sentences ORDER BY id DESC LIMIT ?',
+    [limit],
+    (row) => row.english as string
+  );
+}
+
 export function getGeneratedSentence(id: number): Example | null {
   const rows = queryRows(
     'SELECT hanzi, pinyin, english FROM generated_sentences WHERE id = ?',
