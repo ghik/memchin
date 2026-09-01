@@ -8,7 +8,11 @@ import {
   shuffledPool,
   writtenQuestion,
 } from '../services/sentence-pool.js';
-import { saveGeneratedSentences } from '../db.js';
+import {
+  countUnpractisedGeneratedByLevel,
+  getUnpractisedGeneratedSentences,
+  saveGeneratedSentences,
+} from '../db.js';
 import { SENTENCE_ATTEMPT_OUTCOMES } from '../services/sentence-verdict.js';
 import { recordSentenceAttempt } from '../db.js';
 
@@ -28,9 +32,9 @@ const MAX_ROUND = 200;
 /** Generated rounds are written in one call, and the wait grows with the number asked for */
 const MAX_GENERATED_ROUND = 30;
 
-/** How much material each length offers, for the screen that asks what to practise */
+/** How much material each choice offers, for the screen that asks what to practise */
 router.get('/pool-size', (_req, res) => {
-  res.json(poolCounts());
+  res.json({ ...poolCounts(), written: countUnpractisedGeneratedByLevel() });
 });
 
 /**
@@ -52,9 +56,12 @@ router.get('/questions', (req, res) => {
 });
 
 /**
- * A round of sentences written to order, at chosen HSK levels, with nothing to do with the deck.
- * They are kept, not thrown away after the round: one answered wrong is a sentence to come back
- * to like any other, and there would be nothing to come back to if it were not on record.
+ * A round of sentences at chosen HSK levels, with nothing to do with the deck.
+ *
+ * Drawn first from the ones already written and never answered, and only then from the model,
+ * for as many as are still wanted. Sentences are kept rather than thrown away after the round —
+ * one answered wrong is a sentence to come back to like any other — and keeping them is what
+ * makes most rounds a query rather than a wait.
  */
 router.post('/generate', async (req, res) => {
   const { count, levels } = (req.body ?? {}) as GenerateSentencesRequest;
@@ -74,10 +81,12 @@ router.post('/generate', async (req, res) => {
 
   try {
     const chosen = [...new Set(levels)].sort();
-    const sentences = await generateSentences(count, chosen);
-    const response: SentenceQuestionsResponse = {
-      questions: saveGeneratedSentences(sentences, chosen).map(writtenQuestion),
-    };
+    const questions = getUnpractisedGeneratedSentences(chosen, count).map(writtenQuestion);
+    if (questions.length < count) {
+      const fresh = await generateSentences(count - questions.length, chosen);
+      questions.push(...saveGeneratedSentences(fresh, chosen).map(writtenQuestion));
+    }
+    const response: SentenceQuestionsResponse = { questions };
     res.json(response);
   } catch (error) {
     console.error('Generating sentences failed:', error);

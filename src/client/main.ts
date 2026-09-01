@@ -4721,13 +4721,18 @@ function showSentenceSetup(): void {
  * Said on the setup screen because the pool grows as words are learned, and because how much the
  * longer sentences add to it is exactly what the toggle beneath is asking about.
  */
-let sentencePoolCounts: { medium: number; long: number; review: number } | null = null;
+let sentencePoolCounts: {
+  medium: number;
+  long: number;
+  review: number;
+  written: Record<number, number>;
+} | null = null;
 
 function showSentencePoolInfo(): void {
   if (!sentencePoolCounts) {
     return;
   }
-  const { medium, long, review } = sentencePoolCounts;
+  const { medium, long, review, written } = sentencePoolCounts;
   const source = sentenceSource();
 
   // Each sub-option belongs to one source and says nothing about the others. Length is not why
@@ -4737,10 +4742,13 @@ function showSentencePoolInfo(): void {
   sentenceLevelsRow.classList.toggle('disabled', source !== 'hsk');
 
   if (source === 'hsk') {
-    const levels = [...sentenceLevels].sort().join(', ');
+    const chosen = [...sentenceLevels].sort();
+    // What is waiting is what a round costs nothing and no wait; past that the AI writes more,
+    // which is worth saying, since that is where the seconds on the Start button come from
+    const ready = chosen.reduce((sum, level) => sum + (written[level] ?? 0), 0);
     sentencePoolInfo.textContent =
-      `Sentences written for you at HSK ${levels}, new every round and nothing to do with ` +
-      `your words. How many would you like? (${MAX_WRITTEN_ROUND} at most.)`;
+      `${ready} unanswered sentences ready at HSK ${chosen.join(', ')}, and more written to ` +
+      `order when those run out. How many would you like? (${MAX_WRITTEN_ROUND} at most.)`;
     return;
   }
 

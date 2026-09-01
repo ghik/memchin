@@ -1070,6 +1070,63 @@ export function saveGeneratedSentences(
   return saved;
 }
 
+/** Rows written under any of these levels; the column holds the list a round was asked for */
+function levelClause(levels: number[]): { sql: string; params: string[] } {
+  return {
+    sql: levels.map(() => `(',' || g.levels || ',') LIKE ?`).join(' OR '),
+    params: levels.map((level) => `%,${level},%`),
+  };
+}
+
+/**
+ * Written sentences at these levels that have never been answered, in a random order.
+ *
+ * What a round is drawn from before anything new is written: a sentence already on record is a
+ * sentence already paid for, and one that has been answered is not worth asking again — that is
+ * what the review round is for.
+ */
+export function getUnpractisedGeneratedSentences(
+  levels: number[],
+  limit: number
+): { id: number; sentence: Example }[] {
+  const { sql, params } = levelClause(levels);
+  return queryRows(
+    `SELECT g.id, g.hanzi, g.pinyin, g.english FROM generated_sentences g
+     WHERE (${sql})
+       AND NOT EXISTS (SELECT 1 FROM sentence_attempts a WHERE a.reference = g.normalized)
+     ORDER BY RANDOM() LIMIT ?`,
+    [...params, limit],
+    (row) => ({
+      id: row.id as number,
+      sentence: {
+        hanzi: row.hanzi as string,
+        pinyin: row.pinyin as string,
+        english: row.english as string,
+      },
+    })
+  );
+}
+
+/**
+ * How many are waiting at each level, for the screen that asks what to practise. A sentence
+ * written for several levels counts under each of them, which is as precise as the column is.
+ */
+export function countUnpractisedGeneratedByLevel(): Record<number, number> {
+  const counts: Record<number, number> = {};
+  for (const row of queryRows(
+    `SELECT g.levels, COUNT(*) as cnt FROM generated_sentences g
+     WHERE NOT EXISTS (SELECT 1 FROM sentence_attempts a WHERE a.reference = g.normalized)
+     GROUP BY g.levels`,
+    [],
+    (row) => ({ levels: row.levels as string, count: row.cnt as number })
+  )) {
+    for (const level of row.levels.split(',')) {
+      counts[Number(level)] = (counts[Number(level)] ?? 0) + row.count;
+    }
+  }
+  return counts;
+}
+
 /** Every written sentence there has ever been, in the form a new one is compared against */
 export function getGeneratedNormalized(): Set<string> {
   return new Set(

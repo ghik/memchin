@@ -381,6 +381,8 @@ export function getSentencePoolSize(): Promise<{
   medium: number;
   long: number;
   review: number;
+  /** How many written sentences are waiting at each HSK level, unanswered */
+  written: Record<number, number>;
 }> {
   return apiGet('/sentences/pool-size');
 }
