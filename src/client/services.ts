@@ -387,6 +387,11 @@ export function getSentencePoolSize(): Promise<{
   return apiGet('/sentences/pool-size');
 }
 
+/** Has the reference spoken, if it has not been already. Resolves once the file is there. */
+export function ensureSentenceAudio(id: string): Promise<{ hanzi: string }> {
+  return apiPost<{ hanzi: string }>('/sentences/audio', { id });
+}
+
 export function gradeSentence(id: string, answer: string): Promise<SentenceGradeResponse> {
   return apiPost<SentenceGradeResponse>('/sentences/grade', { id, answer });
 }

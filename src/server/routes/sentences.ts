@@ -14,6 +14,7 @@ import {
   saveGeneratedSentences,
 } from '../db.js';
 import { SENTENCE_ATTEMPT_OUTCOMES } from '../services/sentence-verdict.js';
+import { generateSpeech } from '../services/tts.js';
 import { recordSentenceAttempt } from '../db.js';
 
 import { normalizeSentence } from '../../shared/sentence-match.js';
@@ -91,6 +92,32 @@ router.post('/generate', async (req, res) => {
   } catch (error) {
     console.error('Generating sentences failed:', error);
     res.status(500).json({ error: 'Could not write the sentences' });
+  }
+});
+
+/**
+ * Makes sure the reference has been spoken, so the client can play it.
+ *
+ * On demand rather than with the round: most of a round is never reached, and a sentence is only
+ * worth the synthesis once its answer is in. The file is named by the sentence, as a word's is by
+ * the word, so nothing else has to remember where it went.
+ *
+ * No pinyin is sent with it. A word's audio uses a phoneme tag to pin the exact reading, but a
+ * sentence wants the voice's own phrasing and tone sandhi, which that would override.
+ */
+router.post('/audio', async (req, res) => {
+  const { id } = (req.body ?? {}) as { id?: string };
+  const question = typeof id === 'string' ? anyQuestionFor(id) : null;
+  if (!question) {
+    return res.status(404).json({ error: `No practice sentence "${id}"` });
+  }
+
+  try {
+    await generateSpeech(question.reference.hanzi);
+    res.json({ hanzi: question.reference.hanzi });
+  } catch (error) {
+    console.error(`Could not speak "${question.reference.hanzi}":`, error);
+    res.status(500).json({ error: 'Could not generate the audio' });
   }
 });
 

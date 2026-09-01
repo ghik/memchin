@@ -43,6 +43,7 @@ import {
   getSentenceQuestions,
   getStats,
   getWordCount,
+  ensureSentenceAudio,
   gradeSentence,
   learnNow,
   inferWord,
@@ -4894,13 +4895,27 @@ function alternativesHtml(alternatives: string[] | undefined): string {
 }
 
 function referenceHtml(question: SentenceQuestion): string {
-  // Not clickableHanzi: audio is generated per word, and these sentences have no file, so a
-  // clickable reference would be a dead click on every card
   return (
     `<span class="sentence-reference"><span class="sentence-label">Reference</span>` +
-    `<span class="ex-hanzi">${escapeHtml(question.reference.hanzi)}</span> ` +
+    `${clickableHanzi(question.reference.hanzi, 'ex-hanzi')} ` +
     `<span class="ex-pinyin">${escapeHtml(question.reference.pinyin)}</span></span>`
   );
+}
+
+/**
+ * Speaks the reference once the answer is in, as word practice speaks the word.
+ *
+ * The file is made on the first ask, so this waits on the server the first time a sentence comes
+ * up and on nothing afterwards. It is the last thing the card does and nothing depends on it: a
+ * missing voice costs the reading aloud, not the answer.
+ */
+async function speakSentence(question: SentenceQuestion): Promise<void> {
+  try {
+    await ensureSentenceAudio(question.id);
+    playAudio(question.reference.hanzi);
+  } catch (error) {
+    console.warn('Could not play the reference:', error);
+  }
 }
 
 function revealSentence(outcome: SentenceOutcome, answer: string): void {
@@ -4960,6 +4975,7 @@ function revealSentence(outcome: SentenceOutcome, answer: string): void {
 
   sentenceFeedback.className = `feedback ${cssClass}`;
   sentenceFeedback.innerHTML = parts;
+  void speakSentence(question);
   sentenceAnswered = true;
   sentenceInput.disabled = true;
   sentenceSubmitBtn.classList.add('hidden');
