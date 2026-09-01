@@ -7,6 +7,7 @@ import { openai } from './openai.js';
 import { recordUsage } from './ai-usage.js';
 import { parseGeneratedSentences } from './generated-sentences.js';
 import { getGeneratedNormalized, getRecentGeneratedEnglish } from '../db.js';
+import { pickGrammarPoints } from './grammar-points.js';
 import { normalizeSentence } from '../../shared/sentence-match.js';
 import type { Example } from '../../shared/types.js';
 
@@ -15,8 +16,11 @@ const MAX_RETRIES = 3;
 
 /**
  * Asked the same thing twice, the model writes much the same sentences: left to itself it
- * gravitates to 你今天忙吗 and 我姐姐在银行工作 every time. Naming a few situations at random is
- * what makes one round differ from the next, and it costs a line of the request.
+ * gravitates to 你今天忙吗 and 我姐姐在银行工作 every time.
+ *
+ * A grammar point per sentence is the main defence, since it varies what the sentence is rather
+ * than only what it is about — see grammar-points.ts. These say what it is about, which keeps
+ * the twenty sentences of one round from all being set in an office.
  */
 const SITUATIONS = [
   'at home with family',
@@ -63,8 +67,8 @@ const SITUATIONS = [
 
 /** How many of the recent ones the model is shown, so the request stays short */
 const AVOID_SHOWN = 40;
-/** How many situations one round is pointed at */
-const SITUATIONS_PER_ROUND = 6;
+/** How many situations one round is pointed at; the grammar points carry the rest of the variety */
+const SITUATIONS_PER_ROUND = 5;
 
 function pickSituations(): string[] {
   const shuffled = [...SITUATIONS];
@@ -100,7 +104,11 @@ The English is the exercise, so it has to determine the Chinese:
 - Where the aspect matters, make the English carry it: "I have been to Beijing" rather than "I went to Beijing" if the Chinese uses 过.
 - Do not translate word for word into stilted English. Write the English a native speaker would use, and make the Chinese say the same thing naturally.
 
-The request names some situations to write about, and may list sentences already written for this learner. Spread the sentences across the situations given. Do not write any of the listed sentences again, and do not write a near-variant of one — a different name or number in the same sentence is the same sentence.
+The request names a grammar point for each sentence, with a short example of what is meant. Write one sentence for each, in the order given, and make the point actually carry the sentence: a sentence for 把 has to need 把, not merely tolerate it. Everything else in the sentence still has to sit at the levels asked for.
+
+The request also names some situations. Use them as settings for the sentences, so a round is not all set in an office — but the grammar point comes first when the two pull apart.
+
+The request may list sentences already written for this learner. Do not write any of them again, and do not write a near-variant of one: a different name or number in the same sentence is the same sentence.
 
 Give the pinyin with tone marks, spaced as words: "wǒ jīn tiān hěn máng" is wrong, "wǒ jīntiān hěn máng" is right.
 
@@ -114,10 +122,13 @@ async function askForSentences(
   avoid: string[],
   signal?: AbortSignal
 ): Promise<Example[]> {
+  const points = pickGrammarPoints(levels, count);
   const request =
     `Write ${count} sentences at HSK level${levels.length > 1 ? 's' : ''} ` +
     `${levels.join(', ')}.\n\n` +
-    `Situations: ${pickSituations().join('; ')}.` +
+    `One sentence for each of these grammar points, in order:\n` +
+    points.map(({ point, example }) => `- ${point} (${example})`).join('\n') +
+    `\n\nSituations to set them in: ${pickSituations().join('; ')}.` +
     (avoid.length > 0 ? `\n\nAlready written, do not repeat:\n${avoid.join('\n')}` : '');
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
