@@ -4758,12 +4758,12 @@ function showSentencePoolInfo(): void {
   if (total > 0) {
     sentencePoolInfo.textContent =
       (reviewing
-        ? `${total} prior mistakes, skipped or answered wrong.`
+        ? `${total} to put right: skipped, answered wrong, or only acceptable.`
         : `${total} sentences available, from the words you have learned.`) +
       ' How many would you like to do?';
   } else {
     sentencePoolInfo.textContent = reviewing
-      ? 'No prior mistakes — everything you have answered, you got right.'
+      ? 'Nothing to put right — everything you have answered came back correct.'
       : 'No sentences yet — they come from the example sentences of words you have learned.';
   }
 }

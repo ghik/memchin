@@ -120,7 +120,7 @@ export function questionFor(id: string): SentenceQuestion | null {
 }
 
 /**
- * The questions last answered wrong or skipped, from wherever they came: the deck's examples and
+ * The questions not yet properly answered, from wherever they came: the deck's examples and
  * the sentences written to order are the same kind of exercise once they have been failed, and
  * a round of them is one list.
  *

@@ -1009,7 +1009,8 @@ export function getLearnedCount(): number {
 }
 
 /**
- * The sentences whose last word on the matter was a failure: answered wrong, or skipped.
+ * The sentences whose last word on the matter was short of right: answered wrong, skipped, or
+ * marked acceptable — understood, but not how a native would put it, which is worth another go.
  *
  * A sentence is identified by itself — the normalised form the history stores — and not by any
  * word. Most came from a word's examples and some were written to order, and one that two words
@@ -1024,7 +1025,7 @@ export function getLearnedCount(): number {
 export function getSentencesNeedingReview(): string[] {
   return queryRows(
     `SELECT DISTINCT a.reference FROM sentence_attempts a
-     WHERE a.outcome IN ('wrong', 'skipped')
+     WHERE a.outcome IN ('wrong', 'skipped', 'acceptable')
        AND a.id = (SELECT MAX(b.id) FROM sentence_attempts b
                    WHERE b.reference = a.reference AND b.outcome <> 'missing-word')`,
     [],
@@ -1156,14 +1157,14 @@ export function getGeneratedSentence(id: number): Example | null {
   return rows[0] ?? null;
 }
 
-/** The written sentences last answered wrong or skipped, joined on the same normalised form */
+/** The same for written sentences, joined on the same normalised form */
 export function getGeneratedSentencesNeedingReview(): { id: number; sentence: Example }[] {
   return queryRows(
     `SELECT g.id, g.hanzi, g.pinyin, g.english FROM generated_sentences g
      WHERE EXISTS (
        SELECT 1 FROM sentence_attempts a
        WHERE a.reference = g.normalized
-         AND a.outcome IN ('wrong', 'skipped')
+         AND a.outcome IN ('wrong', 'skipped', 'acceptable')
          AND a.id = (SELECT MAX(b.id) FROM sentence_attempts b
                      WHERE b.reference = a.reference AND b.outcome <> 'missing-word'))`,
     [],
