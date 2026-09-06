@@ -73,6 +73,8 @@ export interface StartRequest {
   excludedCategories?: string[];
   characterMode: boolean;
   hanziList?: string[]; // specific words to practice (overrides count/wordSelection/categories)
+  /** Which buckets to draw from; all of them when absent, none when empty */
+  buckets?: number[];
 }
 
 export interface StartResponse {

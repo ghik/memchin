@@ -404,6 +404,45 @@ function setCardCollapsed(key: string, collapsed: boolean) {
   savedCardCollapsed[key] = collapsed;
   localStorage.setItem('cardCollapsed', JSON.stringify(savedCardCollapsed));
 }
+/**
+ * Which buckets each card draws from. A card with nothing stored draws from all of them, which
+ * is why what is kept is the set turned *off*: buckets go up to MAX_BUCKET and a stored "all"
+ * would silently stop including any bucket added later.
+ */
+const savedBucketsOff: Record<string, number[]> = JSON.parse(
+  localStorage.getItem('bucketsOff') ?? '{}'
+);
+
+function bucketIsOn(key: string, bucket: number): boolean {
+  return !(savedBucketsOff[key] ?? []).includes(bucket);
+}
+
+function toggleBucket(key: string, bucket: number): void {
+  const off = new Set(savedBucketsOff[key] ?? []);
+  if (off.has(bucket)) {
+    off.delete(bucket);
+  } else {
+    off.add(bucket);
+  }
+  savedBucketsOff[key] = [...off].sort((a, b) => a - b);
+  localStorage.setItem('bucketsOff', JSON.stringify(savedBucketsOff));
+}
+
+/** The buckets a card practises, or undefined when it practises all of them */
+function bucketsFor(key: string, bucketCount: number): number[] | undefined {
+  const off = savedBucketsOff[key] ?? [];
+  if (off.length === 0) {
+    return undefined;
+  }
+  const on: number[] = [];
+  for (let bucket = 0; bucket < bucketCount; bucket++) {
+    if (!off.includes(bucket)) {
+      on.push(bucket);
+    }
+  }
+  return on;
+}
+
 function modeKey(mode: PracticeMode, charMode: boolean): string {
   return charMode ? `${mode}:char` : mode;
 }
@@ -794,13 +833,29 @@ function makeBucketTimings(s: Stats): string {
 }
 
 function makeBucketBar(s: Stats): string {
+  const key = modeKey(s.mode, s.characterMode);
   return s.buckets
     .map((count, i) => {
       const due = s.dueBuckets[i] || 0;
       const dueLabel = due > 0 ? `<span class="bucket-due">${due}</span> ` : '';
-      return `<span class="bucket-count" title="Bucket ${i}: ${count} total, ${due} due">${dueLabel}${count}</span>`;
+      const off = bucketIsOn(key, i) ? '' : ' bucket-off';
+      const state = off ? 'not practised' : 'practised';
+      return (
+        `<button class="bucket-count${off}" data-bucket="${i}" ` +
+        `title="Bucket ${i}: ${count} total, ${due} due — ${state}, click to change">` +
+        `${dueLabel}${count}</button>`
+      );
     })
     .join('');
+}
+
+/** What the due button offers, once the buckets turned off are taken out of it */
+function dueInSelectedBuckets(s: Stats): number {
+  const key = modeKey(s.mode, s.characterMode);
+  return s.dueBuckets.reduce(
+    (sum, due, bucket) => sum + (bucketIsOn(key, bucket) ? due || 0 : 0),
+    0
+  );
 }
 
 function makeForecastTimings(): string {
@@ -842,9 +897,10 @@ function updateStatsInPlace(stats: Stats[]): void {
     card.querySelector('.forecast-timings')!.innerHTML = makeForecastTimings();
     card.querySelector('.forecast-bar')!.innerHTML = makeForecastBar(s);
     const dueBtn = card.querySelector('.due-mode-btn') as HTMLButtonElement;
-    dueBtn.textContent = `${s.dueForReview} due`;
-    dueBtn.disabled = s.dueForReview === 0;
-    dueBtn.dataset.count = String(s.dueForReview);
+    const due = dueInSelectedBuckets(s);
+    dueBtn.textContent = `${due} due`;
+    dueBtn.disabled = due === 0;
+    dueBtn.dataset.count = String(due);
     dueBtn.classList.toggle('filtered', hasCategoryFilter());
     const previewBtn = card.querySelector('.mode-preview-btn') as HTMLButtonElement;
     previewBtn.textContent = `${s.newWordsCount} new`;
@@ -877,7 +933,8 @@ async function renderStats(stats: Stats[]) {
       const forecastTimings = makeForecastTimings();
       const forecastBar = makeForecastBar(s);
       const filtered = hasCategoryFilter() ? ' filtered' : '';
-      const dueBtn = `<button class="due-mode-btn${filtered}" data-mode="${s.mode}" data-charmode="${cm}" data-count="${s.dueForReview}" ${s.dueForReview === 0 ? 'disabled' : ''}>${s.dueForReview} due</button>`;
+      const due = dueInSelectedBuckets(s);
+      const dueBtn = `<button class="due-mode-btn${filtered}" data-mode="${s.mode}" data-charmode="${cm}" data-count="${due}" ${due === 0 ? 'disabled' : ''}>${due} due</button>`;
       const previewBtn = `<button class="mode-preview-btn${filtered}${previewMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}" ${s.newWordsCount === 0 ? 'disabled' : ''}>${s.newWordsCount} new</button>`;
       const browseBtn = `<button class="mode-browse-btn${browseMode === cardKey ? ' active' : ''}" data-mode="${s.mode}" data-charmode="${cm}">Browse</button>`;
       const presets = [10, 20, 30, 40, 50];
@@ -1157,6 +1214,8 @@ async function handleStart(
   countOverride?: number
 ) {
   const count = countOverride ?? getModeWordCount(currentMode, characterMode, wordSelection);
+  const key = modeKey(currentMode, characterMode);
+  const stats = latestStats.find((s) => modeKey(s.mode, s.characterMode) === key);
 
   try {
     const selectedCategories = getSelectedCategories();
@@ -1168,7 +1227,9 @@ async function handleStart(
       selectedCategories,
       excludedCategoriesList,
       characterMode,
-      hanziList
+      hanziList,
+      // A named list of words is a list, whatever bucket its words are in
+      hanziList ? undefined : bucketsFor(key, stats?.buckets.length ?? 0)
     );
     questions = shuffle(response.questions);
     allQuestions = [...questions];
@@ -3018,6 +3079,33 @@ async function loadBrowsePage(offset: number, triggerBtn?: HTMLButtonElement) {
     }
   }
 }
+
+/**
+ * Bucket pills: click one to take that bucket out of what the card practises, or put it back.
+ *
+ * Delegated from the container rather than bound to each pill, because updateStatsInPlace
+ * rewrites the bar's markup every time the stats reload and would leave the new pills dead.
+ */
+statsDiv.addEventListener('click', (e) => {
+  const pill = (e.target as HTMLElement).closest('.bucket-count') as HTMLElement | null;
+  if (!pill || pill.closest('.forecast-bar')) {
+    return;
+  }
+  const card = pill.closest('.mode-card') as HTMLElement;
+  const key = card.dataset.key!;
+  const bucket = Number(pill.dataset.bucket);
+  toggleBucket(key, bucket);
+  pill.classList.toggle('bucket-off', !bucketIsOn(key, bucket));
+
+  const stats = latestStats.find((s) => modeKey(s.mode, s.characterMode) === key);
+  if (stats) {
+    const dueBtn = card.querySelector('.due-mode-btn') as HTMLButtonElement;
+    const due = dueInSelectedBuckets(stats);
+    dueBtn.textContent = `${due} due`;
+    dueBtn.disabled = due === 0;
+    dueBtn.dataset.count = String(due);
+  }
+});
 
 // Click handler for audio playback on hanzi
 document.addEventListener('click', (e) => {

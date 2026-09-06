@@ -97,7 +97,8 @@ export function startPractice(
   categories: string[],
   excludedCategories: string[],
   characterMode: boolean,
-  hanziList?: string[]
+  hanziList?: string[],
+  buckets?: number[]
 ): Promise<StartResponse> {
   return apiPost('/practice/start', {
     count,
@@ -107,6 +108,7 @@ export function startPractice(
     excludedCategories,
     characterMode,
     hanziList,
+    buckets,
   });
 }
 

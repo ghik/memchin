@@ -106,9 +106,21 @@ function createQuestion(word: Word, mode: PracticeMode, characterMode: boolean):
 }
 
 router.post('/start', (req, res) => {
-  const { count, mode, wordSelection, categories, excludedCategories, characterMode, hanziList } =
-    req.body as StartRequest;
+  const {
+    count,
+    mode,
+    wordSelection,
+    categories,
+    excludedCategories,
+    characterMode,
+    hanziList,
+    buckets,
+  } = req.body as StartRequest;
   const excluded = excludedCategories ?? [];
+  // An empty list is a real answer — every bucket turned off — so only a missing one means all
+  const fromBuckets = Array.isArray(buckets)
+    ? buckets.filter((bucket) => Number.isInteger(bucket))
+    : undefined;
 
   if (
     !mode ||
@@ -127,10 +139,26 @@ router.post('/start', (req, res) => {
     }
     switch (wordSelection) {
       case 'review':
-        words = getWordsForReview(mode, count, categories, excluded, characterMode, false);
+        words = getWordsForReview(
+          mode,
+          count,
+          categories,
+          excluded,
+          characterMode,
+          false,
+          fromBuckets
+        );
         break;
       case 'random':
-        words = getWordsForReview(mode, count, categories, excluded, characterMode, true);
+        words = getWordsForReview(
+          mode,
+          count,
+          categories,
+          excluded,
+          characterMode,
+          true,
+          fromBuckets
+        );
         break;
     }
   }

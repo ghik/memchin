@@ -743,8 +743,37 @@ body.dark .preview-queued {
   padding: 3px 0;
   font-size: 12px;
   background: var(--border-2);
+  border: 1px solid transparent;
   border-radius: 3px;
   color: var(--text-2);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.bucket-count:hover {
+  border-color: var(--accent);
+}
+
+/* A bucket this card does not practise: legible, but plainly out of the running */
+.bucket-count.bucket-off {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-5);
+  text-decoration: line-through;
+}
+
+.bucket-count.bucket-off .bucket-due {
+  color: inherit;
+  font-weight: normal;
+}
+
+/* The forecast is a read-out, not a control */
+.forecast-bar .bucket-count {
+  cursor: default;
+}
+
+.forecast-bar .bucket-count:hover {
+  border-color: transparent;
 }
 
 .bucket-due {

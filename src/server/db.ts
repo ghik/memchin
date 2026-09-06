@@ -744,6 +744,11 @@ function queryWords(sql: string, params: any[]): Word[] {
   return queryRows(sql, params, rowToWord);
 }
 
+/**
+ * `buckets` narrows the draw to those buckets. Undefined means all of them, which is not the
+ * same as an empty list: empty is a learner who has turned every bucket off, and should get
+ * nothing rather than everything.
+ */
 function queryReviewWords(
   mode: PracticeMode,
   categories: string[],
@@ -751,18 +756,23 @@ function queryReviewWords(
   characterMode: boolean,
   count: number,
   dueOnly: boolean,
-  random: boolean
+  random: boolean,
+  buckets?: number[]
 ): Word[] {
+  if (buckets && buckets.length === 0) {
+    return [];
+  }
   const f = getWordFilters(mode, categories, excludedCategories, characterMode);
   const dueFilter = dueOnly ? "AND p.next_eligible <= datetime('now')" : '';
+  const bucketFilter = buckets ? `AND p.bucket IN (${buckets.map(() => '?').join(', ')})` : '';
   const orderBy = random ? 'RANDOM()' : 'p.next_eligible ASC';
   return queryWords(
     `
       SELECT w.* FROM words w JOIN progress p ON w.hanzi = p.hanzi
-      WHERE p.mode = ? AND p.bucket IS NOT NULL ${dueFilter} ${f.wordFilter}
+      WHERE p.mode = ? AND p.bucket IS NOT NULL ${dueFilter} ${bucketFilter} ${f.wordFilter}
       ORDER BY ${orderBy} LIMIT ?
   `,
-    [mode, ...categories, ...excludedCategories, count]
+    [mode, ...(buckets ?? []), ...categories, ...excludedCategories, count]
   );
 }
 
@@ -794,9 +804,19 @@ export function getWordsForReview(
   categories: string[],
   excludedCategories: string[],
   characterMode: boolean,
-  random: boolean
+  random: boolean,
+  buckets?: number[]
 ): Word[] {
-  return queryReviewWords(mode, categories, excludedCategories, characterMode, count, false, random);
+  return queryReviewWords(
+    mode,
+    categories,
+    excludedCategories,
+    characterMode,
+    count,
+    false,
+    random,
+    buckets
+  );
 }
 
 export function getNewWords(
